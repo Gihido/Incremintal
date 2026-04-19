@@ -123,6 +123,17 @@ local PASSIVE_DEFS = {
 	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5},
 }
 
+local PASSIVE_DEFS = {
+	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1},
+	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1},
+	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5},
+	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5},
+	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2},
+	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3},
+	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5},
+	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5},
+}
+
 local selectedAdminCurrency = "Coins"
 
 local function roundToTenth(value)
@@ -1075,6 +1086,32 @@ addFuelMaxButton.BorderSizePixel = 0
 createCorner(addFuelMaxButton, 12)
 addScaleHover(addFuelMaxButton)
 
+local function createPaperUpgradeUi()
+	if not paperUpgradeDoska then
+		return nil, nil
+	end
+
+	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
+	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
+	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
+
+	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
+		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
+	})
+	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
+		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
+	})
+	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
+		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
+	})
+
+	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
+	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
+	return cards, lockedOverlay
+end
+
+local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
+
 local paperUpgradeCards = nil
 local paperUpgradeLockedOverlay = nil
 if paperUpgradeDoska then
@@ -1099,31 +1136,35 @@ local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроет
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
 local factoryLockedOverlay = createLockedOverlay(factoryBoard, "Откроется на 4-м перерождении")
-local passiveUi = {
-	panel = nil,
-	hintGui = nil,
-	hintEmoji = nil,
-	rollButton = nil,
-	slots = {},
-	equippedText = nil,
-	lastState = {inventory = {}, equippedUid = ""},
-}
+local function createPassiveUi()
+	local ui = {
+		panel = nil,
+		hintGui = nil,
+		hintEmoji = nil,
+		rollButton = nil,
+		slots = {},
+		equippedText = nil,
+		lastState = {inventory = {}, equippedUid = ""},
+	}
 
-if passiveInventoryBlock then
-	passiveUi.hintGui = Instance.new("BillboardGui")
-	passiveUi.hintGui.Name = "PassiveHintGui"
-	passiveUi.hintGui.Adornee = passiveInventoryBlock
-	passiveUi.hintGui.Size = UDim2.new(0, 260, 0, 140)
-	passiveUi.hintGui.StudsOffset = Vector3.new(0, 4.5, 0)
-	passiveUi.hintGui.AlwaysOnTop = true
-	passiveUi.hintGui.Parent = screenGui
+	if not passiveInventoryBlock then
+		return ui
+	end
+
+	ui.hintGui = Instance.new("BillboardGui")
+	ui.hintGui.Name = "PassiveHintGui"
+	ui.hintGui.Adornee = passiveInventoryBlock
+	ui.hintGui.Size = UDim2.new(0, 260, 0, 140)
+	ui.hintGui.StudsOffset = Vector3.new(0, 4.5, 0)
+	ui.hintGui.AlwaysOnTop = true
+	ui.hintGui.Parent = screenGui
 
 	local circle = Instance.new("Frame")
 	circle.Size = UDim2.new(0, 120, 0, 120)
 	circle.Position = UDim2.new(0.5, -60, 0.45, -60)
 	circle.BackgroundColor3 = Color3.fromRGB(104, 150, 237)
 	circle.BorderSizePixel = 0
-	circle.Parent = passiveUi.hintGui
+	circle.Parent = ui.hintGui
 	createCorner(circle, 999)
 	createGradient(circle, Color3.fromRGB(160, 199, 255), Color3.fromRGB(94, 126, 214), 90)
 	createStroke(circle, Color3.fromRGB(255, 255, 255), 2, 0.15)
@@ -1138,58 +1179,60 @@ if passiveInventoryBlock then
 	arrow.TextScaled = true
 	arrow.Parent = circle
 
-	passiveUi.hintEmoji = Instance.new("TextLabel")
-	passiveUi.hintEmoji.BackgroundTransparency = 1
-	passiveUi.hintEmoji.Size = UDim2.new(1, 0, 1, 0)
-	passiveUi.hintEmoji.Text = "😊"
-	passiveUi.hintEmoji.TextScaled = true
-	passiveUi.hintEmoji.Font = Enum.Font.GothamBlack
-	passiveUi.hintEmoji.Parent = circle
+	ui.hintEmoji = Instance.new("TextLabel")
+	ui.hintEmoji.BackgroundTransparency = 1
+	ui.hintEmoji.Size = UDim2.new(1, 0, 1, 0)
+	ui.hintEmoji.Text = "😊"
+	ui.hintEmoji.TextScaled = true
+	ui.hintEmoji.Font = Enum.Font.GothamBlack
+	ui.hintEmoji.Parent = circle
 
-	passiveUi.panel = Instance.new("Frame")
-	passiveUi.panel.Size = UDim2.new(0, 560, 0, 430)
-	passiveUi.panel.AnchorPoint = Vector2.new(0.5, 0.5)
-	passiveUi.panel.Position = UDim2.new(0.5, 0, 0.55, 0)
-	passiveUi.panel.Visible = false
-	passiveUi.panel.BackgroundColor3 = Color3.fromRGB(66, 90, 145)
-	passiveUi.panel.BorderSizePixel = 0
-	passiveUi.panel.Parent = screenGui
-	createCorner(passiveUi.panel, 20)
-	createGradient(passiveUi.panel, Color3.fromRGB(118, 153, 234), Color3.fromRGB(72, 93, 154), 90)
+	ui.panel = Instance.new("Frame")
+	ui.panel.Size = UDim2.new(0, 560, 0, 430)
+	ui.panel.AnchorPoint = Vector2.new(0.5, 0.5)
+	ui.panel.Position = UDim2.new(0.5, 0, 0.55, 0)
+	ui.panel.Visible = false
+	ui.panel.BackgroundColor3 = Color3.fromRGB(66, 90, 145)
+	ui.panel.BorderSizePixel = 0
+	ui.panel.Parent = screenGui
+	createCorner(ui.panel, 20)
+	createGradient(ui.panel, Color3.fromRGB(118, 153, 234), Color3.fromRGB(72, 93, 154), 90)
 
-	createHeader(passiveUi.panel, "PASSIVES", "Ролл, инвентарь, экипировка")
-	passiveUi.rollButton = Instance.new("TextButton")
-	passiveUi.rollButton.Size = UDim2.new(0.5, -12, 0, 40)
-	passiveUi.rollButton.Position = UDim2.new(0, 8, 0, 70)
-	passiveUi.rollButton.BackgroundColor3 = Color3.fromRGB(255, 216, 120)
-	passiveUi.rollButton.Text = "ROLL (50 Paper)"
-	passiveUi.rollButton.TextColor3 = Color3.fromRGB(48, 55, 71)
-	passiveUi.rollButton.Font = Enum.Font.GothamBlack
-	passiveUi.rollButton.TextScaled = true
-	passiveUi.rollButton.Parent = passiveUi.panel
-	createCorner(passiveUi.rollButton, 12)
-	addScaleHover(passiveUi.rollButton)
+	createHeader(ui.panel, "PASSIVES", "Ролл, инвентарь, экипировка")
+	ui.rollButton = Instance.new("TextButton")
+	ui.rollButton.Size = UDim2.new(0.5, -12, 0, 40)
+	ui.rollButton.Position = UDim2.new(0, 8, 0, 70)
+	ui.rollButton.BackgroundColor3 = Color3.fromRGB(255, 216, 120)
+	ui.rollButton.Text = "ROLL (50 Paper)"
+	ui.rollButton.TextColor3 = Color3.fromRGB(48, 55, 71)
+	ui.rollButton.Font = Enum.Font.GothamBlack
+	ui.rollButton.TextScaled = true
+	ui.rollButton.Parent = ui.panel
+	createCorner(ui.rollButton, 12)
+	addScaleHover(ui.rollButton)
 
-	passiveUi.equippedText = Instance.new("TextLabel")
-	passiveUi.equippedText.Size = UDim2.new(0.5, -12, 0, 40)
-	passiveUi.equippedText.Position = UDim2.new(0.5, 4, 0, 70)
-	passiveUi.equippedText.BackgroundTransparency = 1
-	passiveUi.equippedText.Text = "Equipped: none"
-	passiveUi.equippedText.TextColor3 = Color3.fromRGB(245, 250, 255)
-	passiveUi.equippedText.Font = Enum.Font.GothamBold
-	passiveUi.equippedText.TextScaled = true
-	passiveUi.equippedText.Parent = passiveUi.panel
+	ui.equippedText = Instance.new("TextLabel")
+	ui.equippedText.Size = UDim2.new(0.5, -12, 0, 40)
+	ui.equippedText.Position = UDim2.new(0.5, 4, 0, 70)
+	ui.equippedText.BackgroundTransparency = 1
+	ui.equippedText.Text = "Equipped: none"
+	ui.equippedText.TextColor3 = Color3.fromRGB(245, 250, 255)
+	ui.equippedText.Font = Enum.Font.GothamBold
+	ui.equippedText.TextScaled = true
+	ui.equippedText.Parent = ui.panel
 
 	local slots = Instance.new("Frame")
 	slots.Size = UDim2.new(1, -16, 1, -122)
 	slots.Position = UDim2.new(0, 8, 0, 114)
 	slots.BackgroundTransparency = 1
-	slots.Parent = passiveUi.panel
+	slots.Parent = ui.panel
+
 	local grid = Instance.new("UIGridLayout")
 	grid.CellSize = UDim2.new(0, 102, 0, 58)
 	grid.CellPadding = UDim2.new(0, 8, 0, 8)
 	grid.Parent = slots
-	for i = 1, PASSIVE_INVENTORY_CAPACITY do
+
+	for _ = 1, PASSIVE_INVENTORY_CAPACITY do
 		local slot = Instance.new("TextButton")
 		slot.Text = "Пусто"
 		slot.BackgroundColor3 = Color3.fromRGB(90, 112, 162)
@@ -1199,9 +1242,13 @@ if passiveInventoryBlock then
 		slot.BorderSizePixel = 0
 		slot.Parent = slots
 		createCorner(slot, 10)
-			table.insert(passiveUi.slots, slot)
-		end
+		table.insert(ui.slots, slot)
+	end
+
+	return ui
 end
+
+local passiveUi = createPassiveUi()
 
 local function getCoinUpgradeMultiplier()
 	return 1 + (coinMultiplierLevel.Value * 0.1)
@@ -1442,6 +1489,30 @@ local function updateCard(card, levelValue, costValue, activeValue, maxLevel, cu
 
 	setButtonVisual(card.buyButton, "BUY!", canBuy, atMax, Color3.fromRGB(99, 243, 200), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), locked)
 	setButtonVisual(card.maxButton, "MAX!", canBuy, atMax, Color3.fromRGB(177, 122, 255), Color3.fromRGB(136, 148, 175), Color3.fromRGB(255, 255, 255), locked)
+end
+
+local function getPaperCycleTime()
+	local value = 10 - (paperSpeedLevel.Value * 0.5)
+	if value < 5 then
+		value = 5
+	end
+	return roundToTenth(value)
+end
+
+local function getPaperProductionAmount()
+	local baseValue = 1 + paperValueLevel.Value
+	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
+	return roundToTenth(baseValue * multiplier)
+end
+
+local function parsePassiveState()
+	local ok, decoded = pcall(function()
+		return HttpService:JSONDecode(passiveStateJson.Value)
+	end)
+	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
+		return decoded
+	end
+	return {inventory = {}, equippedUid = ""}
 end
 
 local function getPaperCycleTime()
@@ -1715,6 +1786,27 @@ if paperUpgradeCards then
 	end)
 end
 
+if paperUpgradeCards then
+	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
+	end)
+	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
+	end)
+	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
+	end)
+	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
+	end)
+	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
+	end)
+	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
+	end)
+end
+
 rebirthButton.MouseButton1Click:Connect(function()
 	purchaseRebirthEvent:FireServer()
 end)
@@ -1726,6 +1818,36 @@ end)
 addFuelMaxButton.MouseButton1Click:Connect(function()
 	factoryActionEvent:FireServer("AddFuelMax")
 end)
+
+if passiveUi.rollButton then
+	passiveUi.rollButton.MouseButton1Click:Connect(function()
+		passiveActionEvent:FireServer("Roll")
+	end)
+	for _, slot in ipairs(passiveUi.slots) do
+		slot.MouseButton1Click:Connect(function()
+			if not passiveUi.panel.Visible then
+				return
+			end
+			local index = table.find(passiveUi.slots, slot)
+			local entry = passiveUi.lastState.inventory[index]
+			if not entry then
+				return
+			end
+			if passiveUi.lastState.equippedUid == entry.uid then
+				passiveActionEvent:FireServer("Unequip")
+			else
+				passiveActionEvent:FireServer("Equip", entry.uid)
+			end
+		end)
+		slot.MouseButton2Click:Connect(function()
+			local index = table.find(passiveUi.slots, slot)
+			local entry = passiveUi.lastState.inventory[index]
+			if entry then
+				passiveActionEvent:FireServer("Delete", entry.uid)
+			end
+		end)
+	end
+end
 
 if passiveUi.rollButton then
 	passiveUi.rollButton.MouseButton1Click:Connect(function()
