@@ -265,13 +265,21 @@ local PASSIVE_DEFS = {
 		woodMultiplier = 1.5,
 		weight = 12,
 	},
+	RareSprout = {
+		id = "RareSprout",
+		name = "Rare Sprout",
+		rarity = "Rare",
+		coinMultiplier = 1,
+		woodMultiplier = 2,
+		weight = 7,
+	},
 	RareForest = {
 		id = "RareForest",
 		name = "Rare Forest",
 		rarity = "Rare",
 		coinMultiplier = 1,
 		woodMultiplier = 3,
-		weight = 8,
+		weight = 6,
 	},
 	EpicBloom = {
 		id = "EpicBloom",
@@ -924,7 +932,7 @@ local function getPaperProductionAmount(player)
 	end
 
 	local baseValue = 1 + paperUpgrades.PaperValueLevel.Value
-	local multiplier = 1 + paperUpgrades.PaperMultiplierLevel.Value
+	local multiplier = 1 + (paperUpgrades.PaperMultiplierLevel.Value * 0.1)
 
 	return roundToTenth(baseValue * multiplier)
 end
