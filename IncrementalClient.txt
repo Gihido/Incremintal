@@ -5,99 +5,99 @@ local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
-local player = Players.LocalPlayer
-local mouse = player:GetMouse()
-local playerGui = player:WaitForChild("PlayerGui")
+player = Players.LocalPlayer
+mouse = player:GetMouse()
+playerGui = player:WaitForChild("PlayerGui")
 
-local data = player:WaitForChild("PlayerData")
-local coins = data:WaitForChild("Coins")
+data = player:WaitForChild("PlayerData")
+coins = data:WaitForChild("Coins")
 
-local coinUpgrades = data:WaitForChild("CoinUpgrades")
-local coinValueLevel = coinUpgrades:WaitForChild("CoinValueLevel")
-local coinMultiplierLevel = coinUpgrades:WaitForChild("MultiplierLevel")
-local coinSpawnLevel = coinUpgrades:WaitForChild("SpawnSpeedLevel")
-local coinWoodBoostLevel = coinUpgrades:WaitForChild("WoodBoostLevel")
+coinUpgrades = data:WaitForChild("CoinUpgrades")
+coinValueLevel = coinUpgrades:WaitForChild("CoinValueLevel")
+coinMultiplierLevel = coinUpgrades:WaitForChild("MultiplierLevel")
+coinSpawnLevel = coinUpgrades:WaitForChild("SpawnSpeedLevel")
+coinWoodBoostLevel = coinUpgrades:WaitForChild("WoodBoostLevel")
 
-local coinValueCost = coinUpgrades:WaitForChild("CoinValueCost")
-local coinMultiplierCost = coinUpgrades:WaitForChild("MultiplierCost")
-local coinSpawnCost = coinUpgrades:WaitForChild("SpawnSpeedCost")
-local coinWoodBoostCost = coinUpgrades:WaitForChild("WoodBoostCost")
+coinValueCost = coinUpgrades:WaitForChild("CoinValueCost")
+coinMultiplierCost = coinUpgrades:WaitForChild("MultiplierCost")
+coinSpawnCost = coinUpgrades:WaitForChild("SpawnSpeedCost")
+coinWoodBoostCost = coinUpgrades:WaitForChild("WoodBoostCost")
 
-local coinValueActive = coinUpgrades:WaitForChild("CoinValueActive")
-local coinMultiplierActive = coinUpgrades:WaitForChild("MultiplierActive")
-local coinSpawnActive = coinUpgrades:WaitForChild("SpawnSpeedActive")
-local coinWoodBoostActive = coinUpgrades:WaitForChild("WoodBoostActive")
+coinValueActive = coinUpgrades:WaitForChild("CoinValueActive")
+coinMultiplierActive = coinUpgrades:WaitForChild("MultiplierActive")
+coinSpawnActive = coinUpgrades:WaitForChild("SpawnSpeedActive")
+coinWoodBoostActive = coinUpgrades:WaitForChild("WoodBoostActive")
 
-local woodFolder = data:WaitForChild("Wood")
-local woodCurrency = woodFolder:WaitForChild("WoodCurrency")
+woodFolder = data:WaitForChild("Wood")
+woodCurrency = woodFolder:WaitForChild("WoodCurrency")
 
-local woodUpgrades = woodFolder:WaitForChild("WoodUpgrades")
-local woodValueLevel = woodUpgrades:WaitForChild("WoodValueLevel")
-local woodMultiplierLevel = woodUpgrades:WaitForChild("WoodMultiplierLevel")
-local woodSpeedLevel = woodUpgrades:WaitForChild("WoodSpeedLevel")
-local woodCoinBoostLevel = woodUpgrades:WaitForChild("CoinBoostLevel")
+woodUpgrades = woodFolder:WaitForChild("WoodUpgrades")
+woodValueLevel = woodUpgrades:WaitForChild("WoodValueLevel")
+woodMultiplierLevel = woodUpgrades:WaitForChild("WoodMultiplierLevel")
+woodSpeedLevel = woodUpgrades:WaitForChild("WoodSpeedLevel")
+woodCoinBoostLevel = woodUpgrades:WaitForChild("CoinBoostLevel")
 
-local woodValueCost = woodUpgrades:WaitForChild("WoodValueCost")
-local woodMultiplierCost = woodUpgrades:WaitForChild("WoodMultiplierCost")
-local woodSpeedCost = woodUpgrades:WaitForChild("WoodSpeedCost")
-local woodCoinBoostCost = woodUpgrades:WaitForChild("CoinBoostCost")
+woodValueCost = woodUpgrades:WaitForChild("WoodValueCost")
+woodMultiplierCost = woodUpgrades:WaitForChild("WoodMultiplierCost")
+woodSpeedCost = woodUpgrades:WaitForChild("WoodSpeedCost")
+woodCoinBoostCost = woodUpgrades:WaitForChild("CoinBoostCost")
 
-local woodValueActive = woodUpgrades:WaitForChild("WoodValueActive")
-local woodMultiplierActive = woodUpgrades:WaitForChild("WoodMultiplierActive")
-local woodSpeedActive = woodUpgrades:WaitForChild("WoodSpeedActive")
-local woodCoinBoostActive = woodUpgrades:WaitForChild("CoinBoostActive")
+woodValueActive = woodUpgrades:WaitForChild("WoodValueActive")
+woodMultiplierActive = woodUpgrades:WaitForChild("WoodMultiplierActive")
+woodSpeedActive = woodUpgrades:WaitForChild("WoodSpeedActive")
+woodCoinBoostActive = woodUpgrades:WaitForChild("CoinBoostActive")
 
-local paperFactory = woodFolder:WaitForChild("PaperFactory")
-local paperValue = paperFactory:WaitForChild("Paper")
-local fuelValue = paperFactory:WaitForChild("Fuel")
-local factoryCountdown = paperFactory:WaitForChild("Countdown")
-local factoryRunning = paperFactory:WaitForChild("IsRunning")
-local paperUpgrades = woodFolder:WaitForChild("PaperUpgrades")
-local paperValueLevel = paperUpgrades:WaitForChild("PaperValueLevel")
-local paperMultiplierLevel = paperUpgrades:WaitForChild("PaperMultiplierLevel")
-local paperSpeedLevel = paperUpgrades:WaitForChild("PaperSpeedLevel")
-local paperValueCost = paperUpgrades:WaitForChild("PaperValueCost")
-local paperMultiplierCost = paperUpgrades:WaitForChild("PaperMultiplierCost")
-local paperSpeedCost = paperUpgrades:WaitForChild("PaperSpeedCost")
-local paperValueActive = paperUpgrades:WaitForChild("PaperValueActive")
-local paperMultiplierActive = paperUpgrades:WaitForChild("PaperMultiplierActive")
-local paperSpeedActive = paperUpgrades:WaitForChild("PaperSpeedActive")
+paperFactory = woodFolder:WaitForChild("PaperFactory")
+paperValue = paperFactory:WaitForChild("Paper")
+fuelValue = paperFactory:WaitForChild("Fuel")
+factoryCountdown = paperFactory:WaitForChild("Countdown")
+factoryRunning = paperFactory:WaitForChild("IsRunning")
+paperUpgrades = woodFolder:WaitForChild("PaperUpgrades")
+paperValueLevel = paperUpgrades:WaitForChild("PaperValueLevel")
+paperMultiplierLevel = paperUpgrades:WaitForChild("PaperMultiplierLevel")
+paperSpeedLevel = paperUpgrades:WaitForChild("PaperSpeedLevel")
+paperValueCost = paperUpgrades:WaitForChild("PaperValueCost")
+paperMultiplierCost = paperUpgrades:WaitForChild("PaperMultiplierCost")
+paperSpeedCost = paperUpgrades:WaitForChild("PaperSpeedCost")
+paperValueActive = paperUpgrades:WaitForChild("PaperValueActive")
+paperMultiplierActive = paperUpgrades:WaitForChild("PaperMultiplierActive")
+paperSpeedActive = paperUpgrades:WaitForChild("PaperSpeedActive")
 
-local rebirthFolder = data:WaitForChild("Rebirth")
-local rebirthCount = rebirthFolder:WaitForChild("Count")
-local rebirthNextCost = rebirthFolder:WaitForChild("NextCost")
-local rebirthNextCurrency = rebirthFolder:WaitForChild("NextCurrency")
-local rebirthCoinMultiplierBonus = rebirthFolder:WaitForChild("CoinMultiplierBonus")
-local rebirthSpawnSpeedBonus = rebirthFolder:WaitForChild("SpawnSpeedBonus")
-local secondAreaUnlocked = rebirthFolder:WaitForChild("SecondAreaUnlocked")
-local thirdUpgradeUnlocked = rebirthFolder:WaitForChild("ThirdUpgradeUnlocked")
-local fourthSystemsUnlocked = rebirthFolder:WaitForChild("FourthSystemsUnlocked")
-local fifthSystemsUnlocked = rebirthFolder:WaitForChild("FifthSystemsUnlocked")
+rebirthFolder = data:WaitForChild("Rebirth")
+rebirthCount = rebirthFolder:WaitForChild("Count")
+rebirthNextCost = rebirthFolder:WaitForChild("NextCost")
+rebirthNextCurrency = rebirthFolder:WaitForChild("NextCurrency")
+rebirthCoinMultiplierBonus = rebirthFolder:WaitForChild("CoinMultiplierBonus")
+rebirthSpawnSpeedBonus = rebirthFolder:WaitForChild("SpawnSpeedBonus")
+secondAreaUnlocked = rebirthFolder:WaitForChild("SecondAreaUnlocked")
+thirdUpgradeUnlocked = rebirthFolder:WaitForChild("ThirdUpgradeUnlocked")
+fourthSystemsUnlocked = rebirthFolder:WaitForChild("FourthSystemsUnlocked")
+fifthSystemsUnlocked = rebirthFolder:WaitForChild("FifthSystemsUnlocked")
 
-local passiveFolder = data:WaitForChild("Passives")
-local passiveStateJson = passiveFolder:WaitForChild("StateJson")
+passiveFolder = data:WaitForChild("Passives")
+passiveStateJson = passiveFolder:WaitForChild("StateJson")
 
-local remotesFolder = ReplicatedStorage:WaitForChild("IncrementalRemotes")
-local purchaseUpgradeEvent = remotesFolder:WaitForChild("PurchaseUpgrade")
-local purchaseRebirthEvent = remotesFolder:WaitForChild("PurchaseRebirth")
-local adminActionEvent = remotesFolder:WaitForChild("AdminAction")
-local notifyEvent = remotesFolder:WaitForChild("Notify")
-local woodClickEvent = remotesFolder:WaitForChild("WoodClick")
-local factoryActionEvent = remotesFolder:WaitForChild("FactoryAction")
-local passiveActionEvent = remotesFolder:WaitForChild("PassiveAction")
+remotesFolder = ReplicatedStorage:WaitForChild("IncrementalRemotes")
+purchaseUpgradeEvent = remotesFolder:WaitForChild("PurchaseUpgrade")
+purchaseRebirthEvent = remotesFolder:WaitForChild("PurchaseRebirth")
+adminActionEvent = remotesFolder:WaitForChild("AdminAction")
+notifyEvent = remotesFolder:WaitForChild("Notify")
+woodClickEvent = remotesFolder:WaitForChild("WoodClick")
+factoryActionEvent = remotesFolder:WaitForChild("FactoryAction")
+passiveActionEvent = remotesFolder:WaitForChild("PassiveAction")
 
-local doskaPart = workspace:WaitForChild("DoskaPart")
-local upgradeDoska = workspace:WaitForChild("UpgradeDoska")
-local rebirthDoska = workspace:WaitForChild("RebirthDoska")
-local rebirthWall = workspace:WaitForChild("RebirthWall")
-local treeBlock = workspace:WaitForChild("TreeBlock")
-local treeDoska = workspace:WaitForChild("TreeDoska")
-local treeUpgradeDoska = workspace:WaitForChild("TreeUpgradeDoska")
-local boostDoska = workspace:WaitForChild("BoostDoska")
-local paperFactoryDoska = workspace:WaitForChild("PaperFactoryDoska")
-local paperUpgradeDoska = workspace:FindFirstChild("PaperUpgradeDoska")
-local passiveRollBlock = workspace:FindFirstChild("PassiveRollBlock")
-local passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
+doskaPart = workspace:WaitForChild("DoskaPart")
+upgradeDoska = workspace:WaitForChild("UpgradeDoska")
+rebirthDoska = workspace:WaitForChild("RebirthDoska")
+rebirthWall = workspace:WaitForChild("RebirthWall")
+treeBlock = workspace:WaitForChild("TreeBlock")
+treeDoska = workspace:WaitForChild("TreeDoska")
+treeUpgradeDoska = workspace:WaitForChild("TreeUpgradeDoska")
+boostDoska = workspace:WaitForChild("BoostDoska")
+paperFactoryDoska = workspace:WaitForChild("PaperFactoryDoska")
+paperUpgradeDoska = workspace:FindFirstChild("PaperUpgradeDoska")
+passiveRollBlock = workspace:FindFirstChild("PassiveRollBlock")
+passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
 
 local ADMIN_NAME = "Doter24_7"
 local MAX_COIN_SPAWN_SPEED_LEVEL = 3
@@ -110,6 +110,17 @@ local ICON_ASSET_IDS = {
 	Rebirth = "rbxassetid://PASTE_REBIRTH_ICON_ID",
 	Tree = "rbxassetid://PASTE_TREE_ICON_ID",
 	Paper = "rbxassetid://PASTE_PAPER_ICON_ID",
+}
+
+local PASSIVE_DEFS = {
+	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1},
+	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1},
+	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5},
+	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5},
+	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2},
+	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3},
+	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5},
+	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5},
 }
 
 local PASSIVE_DEFS = {
@@ -1112,6 +1123,32 @@ end
 
 local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
 
+local function createPaperUpgradeUi()
+	if not paperUpgradeDoska then
+		return nil, nil
+	end
+
+	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
+	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
+	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
+
+	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
+		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
+	})
+	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
+		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
+	})
+	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
+		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
+	})
+
+	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
+	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
+	return cards, lockedOverlay
+end
+
+local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
+
 local paperUpgradeCards = nil
 local paperUpgradeLockedOverlay = nil
 if paperUpgradeDoska then
@@ -1539,6 +1576,30 @@ local function parsePassiveState()
 	return {inventory = {}, equippedUid = ""}
 end
 
+local function getPaperCycleTime()
+	local value = 10 - (paperSpeedLevel.Value * 0.5)
+	if value < 5 then
+		value = 5
+	end
+	return roundToTenth(value)
+end
+
+local function getPaperProductionAmount()
+	local baseValue = 1 + paperValueLevel.Value
+	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
+	return roundToTenth(baseValue * multiplier)
+end
+
+local function parsePassiveState()
+	local ok, decoded = pcall(function()
+		return HttpService:JSONDecode(passiveStateJson.Value)
+	end)
+	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
+		return decoded
+	end
+	return {inventory = {}, equippedUid = ""}
+end
+
 local wallParts = {}
 if rebirthWall:IsA("BasePart") then
 	table.insert(wallParts, rebirthWall)
@@ -1807,6 +1868,27 @@ if paperUpgradeCards then
 	end)
 end
 
+if paperUpgradeCards then
+	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
+	end)
+	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
+	end)
+	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
+	end)
+	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
+	end)
+	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
+	end)
+	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
+	end)
+end
+
 rebirthButton.MouseButton1Click:Connect(function()
 	purchaseRebirthEvent:FireServer()
 end)
@@ -1818,6 +1900,36 @@ end)
 addFuelMaxButton.MouseButton1Click:Connect(function()
 	factoryActionEvent:FireServer("AddFuelMax")
 end)
+
+if passiveUi.rollButton then
+	passiveUi.rollButton.MouseButton1Click:Connect(function()
+		passiveActionEvent:FireServer("Roll")
+	end)
+	for _, slot in ipairs(passiveUi.slots) do
+		slot.MouseButton1Click:Connect(function()
+			if not passiveUi.panel.Visible then
+				return
+			end
+			local index = table.find(passiveUi.slots, slot)
+			local entry = passiveUi.lastState.inventory[index]
+			if not entry then
+				return
+			end
+			if passiveUi.lastState.equippedUid == entry.uid then
+				passiveActionEvent:FireServer("Unequip")
+			else
+				passiveActionEvent:FireServer("Equip", entry.uid)
+			end
+		end)
+		slot.MouseButton2Click:Connect(function()
+			local index = table.find(passiveUi.slots, slot)
+			local entry = passiveUi.lastState.inventory[index]
+			if entry then
+				passiveActionEvent:FireServer("Delete", entry.uid)
+			end
+		end)
+	end
+end
 
 if passiveUi.rollButton then
 	passiveUi.rollButton.MouseButton1Click:Connect(function()
