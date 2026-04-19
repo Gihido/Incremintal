@@ -30,7 +30,7 @@ local MAX_PAPER_SPEED_LEVEL = 10
 local WOOD_PER_FUEL = 250
 
 local PASSIVE_ROLL_COST = 50
-local PASSIVE_INVENTORY_CAPACITY = 15
+local PASSIVE_INVENTORY_CAPACITY = 10
 
 local START_COIN_VALUE_COST = 2
 local START_COIN_MULTIPLIER_COST = 1
@@ -1271,7 +1271,7 @@ local function handlePassiveAction(player, actionName, argument)
 		end
 
 		local passiveId = chooseRandomPassiveId()
-		passiveRollCooldowns[player.UserId] = now + 5
+			passiveRollCooldowns[player.UserId] = now + 10
 		table.insert(state.inventory, {
 			uid = HttpService:GenerateGUID(false),
 			passiveId = passiveId,
