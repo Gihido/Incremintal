@@ -384,6 +384,7 @@ local characterConnections = {}
 local woodCooldowns = {}
 local paperProcessAnchors = {}
 local passiveStates = {}
+local passiveRollCooldowns = {}
 local isClosing = false
 
 local treeBaseSize = treeBlock.Size
@@ -1249,6 +1250,12 @@ local function handlePassiveAction(player, actionName, argument)
 	local state = getPassiveState(player)
 
 	if actionName == "Roll" then
+		local now = os.clock()
+		local nextRollAt = passiveRollCooldowns[player.UserId] or 0
+		if now < nextRollAt then
+			fireSimple(player, "Подожди, предыдущий ролл еще идет")
+			return
+		end
 		if #state.inventory >= PASSIVE_INVENTORY_CAPACITY then
 			fireSimple(player, "Инвентарь пассивов заполнен")
 			return
@@ -1264,6 +1271,7 @@ local function handlePassiveAction(player, actionName, argument)
 		end
 
 		local passiveId = chooseRandomPassiveId()
+		passiveRollCooldowns[player.UserId] = now + 5
 		table.insert(state.inventory, {
 			uid = HttpService:GenerateGUID(false),
 			passiveId = passiveId,
@@ -1762,6 +1770,7 @@ Players.PlayerRemoving:Connect(function(player)
 	lastSaveTimes[player] = nil
 	pendingTeleportTransforms[player] = nil
 	woodCooldowns[player.UserId] = nil
+	passiveRollCooldowns[player.UserId] = nil
 	paperProcessAnchors[player] = nil
 	passiveStates[player] = nil
 end)
