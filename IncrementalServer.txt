@@ -1,0 +1,1847 @@
+local Players = game:GetService("Players")
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local DataStoreService = game:GetService("DataStoreService")
+local PhysicsService = game:GetService("PhysicsService")
+local HttpService = game:GetService("HttpService")
+
+local zonePart = Workspace:WaitForChild("ZonePart")
+local coinTemplate = ServerStorage:WaitForChild("CoinPart")
+local rebirthWall = Workspace:WaitForChild("RebirthWall")
+local treeBlock = Workspace:WaitForChild("TreeBlock")
+
+local SAVE_STORE_NAME = "IncrementalSave_v8"
+
+local MAX_COINS = 10
+local BASE_COIN_RESPAWN = 3
+local MIN_COIN_RESPAWN = 0.5
+local MAX_COIN_SPAWN_SPEED_LEVEL = 3
+
+local BASE_WOOD_COOLDOWN = 3
+local MIN_WOOD_COOLDOWN = 0.5
+local WOOD_COOLDOWN_STEP = 0.25
+
+local BASE_PAPER_PRODUCTION_TIME = 10
+local MIN_PAPER_PRODUCTION_TIME = 5
+local PAPER_SPEED_STEP = 0.5
+local MAX_PAPER_SPEED_LEVEL = 10
+local WOOD_PER_FUEL = 250
+
+local PASSIVE_ROLL_COST = 50
+local PASSIVE_INVENTORY_CAPACITY = 15
+
+local START_COIN_VALUE_COST = 2
+local START_COIN_MULTIPLIER_COST = 1
+local START_COIN_SPAWN_COST = 10
+local START_COIN_WOODBOOST_COST = 10000
+
+local START_WOOD_VALUE_COST = 5
+local START_WOOD_MULTIPLIER_COST = 15
+local START_WOOD_SPEED_COST = 25
+local START_WOOD_COINBOOST_COST = 250
+
+local START_PAPER_VALUE_COST = 10
+local START_PAPER_MULTIPLIER_COST = 50
+local START_PAPER_SPEED_COST = 15
+
+local ADMIN_NAME = "Doter24_7"
+
+local SAVE_INTERVAL = 45
+local SAVE_COOLDOWN = 20
+
+local MAX_REBIRTH_COUNT = 5
+
+local REBIRTH_STAGES = {
+	[1] = {
+		cost = 500,
+		currency = "Coins",
+		coinMultiplier = 2,
+		spawnBonus = 0.1,
+		woodMultiplier = 1,
+		unlockTree = false,
+		unlockThirdUpgrades = false,
+		unlockFourthSystems = false,
+		unlockFifthSystems = false,
+	},
+	[2] = {
+		cost = 2500,
+		currency = "Coins",
+		coinMultiplier = 5,
+		spawnBonus = 0,
+		woodMultiplier = 1,
+		unlockTree = true,
+		unlockThirdUpgrades = false,
+		unlockFourthSystems = false,
+		unlockFifthSystems = false,
+	},
+	[3] = {
+		cost = 500,
+		currency = "Wood",
+		coinMultiplier = 10,
+		spawnBonus = 0,
+		woodMultiplier = 1,
+		unlockTree = true,
+		unlockThirdUpgrades = true,
+		unlockFourthSystems = false,
+		unlockFifthSystems = false,
+	},
+	[4] = {
+		cost = 5000,
+		currency = "Wood",
+		coinMultiplier = 1,
+		spawnBonus = 0,
+		woodMultiplier = 2,
+		unlockTree = true,
+		unlockThirdUpgrades = true,
+		unlockFourthSystems = true,
+		unlockFifthSystems = false,
+	},
+	[5] = {
+		cost = 50,
+		currency = "Paper",
+		coinMultiplier = 1,
+		spawnBonus = 0,
+		woodMultiplier = 1,
+		unlockTree = true,
+		unlockThirdUpgrades = true,
+		unlockFourthSystems = true,
+		unlockFifthSystems = true,
+	},
+}
+
+local COIN_UPGRADES = {
+	CoinValue = {
+		levelName = "CoinValueLevel",
+		costName = "CoinValueCost",
+		activeName = "CoinValueActive",
+		startCost = START_COIN_VALUE_COST,
+		priceMultiplier = 1.5,
+		maxLevel = math.huge,
+		displayName = "CoinGain",
+		requiredRebirth = 0,
+	},
+	Multiplier = {
+		levelName = "MultiplierLevel",
+		costName = "MultiplierCost",
+		activeName = "MultiplierActive",
+		startCost = START_COIN_MULTIPLIER_COST,
+		priceMultiplier = 2,
+		maxLevel = math.huge,
+		displayName = "CoinMulti",
+		requiredRebirth = 0,
+	},
+	SpawnSpeed = {
+		levelName = "SpawnSpeedLevel",
+		costName = "SpawnSpeedCost",
+		activeName = "SpawnSpeedActive",
+		startCost = START_COIN_SPAWN_COST,
+		priceMultiplier = 1.5,
+		maxLevel = MAX_COIN_SPAWN_SPEED_LEVEL,
+		displayName = "SpawnBoost",
+		requiredRebirth = 0,
+	},
+	WoodBoost = {
+		levelName = "WoodBoostLevel",
+		costName = "WoodBoostCost",
+		activeName = "WoodBoostActive",
+		startCost = START_COIN_WOODBOOST_COST,
+		fixedCost = true,
+		priceMultiplier = 1,
+		maxLevel = 10,
+		displayName = "WoodBoost",
+		requiredRebirth = 3,
+	},
+}
+
+local WOOD_UPGRADES = {
+	WoodValue = {
+		levelName = "WoodValueLevel",
+		costName = "WoodValueCost",
+		activeName = "WoodValueActive",
+		startCost = START_WOOD_VALUE_COST,
+		priceMultiplier = 1.5,
+		maxLevel = math.huge,
+		displayName = "WoodGain",
+		requiredRebirth = 2,
+	},
+	WoodMultiplier = {
+		levelName = "WoodMultiplierLevel",
+		costName = "WoodMultiplierCost",
+		activeName = "WoodMultiplierActive",
+		startCost = START_WOOD_MULTIPLIER_COST,
+		priceMultiplier = 2,
+		maxLevel = math.huge,
+		displayName = "WoodMulti",
+		requiredRebirth = 2,
+	},
+	WoodSpeed = {
+		levelName = "WoodSpeedLevel",
+		costName = "WoodSpeedCost",
+		activeName = "WoodSpeedActive",
+		startCost = START_WOOD_SPEED_COST,
+		priceMultiplier = 1.5,
+		maxLevel = math.huge,
+		displayName = "WoodSpeed",
+		requiredRebirth = 2,
+	},
+	CoinBoost = {
+		levelName = "CoinBoostLevel",
+		costName = "CoinBoostCost",
+		activeName = "CoinBoostActive",
+		startCost = START_WOOD_COINBOOST_COST,
+		fixedCost = true,
+		priceMultiplier = 1,
+		maxLevel = 20,
+		displayName = "CoinBoost",
+		requiredRebirth = 3,
+	},
+}
+
+local PAPER_UPGRADES = {
+	PaperValue = {
+		levelName = "PaperValueLevel",
+		costName = "PaperValueCost",
+		activeName = "PaperValueActive",
+		startCost = START_PAPER_VALUE_COST,
+		priceMultiplier = 1.5,
+		maxLevel = math.huge,
+		displayName = "PaperGain",
+		requiredRebirth = 4,
+	},
+	PaperMultiplier = {
+		levelName = "PaperMultiplierLevel",
+		costName = "PaperMultiplierCost",
+		activeName = "PaperMultiplierActive",
+		startCost = START_PAPER_MULTIPLIER_COST,
+		priceMultiplier = 1.5,
+		maxLevel = math.huge,
+		displayName = "PaperMulti",
+		requiredRebirth = 4,
+	},
+	PaperSpeed = {
+		levelName = "PaperSpeedLevel",
+		costName = "PaperSpeedCost",
+		activeName = "PaperSpeedActive",
+		startCost = START_PAPER_SPEED_COST,
+		priceMultiplier = 2,
+		maxLevel = 10,
+		displayName = "PaperSpeed",
+		requiredRebirth = 4,
+	},
+}
+
+local PASSIVE_DEFS = {
+	CoinBallA = {
+		id = "CoinBallA",
+		name = "Coin Ball A",
+		rarity = "Common",
+		coinMultiplier = 1.5,
+		woodMultiplier = 1,
+		weight = 35,
+	},
+	CoinBallB = {
+		id = "CoinBallB",
+		name = "Coin Ball B",
+		rarity = "Common",
+		coinMultiplier = 2,
+		woodMultiplier = 1,
+		weight = 25,
+	},
+	WoodBallA = {
+		id = "WoodBallA",
+		name = "Wood Ball A",
+		rarity = "Uncommon",
+		coinMultiplier = 1,
+		woodMultiplier = 1.5,
+		weight = 15,
+	},
+	DualBall = {
+		id = "DualBall",
+		name = "Dual Ball",
+		rarity = "Uncommon",
+		coinMultiplier = 1.5,
+		woodMultiplier = 1.5,
+		weight = 12,
+	},
+	RareForest = {
+		id = "RareForest",
+		name = "Rare Forest",
+		rarity = "Rare",
+		coinMultiplier = 1,
+		woodMultiplier = 3,
+		weight = 8,
+	},
+	EpicBloom = {
+		id = "EpicBloom",
+		name = "Epic Bloom",
+		rarity = "Epic",
+		coinMultiplier = 3,
+		woodMultiplier = 5,
+		weight = 4,
+	},
+	LegendSeed = {
+		id = "LegendSeed",
+		name = "Legend Seed",
+		rarity = "Legendary",
+		coinMultiplier = 5,
+		woodMultiplier = 5,
+		weight = 1,
+	},
+}
+
+local LOCKED_PLAYER_GROUP = "LockedAreaPlayers"
+local UNLOCKED_PLAYER_GROUP = "UnlockedAreaPlayers"
+local WALL_GROUP = "RebirthWallGroup"
+
+local playerDataStore = DataStoreService:GetDataStore(SAVE_STORE_NAME)
+
+local spawnedCoinsFolder = Workspace:FindFirstChild("SpawnedCoins")
+if not spawnedCoinsFolder then
+	spawnedCoinsFolder = Instance.new("Folder")
+	spawnedCoinsFolder.Name = "SpawnedCoins"
+	spawnedCoinsFolder.Parent = Workspace
+end
+
+local remotesFolder = ReplicatedStorage:FindFirstChild("IncrementalRemotes")
+if not remotesFolder then
+	remotesFolder = Instance.new("Folder")
+	remotesFolder.Name = "IncrementalRemotes"
+	remotesFolder.Parent = ReplicatedStorage
+end
+
+local function ensureRemote(name)
+	local remote = remotesFolder:FindFirstChild(name)
+	if remote and remote:IsA("RemoteEvent") then
+		return remote
+	end
+
+	remote = Instance.new("RemoteEvent")
+	remote.Name = name
+	remote.Parent = remotesFolder
+	return remote
+end
+
+local purchaseUpgradeEvent = ensureRemote("PurchaseUpgrade")
+local purchaseRebirthEvent = ensureRemote("PurchaseRebirth")
+local adminActionEvent = ensureRemote("AdminAction")
+local notifyEvent = ensureRemote("Notify")
+local woodClickEvent = ensureRemote("WoodClick")
+local factoryActionEvent = ensureRemote("FactoryAction")
+local passiveActionEvent = ensureRemote("PassiveAction")
+
+local activeCoinCount = 0
+local animatedCoins = {}
+local dirtyPlayers = {}
+local lastSaveTimes = {}
+local pendingTeleportTransforms = {}
+local characterConnections = {}
+local woodCooldowns = {}
+local paperProcessAnchors = {}
+local passiveStates = {}
+local isClosing = false
+
+local treeBaseSize = treeBlock.Size
+local treeBaseCFrame = treeBlock.CFrame
+
+local function roundToTenth(value)
+	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
+end
+
+local function ensureFolder(parent, name)
+	local folder = parent:FindFirstChild(name)
+	if folder and folder:IsA("Folder") then
+		return folder
+	end
+
+	folder = Instance.new("Folder")
+	folder.Name = name
+	folder.Parent = parent
+	return folder
+end
+
+local function createValue(parent, className, name, defaultValue)
+	local existing = parent:FindFirstChild(name)
+	if existing and existing.ClassName == className then
+		return existing
+	end
+
+	local obj = Instance.new(className)
+	obj.Name = name
+	obj.Value = defaultValue
+	obj.Parent = parent
+	return obj
+end
+
+local function markDirty(player)
+	if player and player.Parent == Players then
+		dirtyPlayers[player] = true
+	end
+end
+
+local function ensureCollisionGroup(groupName)
+	pcall(function()
+		PhysicsService:RegisterCollisionGroup(groupName)
+	end)
+end
+
+ensureCollisionGroup(LOCKED_PLAYER_GROUP)
+ensureCollisionGroup(UNLOCKED_PLAYER_GROUP)
+ensureCollisionGroup(WALL_GROUP)
+
+pcall(function()
+	PhysicsService:CollisionGroupSetCollidable(WALL_GROUP, LOCKED_PLAYER_GROUP, true)
+	PhysicsService:CollisionGroupSetCollidable(WALL_GROUP, UNLOCKED_PLAYER_GROUP, false)
+end)
+
+local function applyCollisionGroupRecursive(instance, groupName)
+	if instance:IsA("BasePart") then
+		instance.CollisionGroup = groupName
+	end
+
+	for _, descendant in ipairs(instance:GetDescendants()) do
+		if descendant:IsA("BasePart") then
+			descendant.CollisionGroup = groupName
+		end
+	end
+end
+
+applyCollisionGroupRecursive(rebirthWall, WALL_GROUP)
+
+rebirthWall.DescendantAdded:Connect(function(descendant)
+	if descendant:IsA("BasePart") then
+		descendant.CollisionGroup = WALL_GROUP
+	end
+end)
+
+local function fireSimple(player, text)
+	notifyEvent:FireClient(player, {
+		kind = "simple",
+		text = tostring(text),
+	})
+end
+
+local function firePickup(player, iconKey, amount)
+	notifyEvent:FireClient(player, {
+		kind = "pickup",
+		icon = iconKey,
+		amount = amount,
+	})
+end
+
+local function firePassiveRoll(player, passiveId)
+	notifyEvent:FireClient(player, {
+		kind = "passive_roll_result",
+		passiveId = passiveId,
+	})
+end
+
+local function getPlayerData(player)
+	return player:FindFirstChild("PlayerData")
+end
+
+local function getCoinsObject(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("Coins") or nil
+end
+
+local function getCoinUpgradesFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("CoinUpgrades") or nil
+end
+
+local function getWoodFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("Wood") or nil
+end
+
+local function getWoodCurrencyObject(player)
+	local woodFolder = getWoodFolder(player)
+	return woodFolder and woodFolder:FindFirstChild("WoodCurrency") or nil
+end
+
+local function getWoodUpgradesFolder(player)
+	local woodFolder = getWoodFolder(player)
+	return woodFolder and woodFolder:FindFirstChild("WoodUpgrades") or nil
+end
+
+local function getPaperFactoryFolder(player)
+	local woodFolder = getWoodFolder(player)
+	return woodFolder and woodFolder:FindFirstChild("PaperFactory") or nil
+end
+
+local function getPaperUpgradesFolder(player)
+	local woodFolder = getWoodFolder(player)
+	return woodFolder and woodFolder:FindFirstChild("PaperUpgrades") or nil
+end
+
+local function getPaperCurrencyObject(player)
+	local paperFactory = getPaperFactoryFolder(player)
+	return paperFactory and paperFactory:FindFirstChild("Paper") or nil
+end
+
+local function getRebirthFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("Rebirth") or nil
+end
+
+local function getPassiveFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("Passives") or nil
+end
+
+local function updateUpgradeActiveFlags(folder, configTable)
+	if not folder then
+		return
+	end
+
+	for _, config in pairs(configTable) do
+		local levelObject = folder:FindFirstChild(config.levelName)
+		local activeObject = folder:FindFirstChild(config.activeName)
+		if levelObject and activeObject then
+			activeObject.Value = levelObject.Value > 0
+		end
+	end
+end
+
+local function emptyPassiveState()
+	return {
+		inventory = {},
+		equippedUid = "",
+	}
+end
+
+local function getPassiveState(player)
+	if not passiveStates[player] then
+		passiveStates[player] = emptyPassiveState()
+	end
+	return passiveStates[player]
+end
+
+local function writePassiveStateValue(player)
+	local passiveFolder = getPassiveFolder(player)
+	if not passiveFolder then
+		return
+	end
+
+	local jsonValue = passiveFolder:FindFirstChild("StateJson")
+	if not jsonValue then
+		return
+	end
+
+	local state = getPassiveState(player)
+	jsonValue.Value = HttpService:JSONEncode(state)
+end
+
+local function getEquippedPassiveEntry(player)
+	local state = getPassiveState(player)
+	if state.equippedUid == "" then
+		return nil
+	end
+
+	for _, entry in ipairs(state.inventory) do
+		if entry.uid == state.equippedUid then
+			return entry
+		end
+	end
+
+	return nil
+end
+
+local function getEquippedPassiveDef(player)
+	local entry = getEquippedPassiveEntry(player)
+	if not entry then
+		return nil
+	end
+
+	return PASSIVE_DEFS[entry.passiveId]
+end
+
+local function getPassiveMultipliers(player)
+	local passiveDef = getEquippedPassiveDef(player)
+	if not passiveDef then
+		return 1, 1
+	end
+
+	return passiveDef.coinMultiplier or 1, passiveDef.woodMultiplier or 1
+end
+
+local function chooseRandomPassiveId()
+	local totalWeight = 0
+	for _, passiveDef in pairs(PASSIVE_DEFS) do
+		totalWeight += passiveDef.weight
+	end
+
+	local roll = math.random() * totalWeight
+	local running = 0
+
+	for passiveId, passiveDef in pairs(PASSIVE_DEFS) do
+		running += passiveDef.weight
+		if roll <= running then
+			return passiveId
+		end
+	end
+
+	return "CoinBallA"
+end
+
+local function setupPlayerDataObjects(player)
+	local playerData = ensureFolder(player, "PlayerData")
+
+	createValue(playerData, "NumberValue", "Coins", 0)
+
+	local coinUpgrades = ensureFolder(playerData, "CoinUpgrades")
+	for _, config in pairs(COIN_UPGRADES) do
+		createValue(coinUpgrades, "IntValue", config.levelName, 0)
+		createValue(coinUpgrades, "IntValue", config.costName, config.startCost)
+		createValue(coinUpgrades, "BoolValue", config.activeName, false)
+	end
+
+	local woodFolder = ensureFolder(playerData, "Wood")
+	createValue(woodFolder, "NumberValue", "WoodCurrency", 0)
+
+	local woodUpgrades = ensureFolder(woodFolder, "WoodUpgrades")
+	for _, config in pairs(WOOD_UPGRADES) do
+		createValue(woodUpgrades, "IntValue", config.levelName, 0)
+		createValue(woodUpgrades, "IntValue", config.costName, config.startCost)
+		createValue(woodUpgrades, "BoolValue", config.activeName, false)
+	end
+
+	local paperFactory = ensureFolder(woodFolder, "PaperFactory")
+	createValue(paperFactory, "NumberValue", "Paper", 0)
+	createValue(paperFactory, "IntValue", "Fuel", 0)
+	createValue(paperFactory, "NumberValue", "Countdown", BASE_PAPER_PRODUCTION_TIME)
+	createValue(paperFactory, "BoolValue", "IsRunning", false)
+
+	local paperUpgrades = ensureFolder(woodFolder, "PaperUpgrades")
+	for _, config in pairs(PAPER_UPGRADES) do
+		createValue(paperUpgrades, "IntValue", config.levelName, 0)
+		createValue(paperUpgrades, "IntValue", config.costName, config.startCost)
+		createValue(paperUpgrades, "BoolValue", config.activeName, false)
+	end
+
+	local rebirthFolder = ensureFolder(playerData, "Rebirth")
+	createValue(rebirthFolder, "IntValue", "Count", 0)
+	createValue(rebirthFolder, "IntValue", "NextCost", REBIRTH_STAGES[1].cost)
+	createValue(rebirthFolder, "StringValue", "NextCurrency", REBIRTH_STAGES[1].currency)
+	createValue(rebirthFolder, "NumberValue", "CoinMultiplierBonus", 1)
+	createValue(rebirthFolder, "NumberValue", "SpawnSpeedBonus", 0)
+	createValue(rebirthFolder, "NumberValue", "WoodMultiplierBonus", 1)
+	createValue(rebirthFolder, "BoolValue", "SecondAreaUnlocked", false)
+	createValue(rebirthFolder, "BoolValue", "ThirdUpgradeUnlocked", false)
+	createValue(rebirthFolder, "BoolValue", "FourthSystemsUnlocked", false)
+	createValue(rebirthFolder, "BoolValue", "FifthSystemsUnlocked", false)
+
+	local passiveFolder = ensureFolder(playerData, "Passives")
+	createValue(passiveFolder, "StringValue", "StateJson", HttpService:JSONEncode(emptyPassiveState()))
+
+	updateUpgradeActiveFlags(coinUpgrades, COIN_UPGRADES)
+	updateUpgradeActiveFlags(woodUpgrades, WOOD_UPGRADES)
+	updateUpgradeActiveFlags(paperUpgrades, PAPER_UPGRADES)
+end
+
+local function getPlayerCollisionGroup(player)
+	local rebirth = getRebirthFolder(player)
+	if rebirth and rebirth.SecondAreaUnlocked.Value then
+		return UNLOCKED_PLAYER_GROUP
+	end
+	return LOCKED_PLAYER_GROUP
+end
+
+local function applyCharacterCollisionGroup(player, character)
+	local groupName = getPlayerCollisionGroup(player)
+
+	local function applyPart(instance)
+		if instance:IsA("BasePart") then
+			instance.CollisionGroup = groupName
+		end
+	end
+
+	applyPart(character)
+	for _, descendant in ipairs(character:GetDescendants()) do
+		applyPart(descendant)
+	end
+
+	if characterConnections[player] then
+		characterConnections[player]:Disconnect()
+	end
+
+	characterConnections[player] = character.DescendantAdded:Connect(applyPart)
+end
+
+local function recalculateRebirthStats(player)
+	local rebirth = getRebirthFolder(player)
+	if not rebirth then
+		return
+	end
+
+	local count = rebirth.Count.Value
+	local totalCoinMultiplier = 1
+	local totalSpawnBonus = 0
+	local totalWoodMultiplier = 1
+
+	local secondUnlocked = false
+	local thirdUnlocked = false
+	local fourthUnlocked = false
+	local fifthUnlocked = false
+
+	for i = 1, count do
+		local stage = REBIRTH_STAGES[i]
+		if stage then
+			totalCoinMultiplier *= (stage.coinMultiplier or 1)
+			totalSpawnBonus += (stage.spawnBonus or 0)
+			totalWoodMultiplier *= (stage.woodMultiplier or 1)
+
+			if stage.unlockTree then
+				secondUnlocked = true
+			end
+			if stage.unlockThirdUpgrades then
+				thirdUnlocked = true
+			end
+			if stage.unlockFourthSystems then
+				fourthUnlocked = true
+			end
+			if stage.unlockFifthSystems then
+				fifthUnlocked = true
+			end
+		end
+	end
+
+	rebirth.CoinMultiplierBonus.Value = totalCoinMultiplier
+	rebirth.SpawnSpeedBonus.Value = totalSpawnBonus
+	rebirth.WoodMultiplierBonus.Value = totalWoodMultiplier
+	rebirth.SecondAreaUnlocked.Value = secondUnlocked
+	rebirth.ThirdUpgradeUnlocked.Value = thirdUnlocked
+	rebirth.FourthSystemsUnlocked.Value = fourthUnlocked
+	rebirth.FifthSystemsUnlocked.Value = fifthUnlocked
+
+	local nextStage = REBIRTH_STAGES[count + 1]
+	if nextStage then
+		rebirth.NextCost.Value = nextStage.cost
+		rebirth.NextCurrency.Value = nextStage.currency
+	else
+		rebirth.NextCost.Value = 0
+		rebirth.NextCurrency.Value = "None"
+	end
+
+	if player.Character then
+		applyCharacterCollisionGroup(player, player.Character)
+	end
+end
+
+local function computeGoalWoodFactorFromCoins(coinAmount)
+	local threshold = 10000
+	local goalsReached = 0
+	local factor = 1
+
+	while factor < 10 and coinAmount >= threshold do
+		goalsReached += 1
+		factor = math.min(1 + (goalsReached * 0.1), 10)
+		threshold = math.floor(threshold * 1.25 + 0.5)
+	end
+
+	return factor
+end
+
+local function resetCoinProgress(player)
+	local coins = getCoinsObject(player)
+	local coinUpgrades = getCoinUpgradesFolder(player)
+
+	if coins then
+		coins.Value = 0
+	end
+
+	if coinUpgrades then
+		for _, config in pairs(COIN_UPGRADES) do
+			local levelObject = coinUpgrades:FindFirstChild(config.levelName)
+			local costObject = coinUpgrades:FindFirstChild(config.costName)
+
+			if levelObject then
+				levelObject.Value = 0
+			end
+
+			if costObject then
+				costObject.Value = config.startCost
+			end
+		end
+
+		updateUpgradeActiveFlags(coinUpgrades, COIN_UPGRADES)
+	end
+end
+
+local function resetWoodProgress(player)
+	local woodCurrency = getWoodCurrencyObject(player)
+	local woodUpgrades = getWoodUpgradesFolder(player)
+	local paperFactory = getPaperFactoryFolder(player)
+	local paperUpgrades = getPaperUpgradesFolder(player)
+
+	if woodCurrency then
+		woodCurrency.Value = 0
+	end
+
+	if woodUpgrades then
+		for _, config in pairs(WOOD_UPGRADES) do
+			local levelObject = woodUpgrades:FindFirstChild(config.levelName)
+			local costObject = woodUpgrades:FindFirstChild(config.costName)
+
+			if levelObject then
+				levelObject.Value = 0
+			end
+
+			if costObject then
+				costObject.Value = config.startCost
+			end
+		end
+
+		updateUpgradeActiveFlags(woodUpgrades, WOOD_UPGRADES)
+	end
+
+	if paperFactory then
+		paperFactory.Paper.Value = 0
+		paperFactory.Fuel.Value = 0
+		paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
+		paperFactory.IsRunning.Value = false
+	end
+
+	if paperUpgrades then
+		for _, config in pairs(PAPER_UPGRADES) do
+			local levelObject = paperUpgrades:FindFirstChild(config.levelName)
+			local costObject = paperUpgrades:FindFirstChild(config.costName)
+
+			if levelObject then
+				levelObject.Value = 0
+			end
+
+			if costObject then
+				costObject.Value = config.startCost
+			end
+		end
+
+		updateUpgradeActiveFlags(paperUpgrades, PAPER_UPGRADES)
+	end
+
+	paperProcessAnchors[player] = os.clock()
+end
+
+local function resetAllPlayerData(player)
+	resetCoinProgress(player)
+	resetWoodProgress(player)
+
+	local rebirth = getRebirthFolder(player)
+	if rebirth then
+		rebirth.Count.Value = 0
+		recalculateRebirthStats(player)
+	end
+
+	passiveStates[player] = emptyPassiveState()
+	writePassiveStateValue(player)
+
+	markDirty(player)
+end
+
+local function getCoinReward(player)
+	local coinUpgrades = getCoinUpgradesFolder(player)
+	local woodUpgrades = getWoodUpgradesFolder(player)
+	local rebirth = getRebirthFolder(player)
+
+	if not coinUpgrades or not woodUpgrades or not rebirth then
+		return 1
+	end
+
+	local passiveCoinMultiplier = getPassiveMultipliers(player)
+	local passiveCoin = passiveCoinMultiplier
+	local _, passiveWood = getPassiveMultipliers(player)
+	_ = passiveWood
+
+	local baseValue = 1 + coinUpgrades.CoinValueLevel.Value
+	local baseMultiplier = 1 + (coinUpgrades.MultiplierLevel.Value * 0.1)
+	local woodCoinBoostMultiplier = 1.1 ^ woodUpgrades.CoinBoostLevel.Value
+
+	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin)
+end
+
+local function getCoinRespawnDelay(player)
+	local coinUpgrades = getCoinUpgradesFolder(player)
+	local rebirth = getRebirthFolder(player)
+
+	if not coinUpgrades or not rebirth then
+		return BASE_COIN_RESPAWN
+	end
+
+	local value = BASE_COIN_RESPAWN
+	value -= coinUpgrades.SpawnSpeedLevel.Value * 0.5
+	value -= rebirth.SpawnSpeedBonus.Value
+
+	if value < MIN_COIN_RESPAWN then
+		value = MIN_COIN_RESPAWN
+	end
+
+	return roundToTenth(value)
+end
+
+local function getWoodReward(player)
+	local coinUpgrades = getCoinUpgradesFolder(player)
+	local woodUpgrades = getWoodUpgradesFolder(player)
+	local rebirth = getRebirthFolder(player)
+	local coins = getCoinsObject(player)
+
+	if not coinUpgrades or not woodUpgrades or not rebirth or not coins then
+		return 1
+	end
+
+	local _, passiveWoodMultiplier = getPassiveMultipliers(player)
+
+	local baseValue = 1 + woodUpgrades.WoodValueLevel.Value
+	local woodMultiplier = 1 + woodUpgrades.WoodMultiplierLevel.Value + (coinUpgrades.WoodBoostLevel.Value * 0.25)
+
+	local goalFactor = 1
+	if rebirth.FourthSystemsUnlocked.Value then
+		goalFactor = computeGoalWoodFactorFromCoins(coins.Value)
+	end
+
+	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier)
+end
+
+local function getWoodCooldown(player)
+	local woodUpgrades = getWoodUpgradesFolder(player)
+	if not woodUpgrades then
+		return BASE_WOOD_COOLDOWN
+	end
+
+	local value = BASE_WOOD_COOLDOWN - (woodUpgrades.WoodSpeedLevel.Value * WOOD_COOLDOWN_STEP)
+	if value < MIN_WOOD_COOLDOWN then
+		value = MIN_WOOD_COOLDOWN
+	end
+
+	return roundToTenth(value)
+end
+
+local function getPaperProductionAmount(player)
+	local paperUpgrades = getPaperUpgradesFolder(player)
+	if not paperUpgrades then
+		return 1
+	end
+
+	local baseValue = 1 + paperUpgrades.PaperValueLevel.Value
+	local multiplier = 1 + paperUpgrades.PaperMultiplierLevel.Value
+
+	return roundToTenth(baseValue * multiplier)
+end
+
+local function getPaperCycleTime(player)
+	local paperUpgrades = getPaperUpgradesFolder(player)
+	if not paperUpgrades then
+		return BASE_PAPER_PRODUCTION_TIME
+	end
+
+	local value = BASE_PAPER_PRODUCTION_TIME - (paperUpgrades.PaperSpeedLevel.Value * PAPER_SPEED_STEP)
+	if value < MIN_PAPER_PRODUCTION_TIME then
+		value = MIN_PAPER_PRODUCTION_TIME
+	end
+
+	return roundToTenth(value)
+end
+
+local function addCurrency(currencyObject, amount)
+	if currencyObject then
+		currencyObject.Value = roundToTenth(currencyObject.Value + amount)
+	end
+end
+
+local function spendCurrency(currencyObject, amount)
+	if not currencyObject then
+		return false
+	end
+
+	if currencyObject.Value < amount then
+		return false
+	end
+
+	currencyObject.Value = roundToTenth(currencyObject.Value - amount)
+	return true
+end
+
+local function getCurrencyObjectForName(player, currencyName)
+	if currencyName == "Coins" then
+		return getCoinsObject(player)
+	elseif currencyName == "Wood" then
+		return getWoodCurrencyObject(player)
+	elseif currencyName == "Paper" then
+		return getPaperCurrencyObject(player)
+	end
+	return nil
+end
+
+local function tryBuyUpgrade(player, upgradeKey, configTable, folder, currencyObject, currentRebirthCount)
+	local config = configTable[upgradeKey]
+	if not config then
+		return "INVALID"
+	end
+
+	if config.requiredRebirth and currentRebirthCount < config.requiredRebirth then
+		return "LOCKED"
+	end
+
+	local levelObject = folder:FindFirstChild(config.levelName)
+	local costObject = folder:FindFirstChild(config.costName)
+
+	if not levelObject or not costObject then
+		return "INVALID"
+	end
+
+	if levelObject.Value >= config.maxLevel then
+		costObject.Value = 0
+		updateUpgradeActiveFlags(folder, configTable)
+		return "AT_MAX"
+	end
+
+	local cost = costObject.Value
+	if cost <= 0 then
+		return "AT_MAX"
+	end
+
+	if not spendCurrency(currencyObject, cost) then
+		return "NO_MONEY"
+	end
+
+	levelObject.Value += 1
+
+	if levelObject.Value >= config.maxLevel then
+		costObject.Value = 0
+	elseif config.fixedCost then
+		costObject.Value = config.startCost
+	else
+		costObject.Value = math.ceil(cost * config.priceMultiplier)
+	end
+
+	updateUpgradeActiveFlags(folder, configTable)
+	markDirty(player)
+
+	return "BOUGHT"
+end
+
+local function handleUpgradePurchase(player, upgradeFamily, upgradeKey, mode)
+	local rebirth = getRebirthFolder(player)
+	if not rebirth then
+		return
+	end
+
+	local configTable, folder, currencyObject, notEnoughText, lockedText
+
+	if upgradeFamily == "Coin" then
+		configTable = COIN_UPGRADES
+		folder = getCoinUpgradesFolder(player)
+		currencyObject = getCoinsObject(player)
+		notEnoughText = "Не хватает монет"
+		lockedText = "Откроется на 3-м перерождении"
+	elseif upgradeFamily == "Wood" then
+		if not rebirth.SecondAreaUnlocked.Value then
+			fireSimple(player, "Дерево откроется на 2-м перерождении")
+			return
+		end
+		configTable = WOOD_UPGRADES
+		folder = getWoodUpgradesFolder(player)
+		currencyObject = getWoodCurrencyObject(player)
+		notEnoughText = "Не хватает дерева"
+		lockedText = "Откроется на 3-м перерождении"
+	elseif upgradeFamily == "Paper" then
+		if not rebirth.FourthSystemsUnlocked.Value then
+			fireSimple(player, "Откроется на 4-м перерождении")
+			return
+		end
+		configTable = PAPER_UPGRADES
+		folder = getPaperUpgradesFolder(player)
+		currencyObject = getPaperCurrencyObject(player)
+		notEnoughText = "Не хватает бумаги"
+		lockedText = "Откроется на 4-м перерождении"
+	else
+		return
+	end
+
+	if not folder or not currencyObject then
+		return
+	end
+
+	if mode == "Max" then
+		local bought = 0
+
+		for _ = 1, 500 do
+			local result = tryBuyUpgrade(player, upgradeKey, configTable, folder, currencyObject, rebirth.Count.Value)
+			if result == "BOUGHT" then
+				bought += 1
+			else
+				if bought > 0 then
+					fireSimple(player, "Куплено уровней: " .. bought)
+				elseif result == "AT_MAX" then
+					fireSimple(player, "Улучшение уже в MAX")
+				elseif result == "LOCKED" then
+					fireSimple(player, lockedText)
+				else
+					fireSimple(player, notEnoughText)
+				end
+				break
+			end
+		end
+	else
+		local result = tryBuyUpgrade(player, upgradeKey, configTable, folder, currencyObject, rebirth.Count.Value)
+		if result == "BOUGHT" then
+			fireSimple(player, "Улучшение куплено")
+		elseif result == "AT_MAX" then
+			fireSimple(player, "Улучшение уже в MAX")
+		elseif result == "LOCKED" then
+			fireSimple(player, lockedText)
+		else
+			fireSimple(player, notEnoughText)
+		end
+	end
+end
+
+local function tryPurchaseRebirth(player)
+	local rebirth = getRebirthFolder(player)
+	if not rebirth then
+		return
+	end
+
+	local currentCount = rebirth.Count.Value
+	if currentCount >= MAX_REBIRTH_COUNT then
+		fireSimple(player, "Перерождение уже в MAX")
+		return
+	end
+
+	local nextStage = REBIRTH_STAGES[currentCount + 1]
+	if not nextStage then
+		fireSimple(player, "Перерождение уже в MAX")
+		return
+	end
+
+	local currencyObject = getCurrencyObjectForName(player, nextStage.currency)
+	if not currencyObject then
+		return
+	end
+
+	if currencyObject.Value < nextStage.cost then
+		if nextStage.currency == "Coins" then
+			fireSimple(player, "Не хватает монет для перерождения")
+		elseif nextStage.currency == "Wood" then
+			fireSimple(player, "Не хватает дерева для перерождения")
+		else
+			fireSimple(player, "Не хватает бумаги для перерождения")
+		end
+		return
+	end
+
+	if not spendCurrency(currencyObject, nextStage.cost) then
+		return
+	end
+
+	rebirth.Count.Value += 1
+	recalculateRebirthStats(player)
+
+	resetCoinProgress(player)
+	resetWoodProgress(player)
+
+	markDirty(player)
+	fireSimple(player, "Перерождение куплено")
+end
+
+local function handleFactoryAction(player, actionName)
+	local rebirth = getRebirthFolder(player)
+	local woodCurrency = getWoodCurrencyObject(player)
+	local paperFactory = getPaperFactoryFolder(player)
+
+	if not rebirth or not woodCurrency or not paperFactory then
+		return
+	end
+
+	if not rebirth.FourthSystemsUnlocked.Value then
+		fireSimple(player, "Откроется на 4-м перерождении")
+		return
+	end
+
+	if actionName == "AddFuelOnce" then
+		if woodCurrency.Value < WOOD_PER_FUEL then
+			fireSimple(player, "Не хватает дерева")
+			return
+		end
+
+		if spendCurrency(woodCurrency, WOOD_PER_FUEL) then
+			paperFactory.Fuel.Value += 1
+			paperProcessAnchors[player] = os.clock()
+			markDirty(player)
+			fireSimple(player, "Топливо добавлено")
+		end
+	elseif actionName == "AddFuelMax" then
+		local fuelToAdd = math.floor(woodCurrency.Value / WOOD_PER_FUEL)
+		if fuelToAdd <= 0 then
+			fireSimple(player, "Не хватает дерева")
+			return
+		end
+
+		local totalCost = fuelToAdd * WOOD_PER_FUEL
+		if spendCurrency(woodCurrency, totalCost) then
+			paperFactory.Fuel.Value += fuelToAdd
+			paperProcessAnchors[player] = os.clock()
+			markDirty(player)
+			fireSimple(player, "Добавлено топлива: " .. fuelToAdd)
+		end
+	end
+end
+
+local function handlePassiveAction(player, actionName, argument)
+	local rebirth = getRebirthFolder(player)
+	local paper = getPaperCurrencyObject(player)
+
+	if not rebirth or not paper then
+		return
+	end
+
+	if not rebirth.FifthSystemsUnlocked.Value then
+		fireSimple(player, "Откроется на 5-м перерождении")
+		return
+	end
+
+	local state = getPassiveState(player)
+
+	if actionName == "Roll" then
+		if #state.inventory >= PASSIVE_INVENTORY_CAPACITY then
+			fireSimple(player, "Инвентарь пассивов заполнен")
+			return
+		end
+
+		if paper.Value < PASSIVE_ROLL_COST then
+			fireSimple(player, "Не хватает бумаги")
+			return
+		end
+
+		if not spendCurrency(paper, PASSIVE_ROLL_COST) then
+			return
+		end
+
+		local passiveId = chooseRandomPassiveId()
+		table.insert(state.inventory, {
+			uid = HttpService:GenerateGUID(false),
+			passiveId = passiveId,
+		})
+
+		writePassiveStateValue(player)
+		markDirty(player)
+		firePassiveRoll(player, passiveId)
+	elseif actionName == "Equip" then
+		local targetUid = tostring(argument or "")
+		local found = false
+
+		for _, entry in ipairs(state.inventory) do
+			if entry.uid == targetUid then
+				found = true
+				break
+			end
+		end
+
+		if found then
+			state.equippedUid = targetUid
+			writePassiveStateValue(player)
+			markDirty(player)
+			fireSimple(player, "Пассив экипирован")
+		end
+	elseif actionName == "Unequip" then
+		state.equippedUid = ""
+		writePassiveStateValue(player)
+		markDirty(player)
+		fireSimple(player, "Пассив снят")
+	elseif actionName == "Delete" then
+		local targetUid = tostring(argument or "")
+
+		for i = #state.inventory, 1, -1 do
+			if state.inventory[i].uid == targetUid then
+				table.remove(state.inventory, i)
+				break
+			end
+		end
+
+		if state.equippedUid == targetUid then
+			state.equippedUid = ""
+		end
+
+		writePassiveStateValue(player)
+		markDirty(player)
+		fireSimple(player, "Пассив удалён")
+	end
+end
+
+local function getRandomCoinCFrame()
+	local zoneSize = zonePart.Size
+	local coinSize = coinTemplate.Size
+
+	local halfX = math.max((zoneSize.X / 2) - (coinSize.X / 2), 0)
+	local halfZ = math.max((zoneSize.Z / 2) - (coinSize.Z / 2), 0)
+
+	local randomX = (math.random() * 2 - 1) * halfX
+	local randomZ = (math.random() * 2 - 1) * halfZ
+	local yOffset = (zoneSize.Y / 2) + (coinSize.Y / 2) + 0.05
+
+	local localPosition = Vector3.new(randomX, yOffset, randomZ)
+	local worldPosition = zonePart.CFrame:PointToWorldSpace(localPosition)
+
+	return CFrame.new(worldPosition)
+end
+
+local function applyCoinVisuals(coin)
+	if not coin:FindFirstChild("CoinLight") then
+		local light = Instance.new("PointLight")
+		light.Name = "CoinLight"
+		light.Color = Color3.fromRGB(255, 222, 88)
+		light.Brightness = 1.8
+		light.Range = 8
+		light.Parent = coin
+	end
+
+	if not coin:FindFirstChild("CoinHighlight") then
+		local highlight = Instance.new("Highlight")
+		highlight.Name = "CoinHighlight"
+		highlight.Adornee = coin
+		highlight.FillColor = Color3.fromRGB(255, 217, 82)
+		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+		highlight.FillTransparency = 0.35
+		highlight.OutlineTransparency = 0.05
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		highlight.Parent = coin
+	end
+end
+
+local function spawnCoin()
+	if activeCoinCount >= MAX_COINS then
+		return
+	end
+
+	local coin = coinTemplate:Clone()
+	coin.Name = "Coin"
+	coin.CFrame = getRandomCoinCFrame()
+	coin.Anchored = true
+	coin.CanCollide = false
+	coin.CanTouch = true
+	coin.Parent = spawnedCoinsFolder
+
+	applyCoinVisuals(coin)
+
+	activeCoinCount += 1
+	animatedCoins[coin] = {
+		baseCFrame = coin.CFrame,
+		seed = math.random() * 1000,
+		spinSpeed = math.rad(math.random(100, 150)),
+	}
+
+	local taken = false
+	local touchConnection
+
+	touchConnection = coin.Touched:Connect(function(hit)
+		if taken then
+			return
+		end
+
+		local character = hit.Parent
+		if not character then
+			return
+		end
+
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if not humanoid then
+			return
+		end
+
+		local player = Players:GetPlayerFromCharacter(character)
+		if not player then
+			return
+		end
+
+		taken = true
+		coin.CanTouch = false
+
+		local reward = getCoinReward(player)
+		addCurrency(getCoinsObject(player), reward)
+		markDirty(player)
+
+		if touchConnection then
+			touchConnection:Disconnect()
+		end
+
+		animatedCoins[coin] = nil
+		activeCoinCount -= 1
+		coin:Destroy()
+
+		firePickup(player, "Coin", reward)
+
+		local respawnDelay = getCoinRespawnDelay(player)
+		task.delay(respawnDelay, function()
+			if zonePart.Parent and coinTemplate.Parent then
+				spawnCoin()
+			end
+		end)
+	end)
+end
+
+woodClickEvent.OnServerEvent:Connect(function(player)
+	local rebirth = getRebirthFolder(player)
+	if not rebirth or not rebirth.SecondAreaUnlocked.Value then
+		return
+	end
+
+	local now = os.clock()
+	local lastClick = woodCooldowns[player.UserId] or 0
+	local cooldown = getWoodCooldown(player)
+
+	if now - lastClick < cooldown then
+		return
+	end
+
+	woodCooldowns[player.UserId] = now
+
+	local reward = getWoodReward(player)
+	addCurrency(getWoodCurrencyObject(player), reward)
+	markDirty(player)
+
+	firePickup(player, "Tree", reward)
+end)
+
+local function captureTransform(player)
+	local character = player.Character
+	local hrp = character and character:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		return nil
+	end
+
+	local look = hrp.CFrame.LookVector
+	return {
+		X = hrp.Position.X,
+		Y = hrp.Position.Y,
+		Z = hrp.Position.Z,
+		LookX = look.X,
+		LookY = look.Y,
+		LookZ = look.Z,
+	}
+end
+
+local function buildSaveData(player)
+	local coins = getCoinsObject(player)
+	local coinUpgrades = getCoinUpgradesFolder(player)
+	local woodCurrency = getWoodCurrencyObject(player)
+	local woodUpgrades = getWoodUpgradesFolder(player)
+	local paperFactory = getPaperFactoryFolder(player)
+	local paperUpgrades = getPaperUpgradesFolder(player)
+	local rebirth = getRebirthFolder(player)
+
+	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not paperFactory or not paperUpgrades or not rebirth then
+		return nil
+	end
+
+	return {
+		Version = 8,
+		Coins = coins.Value,
+		CoinUpgrades = {
+			CoinValueLevel = coinUpgrades.CoinValueLevel.Value,
+			MultiplierLevel = coinUpgrades.MultiplierLevel.Value,
+			SpawnSpeedLevel = coinUpgrades.SpawnSpeedLevel.Value,
+			WoodBoostLevel = coinUpgrades.WoodBoostLevel.Value,
+			CoinValueCost = coinUpgrades.CoinValueCost.Value,
+			MultiplierCost = coinUpgrades.MultiplierCost.Value,
+			SpawnSpeedCost = coinUpgrades.SpawnSpeedCost.Value,
+			WoodBoostCost = coinUpgrades.WoodBoostCost.Value,
+		},
+		Wood = {
+			WoodCurrency = woodCurrency.Value,
+			WoodValueLevel = woodUpgrades.WoodValueLevel.Value,
+			WoodMultiplierLevel = woodUpgrades.WoodMultiplierLevel.Value,
+			WoodSpeedLevel = woodUpgrades.WoodSpeedLevel.Value,
+			CoinBoostLevel = woodUpgrades.CoinBoostLevel.Value,
+			WoodValueCost = woodUpgrades.WoodValueCost.Value,
+			WoodMultiplierCost = woodUpgrades.WoodMultiplierCost.Value,
+			WoodSpeedCost = woodUpgrades.WoodSpeedCost.Value,
+			CoinBoostCost = woodUpgrades.CoinBoostCost.Value,
+			Paper = paperFactory.Paper.Value,
+			Fuel = paperFactory.Fuel.Value,
+		},
+		PaperUpgrades = {
+			PaperValueLevel = paperUpgrades.PaperValueLevel.Value,
+			PaperMultiplierLevel = paperUpgrades.PaperMultiplierLevel.Value,
+			PaperSpeedLevel = paperUpgrades.PaperSpeedLevel.Value,
+			PaperValueCost = paperUpgrades.PaperValueCost.Value,
+			PaperMultiplierCost = paperUpgrades.PaperMultiplierCost.Value,
+			PaperSpeedCost = paperUpgrades.PaperSpeedCost.Value,
+		},
+		Rebirth = {
+			Count = rebirth.Count.Value,
+		},
+		Passives = getPassiveState(player),
+		Position = captureTransform(player),
+	}
+end
+
+local function savePlayerData(player, force)
+	if not player or player.Parent ~= Players then
+		return false
+	end
+
+	if not dirtyPlayers[player] and not force then
+		return true
+	end
+
+	local now = os.clock()
+	local lastSave = lastSaveTimes[player] or 0
+
+	if not force and (now - lastSave) < SAVE_COOLDOWN then
+		return false
+	end
+
+	local payload = buildSaveData(player)
+	if not payload then
+		return false
+	end
+
+	local success, result = pcall(function()
+		playerDataStore:SetAsync("Player_" .. player.UserId, payload)
+	end)
+
+	if success then
+		lastSaveTimes[player] = now
+		dirtyPlayers[player] = nil
+		return true
+	else
+		warn("Не удалось сохранить " .. player.Name .. ": " .. tostring(result))
+		return false
+	end
+end
+
+local function loadPlayerData(player)
+	setupPlayerDataObjects(player)
+	passiveStates[player] = emptyPassiveState()
+	writePassiveStateValue(player)
+
+	local success, data = pcall(function()
+		return playerDataStore:GetAsync("Player_" .. player.UserId)
+	end)
+
+	if not success then
+		warn("Не удалось загрузить " .. player.Name .. ": " .. tostring(data))
+		return
+	end
+
+	if type(data) ~= "table" then
+		return
+	end
+
+	local coins = getCoinsObject(player)
+	local coinUpgrades = getCoinUpgradesFolder(player)
+	local woodCurrency = getWoodCurrencyObject(player)
+	local woodUpgrades = getWoodUpgradesFolder(player)
+	local paperFactory = getPaperFactoryFolder(player)
+	local paperUpgrades = getPaperUpgradesFolder(player)
+	local rebirth = getRebirthFolder(player)
+
+	coins.Value = roundToTenth(data.Coins or 0)
+
+	local savedCoin = data.CoinUpgrades or {}
+	coinUpgrades.CoinValueLevel.Value = math.max(0, tonumber(savedCoin.CoinValueLevel) or 0)
+	coinUpgrades.MultiplierLevel.Value = math.max(0, tonumber(savedCoin.MultiplierLevel) or 0)
+	coinUpgrades.SpawnSpeedLevel.Value = math.clamp(tonumber(savedCoin.SpawnSpeedLevel) or 0, 0, MAX_COIN_SPAWN_SPEED_LEVEL)
+	coinUpgrades.WoodBoostLevel.Value = math.clamp(tonumber(savedCoin.WoodBoostLevel) or 0, 0, 10)
+
+	coinUpgrades.CoinValueCost.Value = math.max(1, tonumber(savedCoin.CoinValueCost) or START_COIN_VALUE_COST)
+	coinUpgrades.MultiplierCost.Value = math.max(1, tonumber(savedCoin.MultiplierCost) or START_COIN_MULTIPLIER_COST)
+	coinUpgrades.SpawnSpeedCost.Value = coinUpgrades.SpawnSpeedLevel.Value >= MAX_COIN_SPAWN_SPEED_LEVEL and 0 or math.max(1, tonumber(savedCoin.SpawnSpeedCost) or START_COIN_SPAWN_COST)
+	coinUpgrades.WoodBoostCost.Value = coinUpgrades.WoodBoostLevel.Value >= 10 and 0 or math.max(1, tonumber(savedCoin.WoodBoostCost) or START_COIN_WOODBOOST_COST)
+
+	local savedWood = data.Wood or {}
+	woodCurrency.Value = roundToTenth(savedWood.WoodCurrency or 0)
+	woodUpgrades.WoodValueLevel.Value = math.max(0, tonumber(savedWood.WoodValueLevel) or 0)
+	woodUpgrades.WoodMultiplierLevel.Value = math.max(0, tonumber(savedWood.WoodMultiplierLevel) or 0)
+	woodUpgrades.WoodSpeedLevel.Value = math.max(0, tonumber(savedWood.WoodSpeedLevel) or 0)
+	woodUpgrades.CoinBoostLevel.Value = math.clamp(tonumber(savedWood.CoinBoostLevel) or 0, 0, 20)
+
+	woodUpgrades.WoodValueCost.Value = math.max(1, tonumber(savedWood.WoodValueCost) or START_WOOD_VALUE_COST)
+	woodUpgrades.WoodMultiplierCost.Value = math.max(1, tonumber(savedWood.WoodMultiplierCost) or START_WOOD_MULTIPLIER_COST)
+	woodUpgrades.WoodSpeedCost.Value = math.max(1, tonumber(savedWood.WoodSpeedCost) or START_WOOD_SPEED_COST)
+	woodUpgrades.CoinBoostCost.Value = woodUpgrades.CoinBoostLevel.Value >= 20 and 0 or math.max(1, tonumber(savedWood.CoinBoostCost) or START_WOOD_COINBOOST_COST)
+
+	paperFactory.Paper.Value = roundToTenth(savedWood.Paper or 0)
+	paperFactory.Fuel.Value = math.max(0, tonumber(savedWood.Fuel) or 0)
+	paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
+	paperFactory.IsRunning.Value = false
+
+	local savedPaperUpgrades = data.PaperUpgrades or {}
+	paperUpgrades.PaperValueLevel.Value = math.max(0, tonumber(savedPaperUpgrades.PaperValueLevel) or 0)
+	paperUpgrades.PaperMultiplierLevel.Value = math.max(0, tonumber(savedPaperUpgrades.PaperMultiplierLevel) or 0)
+	paperUpgrades.PaperSpeedLevel.Value = math.clamp(tonumber(savedPaperUpgrades.PaperSpeedLevel) or 0, 0, 10)
+
+	paperUpgrades.PaperValueCost.Value = math.max(1, tonumber(savedPaperUpgrades.PaperValueCost) or START_PAPER_VALUE_COST)
+	paperUpgrades.PaperMultiplierCost.Value = math.max(1, tonumber(savedPaperUpgrades.PaperMultiplierCost) or START_PAPER_MULTIPLIER_COST)
+	paperUpgrades.PaperSpeedCost.Value = paperUpgrades.PaperSpeedLevel.Value >= 10 and 0 or math.max(1, tonumber(savedPaperUpgrades.PaperSpeedCost) or START_PAPER_SPEED_COST)
+
+	local savedRebirth = data.Rebirth or {}
+	rebirth.Count.Value = math.clamp(tonumber(savedRebirth.Count) or 0, 0, MAX_REBIRTH_COUNT)
+	recalculateRebirthStats(player)
+
+	local savedPassives = data.Passives
+	if type(savedPassives) == "table" and type(savedPassives.inventory) == "table" then
+		passiveStates[player] = {
+			inventory = savedPassives.inventory,
+			equippedUid = tostring(savedPassives.equippedUid or ""),
+		}
+	else
+		passiveStates[player] = emptyPassiveState()
+	end
+	writePassiveStateValue(player)
+
+	updateUpgradeActiveFlags(coinUpgrades, COIN_UPGRADES)
+	updateUpgradeActiveFlags(woodUpgrades, WOOD_UPGRADES)
+	updateUpgradeActiveFlags(paperUpgrades, PAPER_UPGRADES)
+
+	if type(data.Position) == "table" and data.Position.X and data.Position.Y and data.Position.Z then
+		pendingTeleportTransforms[player] = data.Position
+	end
+end
+
+local function applyPendingTeleport(player, character)
+	local savedPosition = pendingTeleportTransforms[player]
+	if not savedPosition then
+		return
+	end
+
+	task.spawn(function()
+		local hrp = character:WaitForChild("HumanoidRootPart", 10)
+		if not hrp then
+			return
+		end
+
+		task.wait(0.25)
+
+		local position = Vector3.new(savedPosition.X, savedPosition.Y, savedPosition.Z)
+		local look = Vector3.new(savedPosition.LookX or 0, savedPosition.LookY or 0, savedPosition.LookZ or -1)
+
+		if look.Magnitude < 0.05 then
+			look = Vector3.new(0, 0, -1)
+		else
+			look = look.Unit
+		end
+
+		hrp.CFrame = CFrame.lookAt(position, position + look)
+		pendingTeleportTransforms[player] = nil
+	end)
+end
+
+local function setupPlayer(player)
+	loadPlayerData(player)
+	paperProcessAnchors[player] = os.clock()
+
+	player.CharacterAdded:Connect(function(character)
+		applyCharacterCollisionGroup(player, character)
+		applyPendingTeleport(player, character)
+	end)
+
+	if player.Character then
+		applyCharacterCollisionGroup(player, player.Character)
+		applyPendingTeleport(player, player.Character)
+	end
+end
+
+purchaseUpgradeEvent.OnServerEvent:Connect(function(player, upgradeFamily, upgradeKey, mode)
+	if type(upgradeFamily) ~= "string" or type(upgradeKey) ~= "string" then
+		return
+	end
+
+	mode = mode == "Max" and "Max" or "Buy"
+	handleUpgradePurchase(player, upgradeFamily, upgradeKey, mode)
+end)
+
+purchaseRebirthEvent.OnServerEvent:Connect(function(player)
+	tryPurchaseRebirth(player)
+end)
+
+factoryActionEvent.OnServerEvent:Connect(function(player, actionName)
+	if type(actionName) ~= "string" then
+		return
+	end
+	handleFactoryAction(player, actionName)
+end)
+
+passiveActionEvent.OnServerEvent:Connect(function(player, actionName, argument)
+	if type(actionName) ~= "string" then
+		return
+	end
+	handlePassiveAction(player, actionName, argument)
+end)
+
+adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName, actionValue)
+	if player.Name ~= ADMIN_NAME then
+		return
+	end
+
+	if actionName == "GiveCurrency" then
+		local amount = roundToTenth(actionValue)
+		if amount <= 0 then
+			fireSimple(player, "Введи число больше нуля")
+			return
+		end
+
+		local currencyObject = getCurrencyObjectForName(player, currencyName)
+		if not currencyObject then
+			fireSimple(player, "Неизвестная валюта")
+			return
+		end
+
+		addCurrency(currencyObject, amount)
+		markDirty(player)
+		fireSimple(player, "Валюта выдана")
+	elseif actionName == "ResetSelf" then
+		resetAllPlayerData(player)
+		fireSimple(player, "Данные сброшены")
+	end
+end)
+
+Players.PlayerAdded:Connect(setupPlayer)
+
+for _, player in ipairs(Players:GetPlayers()) do
+	setupPlayer(player)
+end
+
+Players.PlayerRemoving:Connect(function(player)
+	if not isClosing then
+		savePlayerData(player, true)
+	end
+
+	if characterConnections[player] then
+		characterConnections[player]:Disconnect()
+		characterConnections[player] = nil
+	end
+
+	dirtyPlayers[player] = nil
+	lastSaveTimes[player] = nil
+	pendingTeleportTransforms[player] = nil
+	woodCooldowns[player.UserId] = nil
+	paperProcessAnchors[player] = nil
+	passiveStates[player] = nil
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(SAVE_INTERVAL)
+		for _, player in ipairs(Players:GetPlayers()) do
+			savePlayerData(player, false)
+		end
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(0.2)
+
+		local now = os.clock()
+
+		for _, player in ipairs(Players:GetPlayers()) do
+			local rebirth = getRebirthFolder(player)
+			local paperFactory = getPaperFactoryFolder(player)
+
+			if rebirth and paperFactory then
+				if not rebirth.FourthSystemsUnlocked.Value then
+					paperFactory.IsRunning.Value = false
+					paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
+					paperProcessAnchors[player] = now
+				else
+					local cycleTime = getPaperCycleTime(player)
+
+					if paperFactory.Fuel.Value > 0 then
+						local lastTick = paperProcessAnchors[player] or now
+						local elapsed = now - lastTick
+
+						while elapsed >= cycleTime and paperFactory.Fuel.Value > 0 do
+							paperFactory.Fuel.Value -= 1
+							paperFactory.Paper.Value = roundToTenth(paperFactory.Paper.Value + getPaperProductionAmount(player))
+							lastTick += cycleTime
+							elapsed = now - lastTick
+							markDirty(player)
+						end
+
+						paperProcessAnchors[player] = lastTick
+						paperFactory.IsRunning.Value = paperFactory.Fuel.Value > 0
+
+						if paperFactory.Fuel.Value > 0 then
+							paperFactory.Countdown.Value = roundToTenth(math.max(0, cycleTime - (now - lastTick)))
+						else
+							paperFactory.Countdown.Value = cycleTime
+						end
+					else
+						paperFactory.IsRunning.Value = false
+						paperFactory.Countdown.Value = cycleTime
+						paperProcessAnchors[player] = now
+					end
+				end
+			end
+		end
+	end
+end)
+
+game:BindToClose(function()
+	isClosing = true
+	for _, player in ipairs(Players:GetPlayers()) do
+		savePlayerData(player, true)
+	end
+end)
+
+if not treeBlock:FindFirstChild("TreeLight") then
+	local light = Instance.new("PointLight")
+	light.Name = "TreeLight"
+	light.Color = Color3.fromRGB(175, 120, 70)
+	light.Range = 12
+	light.Brightness = 2
+	light.Parent = treeBlock
+end
+
+if not treeBlock:FindFirstChild("TreeHighlight") then
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "TreeHighlight"
+	highlight.Adornee = treeBlock
+	highlight.FillColor = Color3.fromRGB(139, 92, 55)
+	highlight.OutlineColor = Color3.fromRGB(255, 230, 200)
+	highlight.FillTransparency = 0.45
+	highlight.OutlineTransparency = 0.1
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	highlight.Parent = treeBlock
+end
+
+RunService.Heartbeat:Connect(function()
+	local now = os.clock()
+
+	for coin, info in pairs(animatedCoins) do
+		if coin and coin.Parent then
+			local bobOffset = math.sin(now * 2 + info.seed) * 0.35
+			local rotationY = now * info.spinSpeed + info.seed
+
+			coin.CFrame = info.baseCFrame
+				* CFrame.new(0, bobOffset, 0)
+				* CFrame.Angles(0, rotationY, 0)
+		else
+			animatedCoins[coin] = nil
+		end
+	end
+
+	if treeBlock and treeBlock.Parent then
+		local alpha = (math.sin(now * 2.3) + 1) / 2
+		local colorA = Color3.fromRGB(116, 77, 48)
+		local colorB = Color3.fromRGB(166, 117, 75)
+
+		treeBlock.Color = colorA:Lerp(colorB, alpha)
+
+		local pulseY = treeBaseSize.Y + math.sin(now * 2.3) * 0.35
+		treeBlock.Size = Vector3.new(treeBaseSize.X, pulseY, treeBaseSize.Z)
+		treeBlock.CFrame = treeBaseCFrame * CFrame.new(0, (pulseY - treeBaseSize.Y) / 2, 0)
+
+		local light = treeBlock:FindFirstChild("TreeLight")
+		if light then
+			light.Brightness = 1.6 + alpha * 1.4
+			light.Color = Color3.fromRGB(180 + math.floor(alpha * 30), 120 + math.floor(alpha * 20), 70)
+		end
+	end
+end)
+
+for _ = 1, MAX_COINS do
+	spawnCoin()
+end

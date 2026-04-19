@@ -1,0 +1,1527 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local playerGui = player:WaitForChild("PlayerGui")
+
+local data = player:WaitForChild("PlayerData")
+local coins = data:WaitForChild("Coins")
+
+local coinUpgrades = data:WaitForChild("CoinUpgrades")
+local coinValueLevel = coinUpgrades:WaitForChild("CoinValueLevel")
+local coinMultiplierLevel = coinUpgrades:WaitForChild("MultiplierLevel")
+local coinSpawnLevel = coinUpgrades:WaitForChild("SpawnSpeedLevel")
+local coinWoodBoostLevel = coinUpgrades:WaitForChild("WoodBoostLevel")
+
+local coinValueCost = coinUpgrades:WaitForChild("CoinValueCost")
+local coinMultiplierCost = coinUpgrades:WaitForChild("MultiplierCost")
+local coinSpawnCost = coinUpgrades:WaitForChild("SpawnSpeedCost")
+local coinWoodBoostCost = coinUpgrades:WaitForChild("WoodBoostCost")
+
+local coinValueActive = coinUpgrades:WaitForChild("CoinValueActive")
+local coinMultiplierActive = coinUpgrades:WaitForChild("MultiplierActive")
+local coinSpawnActive = coinUpgrades:WaitForChild("SpawnSpeedActive")
+local coinWoodBoostActive = coinUpgrades:WaitForChild("WoodBoostActive")
+
+local woodFolder = data:WaitForChild("Wood")
+local woodCurrency = woodFolder:WaitForChild("WoodCurrency")
+
+local woodUpgrades = woodFolder:WaitForChild("WoodUpgrades")
+local woodValueLevel = woodUpgrades:WaitForChild("WoodValueLevel")
+local woodMultiplierLevel = woodUpgrades:WaitForChild("WoodMultiplierLevel")
+local woodSpeedLevel = woodUpgrades:WaitForChild("WoodSpeedLevel")
+local woodCoinBoostLevel = woodUpgrades:WaitForChild("CoinBoostLevel")
+
+local woodValueCost = woodUpgrades:WaitForChild("WoodValueCost")
+local woodMultiplierCost = woodUpgrades:WaitForChild("WoodMultiplierCost")
+local woodSpeedCost = woodUpgrades:WaitForChild("WoodSpeedCost")
+local woodCoinBoostCost = woodUpgrades:WaitForChild("CoinBoostCost")
+
+local woodValueActive = woodUpgrades:WaitForChild("WoodValueActive")
+local woodMultiplierActive = woodUpgrades:WaitForChild("WoodMultiplierActive")
+local woodSpeedActive = woodUpgrades:WaitForChild("WoodSpeedActive")
+local woodCoinBoostActive = woodUpgrades:WaitForChild("CoinBoostActive")
+
+local paperFactory = woodFolder:WaitForChild("PaperFactory")
+local paperValue = paperFactory:WaitForChild("Paper")
+local fuelValue = paperFactory:WaitForChild("Fuel")
+local factoryCountdown = paperFactory:WaitForChild("Countdown")
+local factoryRunning = paperFactory:WaitForChild("IsRunning")
+
+local rebirthFolder = data:WaitForChild("Rebirth")
+local rebirthCount = rebirthFolder:WaitForChild("Count")
+local rebirthNextCost = rebirthFolder:WaitForChild("NextCost")
+local rebirthNextCurrency = rebirthFolder:WaitForChild("NextCurrency")
+local rebirthCoinMultiplierBonus = rebirthFolder:WaitForChild("CoinMultiplierBonus")
+local rebirthSpawnSpeedBonus = rebirthFolder:WaitForChild("SpawnSpeedBonus")
+local secondAreaUnlocked = rebirthFolder:WaitForChild("SecondAreaUnlocked")
+local thirdUpgradeUnlocked = rebirthFolder:WaitForChild("ThirdUpgradeUnlocked")
+local fourthSystemsUnlocked = rebirthFolder:WaitForChild("FourthSystemsUnlocked")
+
+local remotesFolder = ReplicatedStorage:WaitForChild("IncrementalRemotes")
+local purchaseUpgradeEvent = remotesFolder:WaitForChild("PurchaseUpgrade")
+local purchaseRebirthEvent = remotesFolder:WaitForChild("PurchaseRebirth")
+local adminActionEvent = remotesFolder:WaitForChild("AdminAction")
+local notifyEvent = remotesFolder:WaitForChild("Notify")
+local woodClickEvent = remotesFolder:WaitForChild("WoodClick")
+local factoryActionEvent = remotesFolder:WaitForChild("FactoryAction")
+
+local doskaPart = workspace:WaitForChild("DoskaPart")
+local upgradeDoska = workspace:WaitForChild("UpgradeDoska")
+local rebirthDoska = workspace:WaitForChild("RebirthDoska")
+local rebirthWall = workspace:WaitForChild("RebirthWall")
+local treeBlock = workspace:WaitForChild("TreeBlock")
+local treeDoska = workspace:WaitForChild("TreeDoska")
+local treeUpgradeDoska = workspace:WaitForChild("TreeUpgradeDoska")
+local boostDoska = workspace:WaitForChild("BoostDoska")
+local paperFactoryDoska = workspace:WaitForChild("PaperFactoryDoska")
+
+local ADMIN_NAME = "Doter24_7"
+local MAX_COIN_SPAWN_SPEED_LEVEL = 3
+local MAX_REBIRTH_COUNT = 4
+
+local ICON_ASSET_IDS = {
+	Coin = "rbxassetid://PASTE_COIN_ICON_ID",
+	Rebirth = "rbxassetid://PASTE_REBIRTH_ICON_ID",
+	Tree = "rbxassetid://PASTE_TREE_ICON_ID",
+	Paper = "rbxassetid://PASTE_PAPER_ICON_ID",
+}
+
+local selectedAdminCurrency = "Coins"
+
+local function roundToTenth(value)
+	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
+end
+
+local function formatNumber(value)
+	value = roundToTenth(value)
+
+	if math.abs(value - math.floor(value)) < 0.001 then
+		return tostring(math.floor(value))
+	end
+
+	return string.format("%.1f", value)
+end
+
+local function getAssetOrEmpty(assetId)
+	if assetId and assetId ~= "" and not string.find(assetId, "PASTE") then
+		return assetId
+	end
+	return ""
+end
+
+local function createCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or 12)
+	corner.Parent = parent
+	return corner
+end
+
+local function createStroke(parent, color, thickness, transparency)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color or Color3.fromRGB(255, 255, 255)
+	stroke.Thickness = thickness or 1
+	stroke.Transparency = transparency or 0
+	stroke.Parent = parent
+	return stroke
+end
+
+local function createGradient(parent, color1, color2, rotation)
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, color1),
+		ColorSequenceKeypoint.new(1, color2),
+	})
+	gradient.Rotation = rotation or 90
+	gradient.Parent = parent
+	return gradient
+end
+
+local function addScaleHover(button)
+	local scale = Instance.new("UIScale")
+	scale.Scale = 1
+	scale.Parent = button
+
+	button.MouseEnter:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.12), {Scale = 1.05}):Play()
+	end)
+
+	button.MouseLeave:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.12), {Scale = 1}):Play()
+	end)
+
+	button.MouseButton1Down:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.08), {Scale = 0.96}):Play()
+	end)
+
+	button.MouseButton1Up:Connect(function()
+		TweenService:Create(scale, TweenInfo.new(0.08), {Scale = 1.05}):Play()
+	end)
+end
+
+local function createDecorDots(parent, count)
+	for _ = 1, count do
+		local dot = Instance.new("Frame")
+		dot.Size = UDim2.new(0, math.random(8, 26), 0, math.random(8, 26))
+		dot.Position = UDim2.new(math.random(), -10, math.random(), -10)
+		dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		dot.BackgroundTransparency = 0.92
+		dot.BorderSizePixel = 0
+		dot.Parent = parent
+		createCorner(dot, 999)
+	end
+end
+
+local function createWorldBoard(name, adorneePart, face, pixelsPerStud)
+	local old = playerGui:FindFirstChild(name)
+	if old then
+		old:Destroy()
+	end
+
+	local surfaceGui = Instance.new("SurfaceGui")
+	surfaceGui.Name = name
+	surfaceGui.Adornee = adorneePart
+	surfaceGui.Face = face or Enum.NormalId.Front
+	surfaceGui.AlwaysOnTop = true
+	surfaceGui.LightInfluence = 0
+	surfaceGui.Brightness = 2
+	surfaceGui.MaxDistance = 150
+	surfaceGui.PixelsPerStud = pixelsPerStud or 80
+	surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	surfaceGui.ResetOnSpawn = false
+	surfaceGui.Parent = playerGui
+
+	local root = Instance.new("Frame")
+	root.Size = UDim2.new(1, 0, 1, 0)
+	root.BackgroundColor3 = Color3.fromRGB(39, 56, 94)
+	root.BorderSizePixel = 0
+	root.Parent = surfaceGui
+	createGradient(root, Color3.fromRGB(104, 150, 237), Color3.fromRGB(56, 81, 135), 90)
+	createStroke(root, Color3.fromRGB(232, 244, 255), 2, 0.15)
+	createDecorDots(root, 10)
+
+	local inner = Instance.new("Frame")
+	inner.Size = UDim2.new(1, -12, 1, -12)
+	inner.Position = UDim2.new(0, 6, 0, 6)
+	inner.BackgroundColor3 = Color3.fromRGB(92, 125, 198)
+	inner.BorderSizePixel = 0
+	inner.Parent = root
+	createCorner(inner, 18)
+	createGradient(inner, Color3.fromRGB(150, 189, 255), Color3.fromRGB(91, 130, 209), 90)
+	createStroke(inner, Color3.fromRGB(255, 255, 255), 1, 0.18)
+
+	local content = Instance.new("Frame")
+	content.Size = UDim2.new(1, -16, 1, -16)
+	content.Position = UDim2.new(0, 8, 0, 8)
+	content.BackgroundTransparency = 1
+	content.Parent = inner
+
+	return surfaceGui, content
+end
+
+local function createHeader(parent, titleText, subtitleText)
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 58)
+	header.BackgroundTransparency = 1
+	header.Parent = parent
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(1, 0, 0, 28)
+	title.Text = titleText
+	title.TextColor3 = Color3.fromRGB(246, 250, 255)
+	title.Font = Enum.Font.GothamBlack
+	title.TextScaled = true
+	title.Parent = header
+
+	local subtitle = Instance.new("TextLabel")
+	subtitle.BackgroundTransparency = 1
+	subtitle.Size = UDim2.new(1, 0, 0, 18)
+	subtitle.Position = UDim2.new(0, 0, 0, 32)
+	subtitle.Text = subtitleText
+	subtitle.TextColor3 = Color3.fromRGB(224, 236, 255)
+	subtitle.Font = Enum.Font.GothamBold
+	subtitle.TextScaled = true
+	subtitle.Parent = header
+
+	local line = Instance.new("Frame")
+	line.Size = UDim2.new(1, -8, 0, 2)
+	line.Position = UDim2.new(0, 4, 1, -2)
+	line.BackgroundColor3 = Color3.fromRGB(240, 247, 255)
+	line.BackgroundTransparency = 0.18
+	line.BorderSizePixel = 0
+	line.Parent = header
+end
+
+local oldMainGui = playerGui:FindFirstChild("IncrementalMainGui")
+if oldMainGui then
+	oldMainGui:Destroy()
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "IncrementalMainGui"
+screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 20
+screenGui.Parent = playerGui
+
+local pickupLayer = Instance.new("Frame")
+pickupLayer.Size = UDim2.new(1, 0, 1, 0)
+pickupLayer.BackgroundTransparency = 1
+pickupLayer.Parent = screenGui
+
+local toastHolder = Instance.new("Frame")
+toastHolder.AnchorPoint = Vector2.new(0.5, 0)
+toastHolder.Position = UDim2.new(0.5, 0, 0.03, 0)
+toastHolder.Size = UDim2.new(0, 460, 0, 60)
+toastHolder.BackgroundTransparency = 1
+toastHolder.Parent = screenGui
+
+local adminFrame = Instance.new("Frame")
+adminFrame.AnchorPoint = Vector2.new(1, 0)
+adminFrame.Position = UDim2.new(1, -18, 0, 18)
+adminFrame.Size = UDim2.new(0, 280, 0, 225)
+adminFrame.Visible = player.Name == ADMIN_NAME
+adminFrame.BackgroundColor3 = Color3.fromRGB(84, 76, 128)
+adminFrame.BorderSizePixel = 0
+adminFrame.Parent = screenGui
+createCorner(adminFrame, 16)
+createGradient(adminFrame, Color3.fromRGB(133, 109, 175), Color3.fromRGB(87, 79, 133), 90)
+createStroke(adminFrame, Color3.fromRGB(255, 215, 215), 2, 0.12)
+
+local adminPadding = Instance.new("UIPadding")
+adminPadding.PaddingTop = UDim.new(0, 12)
+adminPadding.PaddingBottom = UDim.new(0, 12)
+adminPadding.PaddingLeft = UDim.new(0, 12)
+adminPadding.PaddingRight = UDim.new(0, 12)
+adminPadding.Parent = adminFrame
+
+local adminTitle = Instance.new("TextLabel")
+adminTitle.BackgroundTransparency = 1
+adminTitle.Size = UDim2.new(1, 0, 0, 24)
+adminTitle.Text = "ADMIN PANEL"
+adminTitle.TextColor3 = Color3.fromRGB(255, 235, 235)
+adminTitle.Font = Enum.Font.GothamBlack
+adminTitle.TextSize = 20
+adminTitle.Parent = adminFrame
+
+local adminAmountBox = Instance.new("TextBox")
+adminAmountBox.Position = UDim2.new(0, 0, 0, 34)
+adminAmountBox.Size = UDim2.new(1, 0, 0, 36)
+adminAmountBox.BackgroundColor3 = Color3.fromRGB(114, 104, 165)
+adminAmountBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+adminAmountBox.PlaceholderText = "Сколько выдать"
+adminAmountBox.Text = "10"
+adminAmountBox.Font = Enum.Font.Gotham
+adminAmountBox.TextSize = 16
+adminAmountBox.Parent = adminFrame
+createCorner(adminAmountBox, 12)
+
+local currencySelector = Instance.new("Frame")
+currencySelector.Position = UDim2.new(0, 0, 0, 78)
+currencySelector.Size = UDim2.new(1, 0, 0, 34)
+currencySelector.BackgroundTransparency = 1
+currencySelector.Parent = adminFrame
+
+local selectCoinsButton = Instance.new("TextButton")
+selectCoinsButton.Size = UDim2.new(0.48, 0, 1, 0)
+selectCoinsButton.BackgroundColor3 = Color3.fromRGB(255, 206, 80)
+selectCoinsButton.TextColor3 = Color3.fromRGB(20, 42, 56)
+selectCoinsButton.Text = "COINS"
+selectCoinsButton.Font = Enum.Font.GothamBlack
+selectCoinsButton.TextSize = 16
+selectCoinsButton.Parent = currencySelector
+selectCoinsButton.BorderSizePixel = 0
+createCorner(selectCoinsButton, 12)
+addScaleHover(selectCoinsButton)
+
+local selectWoodButton = Instance.new("TextButton")
+selectWoodButton.Size = UDim2.new(0.48, 0, 1, 0)
+selectWoodButton.Position = UDim2.new(0.52, 0, 0, 0)
+selectWoodButton.BackgroundColor3 = Color3.fromRGB(130, 160, 120)
+selectWoodButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+selectWoodButton.Text = "WOOD"
+selectWoodButton.Font = Enum.Font.GothamBlack
+selectWoodButton.TextSize = 16
+selectWoodButton.Parent = currencySelector
+selectWoodButton.BorderSizePixel = 0
+createCorner(selectWoodButton, 12)
+addScaleHover(selectWoodButton)
+
+local giveCurrencyButton = Instance.new("TextButton")
+giveCurrencyButton.Position = UDim2.new(0, 0, 0, 126)
+giveCurrencyButton.Size = UDim2.new(1, 0, 0, 32)
+giveCurrencyButton.BackgroundColor3 = Color3.fromRGB(96, 241, 203)
+giveCurrencyButton.TextColor3 = Color3.fromRGB(20, 42, 56)
+giveCurrencyButton.Text = "Выдать валюту"
+giveCurrencyButton.Font = Enum.Font.GothamBlack
+giveCurrencyButton.TextSize = 16
+giveCurrencyButton.Parent = adminFrame
+giveCurrencyButton.BorderSizePixel = 0
+createCorner(giveCurrencyButton, 12)
+addScaleHover(giveCurrencyButton)
+
+local resetButton = Instance.new("TextButton")
+resetButton.Position = UDim2.new(0, 0, 0, 170)
+resetButton.Size = UDim2.new(1, 0, 0, 32)
+resetButton.BackgroundColor3 = Color3.fromRGB(255, 121, 121)
+resetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+resetButton.Text = "Полный сброс"
+resetButton.Font = Enum.Font.GothamBlack
+resetButton.TextSize = 16
+resetButton.Parent = adminFrame
+resetButton.BorderSizePixel = 0
+createCorner(resetButton, 12)
+addScaleHover(resetButton)
+
+local function refreshAdminCurrencyButtons()
+	if selectedAdminCurrency == "Coins" then
+		selectCoinsButton.BackgroundColor3 = Color3.fromRGB(255, 206, 80)
+		selectCoinsButton.TextColor3 = Color3.fromRGB(20, 42, 56)
+		selectWoodButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+		selectWoodButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+	else
+		selectCoinsButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+		selectCoinsButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+		selectWoodButton.BackgroundColor3 = Color3.fromRGB(130, 160, 120)
+		selectWoodButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end
+end
+
+local function createStatRow(parent, titleText)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, 0, 0, 34)
+	row.BackgroundColor3 = Color3.fromRGB(89, 123, 198)
+	row.BorderSizePixel = 0
+	row.Parent = parent
+	createCorner(row, 12)
+	createGradient(row, Color3.fromRGB(135, 179, 255), Color3.fromRGB(89, 123, 198), 0)
+	createStroke(row, Color3.fromRGB(255, 255, 255), 1, 0.18)
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(0.58, 0, 1, 0)
+	title.Position = UDim2.new(0, 10, 0, 0)
+	title.Text = titleText
+	title.TextColor3 = Color3.fromRGB(246, 250, 255)
+	title.Font = Enum.Font.GothamBlack
+	title.TextScaled = true
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Parent = row
+
+	local value = Instance.new("TextLabel")
+	value.BackgroundTransparency = 1
+	value.Size = UDim2.new(0.34, 0, 1, 0)
+	value.Position = UDim2.new(0.62, 0, 0, 0)
+	value.Text = "-"
+	value.TextColor3 = Color3.fromRGB(255, 241, 137)
+	value.Font = Enum.Font.GothamBlack
+	value.TextScaled = true
+	value.TextXAlignment = Enum.TextXAlignment.Right
+	value.Parent = row
+
+	return value
+end
+
+local function createIcon(parent, imageId, fallbackText, bg1, bg2)
+	local holder = Instance.new("Frame")
+	holder.Size = UDim2.new(0, 68, 0, 68)
+	holder.BackgroundColor3 = bg1
+	holder.BorderSizePixel = 0
+	holder.Parent = parent
+	createCorner(holder, 999)
+	createGradient(holder, bg1, bg2, 45)
+	createStroke(holder, Color3.fromRGB(255, 255, 255), 2, 0.12)
+
+	local image = Instance.new("ImageLabel")
+	image.Size = UDim2.new(1, -16, 1, -16)
+	image.Position = UDim2.new(0, 8, 0, 8)
+	image.BackgroundTransparency = 1
+	image.ScaleType = Enum.ScaleType.Fit
+	image.Image = getAssetOrEmpty(imageId)
+	image.Parent = holder
+
+	local fallback = Instance.new("TextLabel")
+	fallback.Size = UDim2.new(1, 0, 1, 0)
+	fallback.BackgroundTransparency = 1
+	fallback.Text = fallbackText
+	fallback.TextColor3 = Color3.fromRGB(255, 255, 255)
+	fallback.Font = Enum.Font.GothamBlack
+	fallback.TextScaled = true
+	fallback.Parent = holder
+
+	if image.Image ~= "" then
+		fallback.Visible = false
+	else
+		image.Visible = false
+	end
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 1
+	scale.Parent = holder
+
+	TweenService:Create(scale, TweenInfo.new(1.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+		Scale = 1.06
+	}):Play()
+
+	return holder
+end
+
+local function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconImageId, fallbackText, palette)
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(0, 250, 1, -8)
+	card.BackgroundColor3 = palette.card1
+	card.BorderSizePixel = 0
+	card.Parent = parent
+	createCorner(card, 18)
+	createGradient(card, palette.card1, palette.card2, 90)
+	createStroke(card, Color3.fromRGB(255, 255, 255), 2, 0.12)
+	createDecorDots(card, 5)
+
+	local inner = Instance.new("Frame")
+	inner.Size = UDim2.new(1, -10, 1, -10)
+	inner.Position = UDim2.new(0, 5, 0, 5)
+	inner.BackgroundColor3 = palette.inner1
+	inner.BorderSizePixel = 0
+	inner.Parent = card
+	createCorner(inner, 16)
+	createGradient(inner, palette.inner1, palette.inner2, 90)
+	createStroke(inner, Color3.fromRGB(255, 255, 255), 1, 0.2)
+
+	local icon = createIcon(inner, iconImageId, fallbackText, palette.icon1, palette.icon2)
+	icon.Position = UDim2.new(0.5, -34, 0, 8)
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(1, -12, 0, 24)
+	title.Position = UDim2.new(0, 6, 0, 84)
+	title.Text = titleText
+	title.TextColor3 = Color3.fromRGB(248, 251, 255)
+	title.Font = Enum.Font.GothamBlack
+	title.TextScaled = true
+	title.Parent = inner
+
+	local levelLabel = Instance.new("TextLabel")
+	levelLabel.BackgroundTransparency = 1
+	levelLabel.Size = UDim2.new(1, -12, 0, 18)
+	levelLabel.Position = UDim2.new(0, 6, 0, 110)
+	levelLabel.Text = "Level 0/∞"
+	levelLabel.TextColor3 = Color3.fromRGB(233, 243, 255)
+	levelLabel.Font = Enum.Font.GothamBold
+	levelLabel.TextScaled = true
+	levelLabel.Parent = inner
+
+	local bonusPill = Instance.new("Frame")
+	bonusPill.Size = UDim2.new(0.62, 0, 0, 28)
+	bonusPill.Position = UDim2.new(0.19, 0, 0, 134)
+	bonusPill.BackgroundColor3 = palette.icon1
+	bonusPill.BorderSizePixel = 0
+	bonusPill.Parent = inner
+	createCorner(bonusPill, 999)
+	createGradient(bonusPill, palette.icon1, palette.icon2, 0)
+	createStroke(bonusPill, Color3.fromRGB(255, 255, 255), 1, 0.12)
+
+	local bonusLabel = Instance.new("TextLabel")
+	bonusLabel.BackgroundTransparency = 1
+	bonusLabel.Size = UDim2.new(1, 0, 1, 0)
+	bonusLabel.Text = bonusText
+	bonusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	bonusLabel.Font = Enum.Font.GothamBlack
+	bonusLabel.TextScaled = true
+	bonusLabel.Parent = bonusPill
+
+	local desc = Instance.new("TextLabel")
+	desc.BackgroundTransparency = 1
+	desc.Size = UDim2.new(1, -14, 0, 50)
+	desc.Position = UDim2.new(0, 7, 0, 166)
+	desc.Text = descriptionText
+	desc.TextColor3 = Color3.fromRGB(245, 249, 255)
+	desc.Font = Enum.Font.GothamBold
+	desc.TextWrapped = true
+	desc.TextScaled = true
+	desc.Parent = inner
+
+	local costLabel = Instance.new("TextLabel")
+	costLabel.BackgroundTransparency = 1
+	costLabel.Size = UDim2.new(1, -14, 0, 20)
+	costLabel.Position = UDim2.new(0, 7, 0, 220)
+	costLabel.Text = "Cost: 0"
+	costLabel.TextColor3 = Color3.fromRGB(255, 240, 142)
+	costLabel.Font = Enum.Font.GothamBlack
+	costLabel.TextScaled = true
+	costLabel.Parent = inner
+
+	local statusLabel = Instance.new("TextLabel")
+	statusLabel.BackgroundTransparency = 1
+	statusLabel.Size = UDim2.new(1, -14, 0, 18)
+	statusLabel.Position = UDim2.new(0, 7, 0, 242)
+	statusLabel.Text = "Status: Inactive"
+	statusLabel.TextColor3 = Color3.fromRGB(239, 246, 255)
+	statusLabel.Font = Enum.Font.GothamBold
+	statusLabel.TextScaled = true
+	statusLabel.Parent = inner
+
+	local buttonsFrame = Instance.new("Frame")
+	buttonsFrame.BackgroundTransparency = 1
+	buttonsFrame.Size = UDim2.new(1, -12, 0, 34)
+	buttonsFrame.Position = UDim2.new(0, 6, 1, -40)
+	buttonsFrame.Parent = inner
+
+	local buyButton = Instance.new("TextButton")
+	buyButton.Size = UDim2.new(0.48, 0, 1, 0)
+	buyButton.BackgroundColor3 = Color3.fromRGB(99, 243, 200)
+	buyButton.TextColor3 = Color3.fromRGB(22, 48, 62)
+	buyButton.Text = "BUY!"
+	buyButton.Font = Enum.Font.GothamBlack
+	buyButton.TextScaled = true
+	buyButton.Parent = buttonsFrame
+	buyButton.BorderSizePixel = 0
+	createCorner(buyButton, 12)
+	addScaleHover(buyButton)
+
+	local maxButton = Instance.new("TextButton")
+	maxButton.Size = UDim2.new(0.48, 0, 1, 0)
+	maxButton.Position = UDim2.new(0.52, 0, 0, 0)
+	maxButton.BackgroundColor3 = Color3.fromRGB(177, 122, 255)
+	maxButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	maxButton.Text = "MAX!"
+	maxButton.Font = Enum.Font.GothamBlack
+	maxButton.TextScaled = true
+	maxButton.Parent = buttonsFrame
+	maxButton.BorderSizePixel = 0
+	createCorner(maxButton, 12)
+	addScaleHover(maxButton)
+
+	return {
+		card = card,
+		levelLabel = levelLabel,
+		costLabel = costLabel,
+		statusLabel = statusLabel,
+		buyButton = buyButton,
+		maxButton = maxButton,
+	}
+end
+
+local function createLockedOverlay(parent, text)
+	local overlay = Instance.new("Frame")
+	overlay.Size = UDim2.new(1, 0, 1, 0)
+	overlay.BackgroundColor3 = Color3.fromRGB(18, 24, 37)
+	overlay.BackgroundTransparency = 0.18
+	overlay.BorderSizePixel = 0
+	overlay.Parent = parent
+	createCorner(overlay, 18)
+	createStroke(overlay, Color3.fromRGB(255, 255, 255), 2, 0.18)
+
+	local icon = createIcon(overlay, ICON_ASSET_IDS.Tree, "?", Color3.fromRGB(171, 123, 76), Color3.fromRGB(108, 73, 44))
+	icon.Position = UDim2.new(0.5, -34, 0.28, -34)
+
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(1, -24, 0, 70)
+	label.Position = UDim2.new(0, 12, 0.5, -15)
+	label.Text = text
+	label.TextColor3 = Color3.fromRGB(246, 250, 255)
+	label.Font = Enum.Font.GothamBlack
+	label.TextWrapped = true
+	label.TextScaled = true
+	label.Parent = overlay
+
+	return overlay
+end
+
+local function createHorizontalScroller(parent, positionY, height)
+	local scrolling = Instance.new("ScrollingFrame")
+	scrolling.Position = UDim2.new(0, 0, 0, positionY)
+	scrolling.Size = UDim2.new(1, 0, 1, -positionY - height)
+	scrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scrolling.ScrollBarThickness = 10
+	scrolling.BackgroundTransparency = 1
+	scrolling.BorderSizePixel = 0
+	scrolling.ScrollingDirection = Enum.ScrollingDirection.X
+	scrolling.HorizontalScrollBarInset = Enum.ScrollBarInset.Always
+	scrolling.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+	scrolling.Parent = parent
+
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.Padding = UDim.new(0, 12)
+	layout.Parent = scrolling
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 6)
+	padding.PaddingRight = UDim.new(0, 6)
+	padding.Parent = scrolling
+
+	local function updateCanvas()
+		scrolling.CanvasSize = UDim2.new(0, layout.AbsoluteContentSize.X + 20, 0, 0)
+	end
+
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+	updateCanvas()
+
+	return scrolling
+end
+
+local _, coinBoard = createWorldBoard("CoinsBoardSurfaceGui", doskaPart, Enum.NormalId.Front, 75)
+createHeader(coinBoard, "COINS", "Монеты, бусты и перерождения")
+
+local coinValueLabel = Instance.new("TextLabel")
+coinValueLabel.BackgroundTransparency = 1
+coinValueLabel.Size = UDim2.new(1, 0, 0, 58)
+coinValueLabel.Position = UDim2.new(0, 0, 0, 58)
+coinValueLabel.Text = "0"
+coinValueLabel.TextColor3 = Color3.fromRGB(255, 235, 120)
+coinValueLabel.Font = Enum.Font.GothamBlack
+coinValueLabel.TextScaled = true
+coinValueLabel.Parent = coinBoard
+
+local coinStats = Instance.new("Frame")
+coinStats.BackgroundTransparency = 1
+coinStats.Size = UDim2.new(1, 0, 1, -122)
+coinStats.Position = UDim2.new(0, 0, 0, 122)
+coinStats.Parent = coinBoard
+
+local coinStatsLayout = Instance.new("UIListLayout")
+coinStatsLayout.Padding = UDim.new(0, 8)
+coinStatsLayout.Parent = coinStats
+
+local coinRewardLabel = createStatRow(coinStats, "За 1 монетку")
+local coinUpgradeMultiplierLabel = createStatRow(coinStats, "Множитель апгрейдов")
+local coinRebirthMultiplierLabel = createStatRow(coinStats, "Множитель ребёрта")
+local coinRespawnLabel = createStatRow(coinStats, "Респавн монет")
+local rebirthCountLabel = createStatRow(coinStats, "Перерождений")
+
+local _, upgradeBoard = createWorldBoard("UpgradeBoardSurfaceGui", upgradeDoska, Enum.NormalId.Front, 78)
+createHeader(upgradeBoard, "COIN UPGRADES", "Прокрутка влево-вправо")
+
+local coinScroll = createHorizontalScroller(upgradeBoard, 66, 12)
+
+local coinGainCard = createUpgradeCard(
+	coinScroll,
+	"CoinGain",
+	"Увеличивает награду за 1 монетку.",
+	"+1",
+	ICON_ASSET_IDS.Coin,
+	"C",
+	{
+		card1 = Color3.fromRGB(80, 174, 255),
+		card2 = Color3.fromRGB(69, 112, 212),
+		inner1 = Color3.fromRGB(134, 205, 255),
+		inner2 = Color3.fromRGB(83, 144, 235),
+		icon1 = Color3.fromRGB(255, 214, 84),
+		icon2 = Color3.fromRGB(255, 170, 70),
+	}
+)
+
+local coinMultiCard = createUpgradeCard(
+	coinScroll,
+	"CoinMulti",
+	"Даёт +0.1x к множителю монет.",
+	"x0.1",
+	ICON_ASSET_IDS.Rebirth,
+	"M",
+	{
+		card1 = Color3.fromRGB(177, 126, 255),
+		card2 = Color3.fromRGB(118, 89, 214),
+		inner1 = Color3.fromRGB(214, 167, 255),
+		inner2 = Color3.fromRGB(148, 106, 233),
+		icon1 = Color3.fromRGB(255, 114, 214),
+		icon2 = Color3.fromRGB(174, 100, 255),
+	}
+)
+
+local coinSpawnCard = createUpgradeCard(
+	coinScroll,
+	"SpawnBoost",
+	"Уменьшает респавн монет на 0.5с.",
+	"-0.5s",
+	ICON_ASSET_IDS.Coin,
+	"S",
+	{
+		card1 = Color3.fromRGB(101, 230, 182),
+		card2 = Color3.fromRGB(66, 171, 130),
+		inner1 = Color3.fromRGB(151, 245, 212),
+		inner2 = Color3.fromRGB(91, 199, 158),
+		icon1 = Color3.fromRGB(94, 226, 255),
+		icon2 = Color3.fromRGB(87, 150, 255),
+	}
+)
+
+local coinWoodBoostCard = createUpgradeCard(
+	coinScroll,
+	"WoodBoost",
+	"Даёт +0.25x к множителю дерева.",
+	"+0.25x",
+	ICON_ASSET_IDS.Tree,
+	"W",
+	{
+		card1 = Color3.fromRGB(120, 202, 123),
+		card2 = Color3.fromRGB(77, 154, 88),
+		inner1 = Color3.fromRGB(162, 231, 164),
+		inner2 = Color3.fromRGB(99, 188, 111),
+		icon1 = Color3.fromRGB(171, 123, 76),
+		icon2 = Color3.fromRGB(116, 79, 52),
+	}
+)
+
+local _, rebirthBoard = createWorldBoard("RebirthBoardSurfaceGui", rebirthDoska, Enum.NormalId.Front, 78)
+createHeader(rebirthBoard, "REBIRTH", "Теперь 4 стадии")
+
+local rebirthPanel = Instance.new("Frame")
+rebirthPanel.Size = UDim2.new(1, 0, 1, -68)
+rebirthPanel.Position = UDim2.new(0, 0, 0, 68)
+rebirthPanel.BackgroundColor3 = Color3.fromRGB(171, 124, 255)
+rebirthPanel.BorderSizePixel = 0
+rebirthPanel.Parent = rebirthBoard
+createCorner(rebirthPanel, 20)
+createGradient(rebirthPanel, Color3.fromRGB(204, 162, 255), Color3.fromRGB(133, 101, 232), 90)
+createStroke(rebirthPanel, Color3.fromRGB(255, 255, 255), 2, 0.12)
+createDecorDots(rebirthPanel, 7)
+
+local rebirthIcon = createIcon(rebirthPanel, ICON_ASSET_IDS.Rebirth, "R", Color3.fromRGB(255, 153, 217), Color3.fromRGB(171, 114, 255))
+rebirthIcon.Position = UDim2.new(0.5, -34, 0, 10)
+
+local rebirthLevelText = Instance.new("TextLabel")
+rebirthLevelText.BackgroundTransparency = 1
+rebirthLevelText.Size = UDim2.new(1, -12, 0, 28)
+rebirthLevelText.Position = UDim2.new(0, 6, 0, 88)
+rebirthLevelText.Text = "Rebirth 0/4"
+rebirthLevelText.TextColor3 = Color3.fromRGB(249, 251, 255)
+rebirthLevelText.Font = Enum.Font.GothamBlack
+rebirthLevelText.TextScaled = true
+rebirthLevelText.Parent = rebirthPanel
+
+local rebirthCurrentText = Instance.new("TextLabel")
+rebirthCurrentText.BackgroundTransparency = 1
+rebirthCurrentText.Size = UDim2.new(1, -16, 0, 24)
+rebirthCurrentText.Position = UDim2.new(0, 8, 0, 120)
+rebirthCurrentText.Text = "Сейчас: x1 | -0.0с"
+rebirthCurrentText.TextColor3 = Color3.fromRGB(255, 240, 146)
+rebirthCurrentText.Font = Enum.Font.GothamBlack
+rebirthCurrentText.TextScaled = true
+rebirthCurrentText.Parent = rebirthPanel
+
+local rebirthNextText = Instance.new("TextLabel")
+rebirthNextText.BackgroundTransparency = 1
+rebirthNextText.Size = UDim2.new(1, -16, 0, 70)
+rebirthNextText.Position = UDim2.new(0, 8, 0, 148)
+rebirthNextText.Text = "Следующее..."
+rebirthNextText.TextColor3 = Color3.fromRGB(245, 249, 255)
+rebirthNextText.Font = Enum.Font.GothamBlack
+rebirthNextText.TextWrapped = true
+rebirthNextText.TextScaled = true
+rebirthNextText.Parent = rebirthPanel
+
+local rebirthUnlockText = Instance.new("TextLabel")
+rebirthUnlockText.BackgroundTransparency = 1
+rebirthUnlockText.Size = UDim2.new(1, -16, 0, 22)
+rebirthUnlockText.Position = UDim2.new(0, 8, 0, 220)
+rebirthUnlockText.Text = "Новая зона: закрыта"
+rebirthUnlockText.TextColor3 = Color3.fromRGB(243, 248, 255)
+rebirthUnlockText.Font = Enum.Font.GothamBold
+rebirthUnlockText.TextScaled = true
+rebirthUnlockText.Parent = rebirthPanel
+
+local rebirthCostPill = Instance.new("Frame")
+rebirthCostPill.Size = UDim2.new(0.72, 0, 0, 30)
+rebirthCostPill.Position = UDim2.new(0.14, 0, 0, 250)
+rebirthCostPill.BackgroundColor3 = Color3.fromRGB(255, 153, 214)
+rebirthCostPill.BorderSizePixel = 0
+rebirthCostPill.Parent = rebirthPanel
+createCorner(rebirthCostPill, 999)
+createGradient(rebirthCostPill, Color3.fromRGB(255, 170, 220), Color3.fromRGB(184, 127, 255), 0)
+
+local rebirthCostText = Instance.new("TextLabel")
+rebirthCostText.Size = UDim2.new(1, 0, 1, 0)
+rebirthCostText.BackgroundTransparency = 1
+rebirthCostText.Text = "Cost: 500 Coins"
+rebirthCostText.TextColor3 = Color3.fromRGB(255, 255, 255)
+rebirthCostText.Font = Enum.Font.GothamBlack
+rebirthCostText.TextScaled = true
+rebirthCostText.Parent = rebirthCostPill
+
+local rebirthButton = Instance.new("TextButton")
+rebirthButton.Size = UDim2.new(1, -20, 0, 40)
+rebirthButton.Position = UDim2.new(0, 10, 1, -52)
+rebirthButton.BackgroundColor3 = Color3.fromRGB(255, 218, 96)
+rebirthButton.TextColor3 = Color3.fromRGB(65, 46, 93)
+rebirthButton.Text = "REBIRTH!"
+rebirthButton.Font = Enum.Font.GothamBlack
+rebirthButton.TextScaled = true
+rebirthButton.Parent = rebirthPanel
+rebirthButton.BorderSizePixel = 0
+createCorner(rebirthButton, 14)
+addScaleHover(rebirthButton)
+
+local _, treeInfoBoard = createWorldBoard("TreeBoardSurfaceGui", treeDoska, Enum.NormalId.Front, 78)
+createHeader(treeInfoBoard, "TREE", "Новая валюта второй зоны")
+
+local treeCurrencyText = Instance.new("TextLabel")
+treeCurrencyText.BackgroundTransparency = 1
+treeCurrencyText.Size = UDim2.new(1, 0, 0, 58)
+treeCurrencyText.Position = UDim2.new(0, 0, 0, 58)
+treeCurrencyText.Text = "0"
+treeCurrencyText.TextColor3 = Color3.fromRGB(187, 255, 174)
+treeCurrencyText.Font = Enum.Font.GothamBlack
+treeCurrencyText.TextScaled = true
+treeCurrencyText.Parent = treeInfoBoard
+
+local treeStats = Instance.new("Frame")
+treeStats.BackgroundTransparency = 1
+treeStats.Size = UDim2.new(1, 0, 1, -122)
+treeStats.Position = UDim2.new(0, 0, 0, 122)
+treeStats.Parent = treeInfoBoard
+
+local treeStatsLayout = Instance.new("UIListLayout")
+treeStatsLayout.Padding = UDim.new(0, 8)
+treeStatsLayout.Parent = treeStats
+
+local treeRewardText = createStatRow(treeStats, "За 1 клик")
+local treeMultiplierText = createStatRow(treeStats, "Множитель дерева")
+local treeCooldownText = createStatRow(treeStats, "КД дерева")
+local treeUnlockStatusText = createStatRow(treeStats, "Статус")
+
+local _, treeUpgradeBoard = createWorldBoard("TreeUpgradeBoardSurfaceGui", treeUpgradeDoska, Enum.NormalId.Front, 78)
+createHeader(treeUpgradeBoard, "TREE UPGRADES", "Прокрутка влево-вправо")
+
+local treeScroll = createHorizontalScroller(treeUpgradeBoard, 66, 12)
+
+local treeGainCard = createUpgradeCard(
+	treeScroll,
+	"WoodGain",
+	"Даёт +1 к дереву за клик.",
+	"+1",
+	ICON_ASSET_IDS.Tree,
+	"T",
+	{
+		card1 = Color3.fromRGB(106, 196, 120),
+		card2 = Color3.fromRGB(67, 151, 80),
+		inner1 = Color3.fromRGB(154, 232, 166),
+		inner2 = Color3.fromRGB(89, 186, 103),
+		icon1 = Color3.fromRGB(150, 106, 68),
+		icon2 = Color3.fromRGB(116, 79, 52),
+	}
+)
+
+local treeMultiCard = createUpgradeCard(
+	treeScroll,
+	"WoodMulti",
+	"Даёт +1x к множителю дерева.",
+	"+1x",
+	ICON_ASSET_IDS.Rebirth,
+	"X",
+	{
+		card1 = Color3.fromRGB(140, 189, 106),
+		card2 = Color3.fromRGB(95, 149, 72),
+		inner1 = Color3.fromRGB(188, 236, 154),
+		inner2 = Color3.fromRGB(118, 182, 89),
+		icon1 = Color3.fromRGB(106, 171, 255),
+		icon2 = Color3.fromRGB(150, 112, 255),
+	}
+)
+
+local treeSpeedCard = createUpgradeCard(
+	treeScroll,
+	"WoodSpeed",
+	"Уменьшает кд клика на 0.25с.",
+	"-0.25s",
+	ICON_ASSET_IDS.Tree,
+	"CD",
+	{
+		card1 = Color3.fromRGB(166, 196, 106),
+		card2 = Color3.fromRGB(124, 151, 66),
+		inner1 = Color3.fromRGB(214, 236, 154),
+		inner2 = Color3.fromRGB(170, 199, 87),
+		icon1 = Color3.fromRGB(171, 123, 76),
+		icon2 = Color3.fromRGB(124, 82, 52),
+	}
+)
+
+local treeCoinBoostCard = createUpgradeCard(
+	treeScroll,
+	"CoinBoost",
+	"Даёт x1.1 к множителю монет.",
+	"x1.1",
+	ICON_ASSET_IDS.Coin,
+	"C",
+	{
+		card1 = Color3.fromRGB(244, 180, 91),
+		card2 = Color3.fromRGB(210, 129, 58),
+		inner1 = Color3.fromRGB(255, 216, 129),
+		inner2 = Color3.fromRGB(237, 166, 87),
+		icon1 = Color3.fromRGB(255, 214, 84),
+		icon2 = Color3.fromRGB(255, 170, 70),
+	}
+)
+
+local _, boostBoard = createWorldBoard("BoostBoardSurfaceGui", boostDoska, Enum.NormalId.Front, 78)
+createHeader(boostBoard, "COIN GOAL BOOST", "Буст дерева от количества монет")
+
+local boostStats = Instance.new("Frame")
+boostStats.BackgroundTransparency = 1
+boostStats.Size = UDim2.new(1, 0, 1, -70)
+boostStats.Position = UDim2.new(0, 0, 0, 70)
+boostStats.Parent = boostBoard
+
+local boostStatsLayout = Instance.new("UIListLayout")
+boostStatsLayout.Padding = UDim.new(0, 8)
+boostStatsLayout.Parent = boostStats
+
+local boostFactorText = createStatRow(boostStats, "Текущий буст")
+local boostGoalsText = createStatRow(boostStats, "Целей взято")
+local boostNextTargetText = createStatRow(boostStats, "Следующая цель")
+local boostCoinText = createStatRow(boostStats, "Сейчас монет")
+
+local _, factoryBoard = createWorldBoard("PaperFactoryBoardSurfaceGui", paperFactoryDoska, Enum.NormalId.Front, 78)
+createHeader(factoryBoard, "PAPER FACTORY", "Производство бумаги")
+
+local factoryStats = Instance.new("Frame")
+factoryStats.BackgroundTransparency = 1
+factoryStats.Size = UDim2.new(1, 0, 0, 154)
+factoryStats.Position = UDim2.new(0, 0, 0, 70)
+factoryStats.Parent = factoryBoard
+
+local factoryStatsLayout = Instance.new("UIListLayout")
+factoryStatsLayout.Padding = UDim.new(0, 8)
+factoryStatsLayout.Parent = factoryStats
+
+local paperText = createStatRow(factoryStats, "Бумага")
+local fuelText = createStatRow(factoryStats, "Топливо")
+local countdownText = createStatRow(factoryStats, "До цикла")
+local factoryStatusText = createStatRow(factoryStats, "Статус")
+
+local factoryButtonsFrame = Instance.new("Frame")
+factoryButtonsFrame.BackgroundTransparency = 1
+factoryButtonsFrame.Size = UDim2.new(1, 0, 0, 42)
+factoryButtonsFrame.Position = UDim2.new(0, 0, 1, -50)
+factoryButtonsFrame.Parent = factoryBoard
+
+local addFuelButton = Instance.new("TextButton")
+addFuelButton.Size = UDim2.new(0.48, 0, 1, 0)
+addFuelButton.BackgroundColor3 = Color3.fromRGB(166, 196, 106)
+addFuelButton.TextColor3 = Color3.fromRGB(35, 46, 23)
+addFuelButton.Text = "+1 FUEL"
+addFuelButton.Font = Enum.Font.GothamBlack
+addFuelButton.TextScaled = true
+addFuelButton.Parent = factoryButtonsFrame
+addFuelButton.BorderSizePixel = 0
+createCorner(addFuelButton, 12)
+addScaleHover(addFuelButton)
+
+local addFuelMaxButton = Instance.new("TextButton")
+addFuelMaxButton.Size = UDim2.new(0.48, 0, 1, 0)
+addFuelMaxButton.Position = UDim2.new(0.52, 0, 0, 0)
+addFuelMaxButton.BackgroundColor3 = Color3.fromRGB(177, 122, 255)
+addFuelMaxButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+addFuelMaxButton.Text = "MAX FUEL"
+addFuelMaxButton.Font = Enum.Font.GothamBlack
+addFuelMaxButton.TextScaled = true
+addFuelMaxButton.Parent = factoryButtonsFrame
+addFuelMaxButton.BorderSizePixel = 0
+createCorner(addFuelMaxButton, 12)
+addScaleHover(addFuelMaxButton)
+
+local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
+local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
+local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
+local factoryLockedOverlay = createLockedOverlay(factoryBoard, "Откроется на 4-м перерождении")
+
+local function getCoinUpgradeMultiplier()
+	return 1 + (coinMultiplierLevel.Value * 0.1)
+end
+
+local function getCoinReward()
+	local baseValue = 1 + coinValueLevel.Value
+	local woodCoinBoostMultiplier = 1.1 ^ woodCoinBoostLevel.Value
+	return roundToTenth(baseValue * getCoinUpgradeMultiplier() * rebirthCoinMultiplierBonus.Value * woodCoinBoostMultiplier)
+end
+
+local function getCoinRespawn()
+	local value = 3 - (coinSpawnLevel.Value * 0.5) - rebirthSpawnSpeedBonus.Value
+	if value < 0.5 then
+		value = 0.5
+	end
+	return roundToTenth(value)
+end
+
+local function computeGoalWoodFactor(coinAmount)
+	local threshold = 10000
+	local goalsReached = 0
+	local factor = 1
+
+	while factor < 10 and coinAmount >= threshold do
+		goalsReached += 1
+		factor = math.min(1 + (goalsReached * 0.1), 10)
+		threshold = math.floor(threshold * 1.25 + 0.5)
+	end
+
+	return factor, goalsReached, threshold
+end
+
+local function getWoodReward()
+	local baseValue = 1 + woodValueLevel.Value
+	local baseMultiplier = 1 + woodMultiplierLevel.Value + (coinWoodBoostLevel.Value * 0.25)
+
+	local goalFactor = 1
+	if fourthSystemsUnlocked.Value then
+		goalFactor = select(1, computeGoalWoodFactor(coins.Value))
+	end
+
+	return roundToTenth(baseValue * baseMultiplier * goalFactor)
+end
+
+local function getWoodCooldown()
+	local value = 3 - (woodSpeedLevel.Value * 0.25)
+	if value < 0.5 then
+		value = 0.5
+	end
+	return roundToTenth(value)
+end
+
+local function showToast(text)
+	local toast = Instance.new("Frame")
+	toast.AnchorPoint = Vector2.new(0.5, 0)
+	toast.Position = UDim2.new(0.5, 0, 0, 0)
+	toast.Size = UDim2.new(0, 0, 0, 52)
+	toast.BackgroundColor3 = Color3.fromRGB(70, 105, 178)
+	toast.BorderSizePixel = 0
+	toast.Parent = toastHolder
+	createCorner(toast, 16)
+	createGradient(toast, Color3.fromRGB(105, 162, 255), Color3.fromRGB(72, 101, 177), 0)
+	createStroke(toast, Color3.fromRGB(255, 255, 255), 2, 0.14)
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -20, 1, 0)
+	label.Position = UDim2.new(0, 10, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = tostring(text)
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.Font = Enum.Font.GothamBlack
+	label.TextSize = 19
+	label.TextScaled = true
+	label.Parent = toast
+
+	TweenService:Create(toast, TweenInfo.new(0.18), {
+		Size = UDim2.new(0, 360, 0, 52)
+	}):Play()
+
+	task.spawn(function()
+		task.wait(1.5)
+		local tweenOut = TweenService:Create(toast, TweenInfo.new(0.22), {
+			Size = UDim2.new(0, 0, 0, 52),
+			BackgroundTransparency = 1
+		})
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
+		toast:Destroy()
+	end)
+end
+
+local function showPickup(iconKey, amount)
+	local holder = Instance.new("Frame")
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.Position = UDim2.new(0.5 + math.random(-12, 12) / 100, 0, 0.72, 0)
+	holder.Size = UDim2.new(0, 150, 0, 60)
+	holder.BackgroundTransparency = 1
+	holder.Parent = pickupLayer
+
+	local iconWrap = Instance.new("Frame")
+	iconWrap.Size = UDim2.new(0, 48, 0, 48)
+	iconWrap.Position = UDim2.new(0, 0, 0.5, -24)
+	iconWrap.BackgroundColor3 = iconKey == "Tree" and Color3.fromRGB(171, 123, 76) or Color3.fromRGB(255, 206, 80)
+	iconWrap.BorderSizePixel = 0
+	iconWrap.Parent = holder
+	createCorner(iconWrap, 999)
+	createGradient(iconWrap, iconWrap.BackgroundColor3, iconKey == "Tree" and Color3.fromRGB(118, 82, 52) or Color3.fromRGB(255, 160, 70), 45)
+	createStroke(iconWrap, Color3.fromRGB(255, 255, 255), 2, 0.14)
+
+	local image = Instance.new("ImageLabel")
+	image.Size = UDim2.new(1, -10, 1, -10)
+	image.Position = UDim2.new(0, 5, 0, 5)
+	image.BackgroundTransparency = 1
+	image.ScaleType = Enum.ScaleType.Fit
+	image.Image = getAssetOrEmpty(ICON_ASSET_IDS[iconKey])
+	image.Parent = iconWrap
+
+	local fallback = Instance.new("TextLabel")
+	fallback.Size = UDim2.new(1, 0, 1, 0)
+	fallback.BackgroundTransparency = 1
+	fallback.Text = iconKey == "Tree" and "T" or iconKey == "Paper" and "P" or "$"
+	fallback.TextColor3 = Color3.fromRGB(255, 255, 255)
+	fallback.Font = Enum.Font.GothamBlack
+	fallback.TextScaled = true
+	fallback.Parent = iconWrap
+
+	if image.Image ~= "" then
+		fallback.Visible = false
+	else
+		image.Visible = false
+	end
+
+	local text = Instance.new("TextLabel")
+	text.BackgroundTransparency = 1
+	text.Position = UDim2.new(0, 58, 0, 7)
+	text.Size = UDim2.new(0, 88, 0, 46)
+	text.Text = "+" .. formatNumber(amount)
+	text.TextColor3 = iconKey == "Tree" and Color3.fromRGB(207, 255, 183) or iconKey == "Paper" and Color3.fromRGB(230, 235, 255) or Color3.fromRGB(255, 239, 126)
+	text.Font = Enum.Font.GothamBlack
+	text.TextScaled = true
+	text.Parent = holder
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.75
+	scale.Parent = holder
+
+	local tweenUp1 = TweenService:Create(holder, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Position = holder.Position - UDim2.new(0, 0, 0.08, 0)
+	})
+
+	local tweenUp2 = TweenService:Create(holder, TweenInfo.new(0.28, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {
+		Position = holder.Position - UDim2.new(0, 0, 0.12, 0)
+	})
+
+	local scaleTween = TweenService:Create(scale, TweenInfo.new(0.2), {
+		Scale = 1.08
+	})
+
+	local fadeText = TweenService:Create(text, TweenInfo.new(0.85), {
+		TextTransparency = 1
+	})
+
+	local fadeIcon = TweenService:Create(iconWrap, TweenInfo.new(0.85), {
+		BackgroundTransparency = 1
+	})
+
+	local moveDown = TweenService:Create(holder, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		Position = holder.Position - UDim2.new(0, 0, 0.04, 0)
+	})
+
+	tweenUp1:Play()
+	scaleTween:Play()
+
+	tweenUp1.Completed:Connect(function()
+		tweenUp2:Play()
+		fadeText:Play()
+		fadeIcon:Play()
+		moveDown:Play()
+	end)
+
+	task.delay(1, function()
+		holder:Destroy()
+	end)
+end
+
+local function setButtonVisual(button, text, canBuy, atMax, activeColor, disabledColor, textColor, locked)
+	if locked then
+		button.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+		button.TextColor3 = Color3.fromRGB(240, 244, 255)
+		button.Text = "LOCKED"
+		button.AutoButtonColor = false
+		return
+	end
+
+	if atMax then
+		button.BackgroundColor3 = Color3.fromRGB(138, 121, 188)
+		button.TextColor3 = Color3.fromRGB(255, 255, 255)
+		button.Text = "MAX"
+		button.AutoButtonColor = false
+		return
+	end
+
+	if canBuy then
+		button.BackgroundColor3 = activeColor
+		button.TextColor3 = textColor
+		button.AutoButtonColor = true
+	else
+		button.BackgroundColor3 = disabledColor
+		button.TextColor3 = Color3.fromRGB(242, 247, 255)
+		button.AutoButtonColor = false
+	end
+
+	button.Text = text
+end
+
+local function updateCard(card, levelValue, costValue, activeValue, maxLevel, currentCurrency, lockedReason)
+	local locked = lockedReason ~= nil
+	local atMax = (not locked) and maxLevel ~= math.huge and levelValue >= maxLevel
+	local canBuy = (not locked) and (not atMax) and costValue > 0 and currentCurrency >= costValue
+
+	if maxLevel == math.huge then
+		card.levelLabel.Text = "Level " .. tostring(levelValue) .. "/∞"
+	else
+		card.levelLabel.Text = "Level " .. tostring(levelValue) .. "/" .. tostring(maxLevel)
+	end
+
+	if locked then
+		card.costLabel.Text = "Cost: LOCKED"
+		card.statusLabel.Text = lockedReason
+	elseif atMax then
+		card.costLabel.Text = "Cost: MAX"
+		card.statusLabel.Text = "Status: MAX"
+	else
+		card.costLabel.Text = "Cost: " .. tostring(costValue)
+		card.statusLabel.Text = activeValue and "Status: Active" or "Status: Inactive"
+	end
+
+	setButtonVisual(card.buyButton, "BUY!", canBuy, atMax, Color3.fromRGB(99, 243, 200), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), locked)
+	setButtonVisual(card.maxButton, "MAX!", canBuy, atMax, Color3.fromRGB(177, 122, 255), Color3.fromRGB(136, 148, 175), Color3.fromRGB(255, 255, 255), locked)
+end
+
+local wallParts = {}
+if rebirthWall:IsA("BasePart") then
+	table.insert(wallParts, rebirthWall)
+end
+for _, obj in ipairs(rebirthWall:GetDescendants()) do
+	if obj:IsA("BasePart") then
+		table.insert(wallParts, obj)
+	end
+end
+
+local function updateWallVisual()
+	for _, part in ipairs(wallParts) do
+		part.LocalTransparencyModifier = secondAreaUnlocked.Value and 0.78 or 0
+	end
+end
+
+local function updateBoards()
+	coinValueLabel.Text = formatNumber(coins.Value)
+	coinRewardLabel.Text = formatNumber(getCoinReward())
+	coinUpgradeMultiplierLabel.Text = "x" .. formatNumber(getCoinUpgradeMultiplier())
+	coinRebirthMultiplierLabel.Text = "x" .. formatNumber(rebirthCoinMultiplierBonus.Value)
+	coinRespawnLabel.Text = formatNumber(getCoinRespawn()) .. "s"
+	rebirthCountLabel.Text = tostring(rebirthCount.Value)
+
+	updateCard(coinGainCard, coinValueLevel.Value, coinValueCost.Value, coinValueActive.Value, math.huge, coins.Value)
+	updateCard(coinMultiCard, coinMultiplierLevel.Value, coinMultiplierCost.Value, coinMultiplierActive.Value, math.huge, coins.Value)
+	updateCard(coinSpawnCard, coinSpawnLevel.Value, coinSpawnCost.Value, coinSpawnActive.Value, MAX_COIN_SPAWN_SPEED_LEVEL, coins.Value)
+	updateCard(
+		coinWoodBoostCard,
+		coinWoodBoostLevel.Value,
+		coinWoodBoostCost.Value,
+		coinWoodBoostActive.Value,
+		10,
+		coins.Value,
+		thirdUpgradeUnlocked.Value and nil or "Откроется на 3-м"
+	)
+
+	rebirthLevelText.Text = "Rebirth " .. tostring(rebirthCount.Value) .. "/" .. tostring(MAX_REBIRTH_COUNT)
+	rebirthCurrentText.Text = "Сейчас: x" .. formatNumber(rebirthCoinMultiplierBonus.Value) .. " | -" .. formatNumber(rebirthSpawnSpeedBonus.Value) .. "с"
+
+	if rebirthCount.Value == 0 then
+		rebirthNextText.Text = "1-е: x2 монеты и -0.1с к спавну"
+	elseif rebirthCount.Value == 1 then
+		rebirthNextText.Text = "2-е: x5 поверх и открытие дерева"
+	elseif rebirthCount.Value == 2 then
+		rebirthNextText.Text = "3-е: x10 монет и новые апгрейды"
+	elseif rebirthCount.Value == 3 then
+		rebirthNextText.Text = "4-е: доска буста и производство бумаги"
+	else
+		rebirthNextText.Text = "Все перерождения куплены"
+	end
+
+	rebirthUnlockText.Text = secondAreaUnlocked.Value and "Новая зона: открыта" or "Новая зона: закрыта"
+
+	local rebirthAtMax = rebirthNextCost.Value <= 0
+	local currencyLabel = rebirthNextCurrency.Value ~= "None" and rebirthNextCurrency.Value or ""
+	local rebirthCanBuy = false
+	if not rebirthAtMax then
+		if currencyLabel == "Coins" then
+			rebirthCanBuy = coins.Value >= rebirthNextCost.Value
+		elseif currencyLabel == "Wood" then
+			rebirthCanBuy = woodCurrency.Value >= rebirthNextCost.Value
+		end
+	end
+
+	if rebirthAtMax then
+		rebirthCostText.Text = "Cost: MAX"
+	else
+		rebirthCostText.Text = "Cost: " .. tostring(rebirthNextCost.Value) .. " " .. currencyLabel
+	end
+
+	setButtonVisual(rebirthButton, "REBIRTH!", rebirthCanBuy, rebirthAtMax, Color3.fromRGB(255, 218, 96), Color3.fromRGB(136, 148, 175), Color3.fromRGB(65, 46, 93))
+
+	treeCurrencyText.Text = formatNumber(woodCurrency.Value)
+	treeRewardText.Text = formatNumber(getWoodReward())
+	treeMultiplierText.Text = "x" .. formatNumber(1 + woodMultiplierLevel.Value + (coinWoodBoostLevel.Value * 0.25))
+	treeCooldownText.Text = formatNumber(getWoodCooldown()) .. "s"
+	treeUnlockStatusText.Text = secondAreaUnlocked.Value and "Открыто" or "Закрыто"
+
+	updateCard(treeGainCard, woodValueLevel.Value, woodValueCost.Value, woodValueActive.Value, math.huge, woodCurrency.Value)
+	updateCard(treeMultiCard, woodMultiplierLevel.Value, woodMultiplierCost.Value, woodMultiplierActive.Value, math.huge, woodCurrency.Value)
+	updateCard(treeSpeedCard, woodSpeedLevel.Value, woodSpeedCost.Value, woodSpeedActive.Value, math.huge, woodCurrency.Value)
+	updateCard(
+		treeCoinBoostCard,
+		woodCoinBoostLevel.Value,
+		woodCoinBoostCost.Value,
+		woodCoinBoostActive.Value,
+		20,
+		woodCurrency.Value,
+		thirdUpgradeUnlocked.Value and nil or "Откроется на 3-м"
+	)
+
+	local goalFactor, goalsReached, nextTarget = computeGoalWoodFactor(coins.Value)
+	boostFactorText.Text = "x" .. formatNumber(goalFactor)
+	boostGoalsText.Text = tostring(goalsReached)
+	boostNextTargetText.Text = goalFactor >= 10 and "MAX" or tostring(nextTarget)
+	boostCoinText.Text = formatNumber(coins.Value)
+
+	paperText.Text = formatNumber(paperValue.Value)
+	fuelText.Text = tostring(fuelValue.Value)
+	countdownText.Text = tostring(factoryCountdown.Value) .. "s"
+	factoryStatusText.Text = factoryRunning.Value and "Работает" or "Нет топлива"
+
+	treeInfoLockedOverlay.Visible = not secondAreaUnlocked.Value
+	treeUpgradeLockedOverlay.Visible = not secondAreaUnlocked.Value
+	boostLockedOverlay.Visible = not fourthSystemsUnlocked.Value
+	factoryLockedOverlay.Visible = not fourthSystemsUnlocked.Value
+
+	updateWallVisual()
+	refreshAdminCurrencyButtons()
+end
+
+selectCoinsButton.MouseButton1Click:Connect(function()
+	selectedAdminCurrency = "Coins"
+	refreshAdminCurrencyButtons()
+end)
+
+selectWoodButton.MouseButton1Click:Connect(function()
+	selectedAdminCurrency = "Wood"
+	refreshAdminCurrencyButtons()
+end)
+
+coinGainCard.buyButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Coin", "CoinValue", "Buy")
+end)
+coinGainCard.maxButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Coin", "CoinValue", "Max")
+end)
+
+coinMultiCard.buyButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Coin", "Multiplier", "Buy")
+end)
+coinMultiCard.maxButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Coin", "Multiplier", "Max")
+end)
+
+coinSpawnCard.buyButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Coin", "SpawnSpeed", "Buy")
+end)
+coinSpawnCard.maxButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Coin", "SpawnSpeed", "Max")
+end)
+
+coinWoodBoostCard.buyButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Coin", "WoodBoost", "Buy")
+end)
+coinWoodBoostCard.maxButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Coin", "WoodBoost", "Max")
+end)
+
+treeGainCard.buyButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Wood", "WoodValue", "Buy")
+end)
+treeGainCard.maxButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Wood", "WoodValue", "Max")
+end)
+
+treeMultiCard.buyButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Wood", "WoodMultiplier", "Buy")
+end)
+treeMultiCard.maxButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Wood", "WoodMultiplier", "Max")
+end)
+
+treeSpeedCard.buyButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Wood", "WoodSpeed", "Buy")
+end)
+treeSpeedCard.maxButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Wood", "WoodSpeed", "Max")
+end)
+
+treeCoinBoostCard.buyButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Wood", "CoinBoost", "Buy")
+end)
+treeCoinBoostCard.maxButton.MouseButton1Click:Connect(function()
+	purchaseUpgradeEvent:FireServer("Wood", "CoinBoost", "Max")
+end)
+
+rebirthButton.MouseButton1Click:Connect(function()
+	purchaseRebirthEvent:FireServer()
+end)
+
+addFuelButton.MouseButton1Click:Connect(function()
+	factoryActionEvent:FireServer("AddFuelOnce")
+end)
+
+addFuelMaxButton.MouseButton1Click:Connect(function()
+	factoryActionEvent:FireServer("AddFuelMax")
+end)
+
+giveCurrencyButton.MouseButton1Click:Connect(function()
+	local amount = tonumber(adminAmountBox.Text)
+	if amount then
+		adminActionEvent:FireServer("GiveCurrency", selectedAdminCurrency, amount)
+	else
+		showToast("Введи число")
+	end
+end)
+
+resetButton.MouseButton1Click:Connect(function()
+	adminActionEvent:FireServer("ResetSelf")
+end)
+
+notifyEvent.OnClientEvent:Connect(function(payload)
+	if typeof(payload) ~= "table" then
+		showToast(tostring(payload))
+		return
+	end
+
+	if payload.kind == "pickup" then
+		showPickup(payload.icon or "Coin", payload.amount or 1)
+	else
+		showToast(payload.text or "Готово")
+	end
+end)
+
+mouse.Button1Down:Connect(function()
+	if UserInputService:GetFocusedTextBox() then
+		return
+	end
+
+	if not secondAreaUnlocked.Value then
+		return
+	end
+
+	if mouse.Target == treeBlock then
+		woodClickEvent:FireServer()
+	end
+end)
+
+local watchedValues = {
+	coins,
+
+	coinValueLevel, coinMultiplierLevel, coinSpawnLevel, coinWoodBoostLevel,
+	coinValueCost, coinMultiplierCost, coinSpawnCost, coinWoodBoostCost,
+	coinValueActive, coinMultiplierActive, coinSpawnActive, coinWoodBoostActive,
+
+	woodCurrency,
+	woodValueLevel, woodMultiplierLevel, woodSpeedLevel, woodCoinBoostLevel,
+	woodValueCost, woodMultiplierCost, woodSpeedCost, woodCoinBoostCost,
+	woodValueActive, woodMultiplierActive, woodSpeedActive, woodCoinBoostActive,
+
+	paperValue, fuelValue, factoryCountdown, factoryRunning,
+
+	rebirthCount, rebirthNextCost, rebirthNextCurrency,
+	rebirthCoinMultiplierBonus, rebirthSpawnSpeedBonus,
+	secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked,
+}
+
+for _, obj in ipairs(watchedValues) do
+	obj:GetPropertyChangedSignal("Value"):Connect(updateBoards)
+end
+
+updateBoards()
