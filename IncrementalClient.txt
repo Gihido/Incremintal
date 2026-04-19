@@ -1099,29 +1099,31 @@ local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроет
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
 local factoryLockedOverlay = createLockedOverlay(factoryBoard, "Откроется на 4-м перерождении")
-local passivePanel
-local passiveHintGui
-local passiveHintEmoji
-local passiveRollButton
-local passiveSlots = {}
-local passiveEquippedText
-local lastPassiveState = {inventory = {}, equippedUid = ""}
+local passiveUi = {
+	panel = nil,
+	hintGui = nil,
+	hintEmoji = nil,
+	rollButton = nil,
+	slots = {},
+	equippedText = nil,
+	lastState = {inventory = {}, equippedUid = ""},
+}
 
 if passiveInventoryBlock then
-	passiveHintGui = Instance.new("BillboardGui")
-	passiveHintGui.Name = "PassiveHintGui"
-	passiveHintGui.Adornee = passiveInventoryBlock
-	passiveHintGui.Size = UDim2.new(0, 260, 0, 140)
-	passiveHintGui.StudsOffset = Vector3.new(0, 4.5, 0)
-	passiveHintGui.AlwaysOnTop = true
-	passiveHintGui.Parent = screenGui
+	passiveUi.hintGui = Instance.new("BillboardGui")
+	passiveUi.hintGui.Name = "PassiveHintGui"
+	passiveUi.hintGui.Adornee = passiveInventoryBlock
+	passiveUi.hintGui.Size = UDim2.new(0, 260, 0, 140)
+	passiveUi.hintGui.StudsOffset = Vector3.new(0, 4.5, 0)
+	passiveUi.hintGui.AlwaysOnTop = true
+	passiveUi.hintGui.Parent = screenGui
 
 	local circle = Instance.new("Frame")
 	circle.Size = UDim2.new(0, 120, 0, 120)
 	circle.Position = UDim2.new(0.5, -60, 0.45, -60)
 	circle.BackgroundColor3 = Color3.fromRGB(104, 150, 237)
 	circle.BorderSizePixel = 0
-	circle.Parent = passiveHintGui
+	circle.Parent = passiveUi.hintGui
 	createCorner(circle, 999)
 	createGradient(circle, Color3.fromRGB(160, 199, 255), Color3.fromRGB(94, 126, 214), 90)
 	createStroke(circle, Color3.fromRGB(255, 255, 255), 2, 0.15)
@@ -1136,53 +1138,53 @@ if passiveInventoryBlock then
 	arrow.TextScaled = true
 	arrow.Parent = circle
 
-	passiveHintEmoji = Instance.new("TextLabel")
-	passiveHintEmoji.BackgroundTransparency = 1
-	passiveHintEmoji.Size = UDim2.new(1, 0, 1, 0)
-	passiveHintEmoji.Text = "😊"
-	passiveHintEmoji.TextScaled = true
-	passiveHintEmoji.Font = Enum.Font.GothamBlack
-	passiveHintEmoji.Parent = circle
+	passiveUi.hintEmoji = Instance.new("TextLabel")
+	passiveUi.hintEmoji.BackgroundTransparency = 1
+	passiveUi.hintEmoji.Size = UDim2.new(1, 0, 1, 0)
+	passiveUi.hintEmoji.Text = "😊"
+	passiveUi.hintEmoji.TextScaled = true
+	passiveUi.hintEmoji.Font = Enum.Font.GothamBlack
+	passiveUi.hintEmoji.Parent = circle
 
-	passivePanel = Instance.new("Frame")
-	passivePanel.Size = UDim2.new(0, 560, 0, 430)
-	passivePanel.AnchorPoint = Vector2.new(0.5, 0.5)
-	passivePanel.Position = UDim2.new(0.5, 0, 0.55, 0)
-	passivePanel.Visible = false
-	passivePanel.BackgroundColor3 = Color3.fromRGB(66, 90, 145)
-	passivePanel.BorderSizePixel = 0
-	passivePanel.Parent = screenGui
-	createCorner(passivePanel, 20)
-	createGradient(passivePanel, Color3.fromRGB(118, 153, 234), Color3.fromRGB(72, 93, 154), 90)
+	passiveUi.panel = Instance.new("Frame")
+	passiveUi.panel.Size = UDim2.new(0, 560, 0, 430)
+	passiveUi.panel.AnchorPoint = Vector2.new(0.5, 0.5)
+	passiveUi.panel.Position = UDim2.new(0.5, 0, 0.55, 0)
+	passiveUi.panel.Visible = false
+	passiveUi.panel.BackgroundColor3 = Color3.fromRGB(66, 90, 145)
+	passiveUi.panel.BorderSizePixel = 0
+	passiveUi.panel.Parent = screenGui
+	createCorner(passiveUi.panel, 20)
+	createGradient(passiveUi.panel, Color3.fromRGB(118, 153, 234), Color3.fromRGB(72, 93, 154), 90)
 
-	createHeader(passivePanel, "PASSIVES", "Ролл, инвентарь, экипировка")
-	passiveRollButton = Instance.new("TextButton")
-	passiveRollButton.Size = UDim2.new(0.5, -12, 0, 40)
-	passiveRollButton.Position = UDim2.new(0, 8, 0, 70)
-	passiveRollButton.BackgroundColor3 = Color3.fromRGB(255, 216, 120)
-	passiveRollButton.Text = "ROLL (50 Paper)"
-	passiveRollButton.TextColor3 = Color3.fromRGB(48, 55, 71)
-	passiveRollButton.Font = Enum.Font.GothamBlack
-	passiveRollButton.TextScaled = true
-	passiveRollButton.Parent = passivePanel
-	createCorner(passiveRollButton, 12)
-	addScaleHover(passiveRollButton)
+	createHeader(passiveUi.panel, "PASSIVES", "Ролл, инвентарь, экипировка")
+	passiveUi.rollButton = Instance.new("TextButton")
+	passiveUi.rollButton.Size = UDim2.new(0.5, -12, 0, 40)
+	passiveUi.rollButton.Position = UDim2.new(0, 8, 0, 70)
+	passiveUi.rollButton.BackgroundColor3 = Color3.fromRGB(255, 216, 120)
+	passiveUi.rollButton.Text = "ROLL (50 Paper)"
+	passiveUi.rollButton.TextColor3 = Color3.fromRGB(48, 55, 71)
+	passiveUi.rollButton.Font = Enum.Font.GothamBlack
+	passiveUi.rollButton.TextScaled = true
+	passiveUi.rollButton.Parent = passiveUi.panel
+	createCorner(passiveUi.rollButton, 12)
+	addScaleHover(passiveUi.rollButton)
 
-	passiveEquippedText = Instance.new("TextLabel")
-	passiveEquippedText.Size = UDim2.new(0.5, -12, 0, 40)
-	passiveEquippedText.Position = UDim2.new(0.5, 4, 0, 70)
-	passiveEquippedText.BackgroundTransparency = 1
-	passiveEquippedText.Text = "Equipped: none"
-	passiveEquippedText.TextColor3 = Color3.fromRGB(245, 250, 255)
-	passiveEquippedText.Font = Enum.Font.GothamBold
-	passiveEquippedText.TextScaled = true
-	passiveEquippedText.Parent = passivePanel
+	passiveUi.equippedText = Instance.new("TextLabel")
+	passiveUi.equippedText.Size = UDim2.new(0.5, -12, 0, 40)
+	passiveUi.equippedText.Position = UDim2.new(0.5, 4, 0, 70)
+	passiveUi.equippedText.BackgroundTransparency = 1
+	passiveUi.equippedText.Text = "Equipped: none"
+	passiveUi.equippedText.TextColor3 = Color3.fromRGB(245, 250, 255)
+	passiveUi.equippedText.Font = Enum.Font.GothamBold
+	passiveUi.equippedText.TextScaled = true
+	passiveUi.equippedText.Parent = passiveUi.panel
 
 	local slots = Instance.new("Frame")
 	slots.Size = UDim2.new(1, -16, 1, -122)
 	slots.Position = UDim2.new(0, 8, 0, 114)
 	slots.BackgroundTransparency = 1
-	slots.Parent = passivePanel
+	slots.Parent = passiveUi.panel
 	local grid = Instance.new("UIGridLayout")
 	grid.CellSize = UDim2.new(0, 102, 0, 58)
 	grid.CellPadding = UDim2.new(0, 8, 0, 8)
@@ -1197,8 +1199,8 @@ if passiveInventoryBlock then
 		slot.BorderSizePixel = 0
 		slot.Parent = slots
 		createCorner(slot, 10)
-		table.insert(passiveSlots, slot)
-	end
+			table.insert(passiveUi.slots, slot)
+		end
 end
 
 local function getCoinUpgradeMultiplier()
@@ -1594,14 +1596,14 @@ local function updateBoards()
 	boostLockedOverlay.Visible = not fourthSystemsUnlocked.Value
 	factoryLockedOverlay.Visible = not fourthSystemsUnlocked.Value
 
-	if passiveHintGui then
-		passiveHintGui.Enabled = fifthSystemsUnlocked.Value
+	if passiveUi.hintGui then
+		passiveUi.hintGui.Enabled = fifthSystemsUnlocked.Value
 	end
-	if passivePanel then
+	if passiveUi.panel then
 		local state = parsePassiveState()
-		lastPassiveState = state
+		passiveUi.lastState = state
 		local equippedName = "none"
-		for index, slot in ipairs(passiveSlots) do
+		for index, slot in ipairs(passiveUi.slots) do
 			local entry = state.inventory[index]
 			if entry and PASSIVE_DEFS[entry.passiveId] then
 				local def = PASSIVE_DEFS[entry.passiveId]
@@ -1616,9 +1618,9 @@ local function updateBoards()
 				slot.BackgroundColor3 = Color3.fromRGB(90, 112, 162)
 			end
 		end
-		passiveEquippedText.Text = "Equipped: " .. equippedName .. " | Slots: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
-		if passiveRollButton then
-			setButtonVisual(passiveRollButton, "ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
+		passiveUi.equippedText.Text = "Equipped: " .. equippedName .. " | Slots: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
+		if passiveUi.rollButton then
+			setButtonVisual(passiveUi.rollButton, "ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
 		end
 	end
 
@@ -1725,29 +1727,29 @@ addFuelMaxButton.MouseButton1Click:Connect(function()
 	factoryActionEvent:FireServer("AddFuelMax")
 end)
 
-if passiveRollButton then
-	passiveRollButton.MouseButton1Click:Connect(function()
+if passiveUi.rollButton then
+	passiveUi.rollButton.MouseButton1Click:Connect(function()
 		passiveActionEvent:FireServer("Roll")
 	end)
-	for _, slot in ipairs(passiveSlots) do
+	for _, slot in ipairs(passiveUi.slots) do
 		slot.MouseButton1Click:Connect(function()
-			if not passivePanel.Visible then
+			if not passiveUi.panel.Visible then
 				return
 			end
-			local index = table.find(passiveSlots, slot)
-			local entry = lastPassiveState.inventory[index]
+			local index = table.find(passiveUi.slots, slot)
+			local entry = passiveUi.lastState.inventory[index]
 			if not entry then
 				return
 			end
-			if lastPassiveState.equippedUid == entry.uid then
+			if passiveUi.lastState.equippedUid == entry.uid then
 				passiveActionEvent:FireServer("Unequip")
 			else
 				passiveActionEvent:FireServer("Equip", entry.uid)
 			end
 		end)
 		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveSlots, slot)
-			local entry = lastPassiveState.inventory[index]
+			local index = table.find(passiveUi.slots, slot)
+			local entry = passiveUi.lastState.inventory[index]
 			if entry then
 				passiveActionEvent:FireServer("Delete", entry.uid)
 			end
@@ -1794,8 +1796,8 @@ mouse.Button1Down:Connect(function()
 	end
 
 	if not secondAreaUnlocked.Value then
-		if passivePanel and (mouse.Target == passiveInventoryBlock or mouse.Target == passiveRollBlock) then
-			passivePanel.Visible = not passivePanel.Visible
+		if passiveUi.panel and (mouse.Target == passiveInventoryBlock or mouse.Target == passiveRollBlock) then
+			passiveUi.panel.Visible = not passiveUi.panel.Visible
 		end
 		return
 	end
@@ -1805,9 +1807,9 @@ mouse.Button1Down:Connect(function()
 		return
 	end
 
-	if passivePanel and (mouse.Target == passiveInventoryBlock or mouse.Target == passiveRollBlock) then
+	if passiveUi.panel and (mouse.Target == passiveInventoryBlock or mouse.Target == passiveRollBlock) then
 		if fifthSystemsUnlocked.Value then
-			passivePanel.Visible = not passivePanel.Visible
+			passiveUi.panel.Visible = not passiveUi.panel.Visible
 		else
 			showToast("Пассивы откроются на 5-м перерождении")
 		end
@@ -1841,18 +1843,18 @@ for _, obj in ipairs(watchedValues) do
 	obj:GetPropertyChangedSignal("Value"):Connect(updateBoards)
 end
 
-if passiveHintEmoji then
+if passiveUi.hintEmoji then
 	RunService.RenderStepped:Connect(function()
 		local t = os.clock()
 		local blink = math.sin(t * 2.7)
 		if blink > 0.95 then
-			passiveHintEmoji.Text = ";)"
+			passiveUi.hintEmoji.Text = ";)"
 		elseif blink < -0.95 then
-			passiveHintEmoji.Text = "-_-"
+			passiveUi.hintEmoji.Text = "-_-"
 		else
-			passiveHintEmoji.Text = "😊"
+			passiveUi.hintEmoji.Text = "😊"
 		end
-		passiveHintEmoji.Rotation = math.sin(t * 1.8) * 8
+		passiveUi.hintEmoji.Rotation = math.sin(t * 1.8) * 8
 	end)
 end
 
