@@ -2,92 +2,129 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 
-local player = Players.LocalPlayer
-local mouse = player:GetMouse()
-local playerGui = player:WaitForChild("PlayerGui")
+player = Players.LocalPlayer
+mouse = player:GetMouse()
+playerGui = player:WaitForChild("PlayerGui")
 
-local data = player:WaitForChild("PlayerData")
-local coins = data:WaitForChild("Coins")
+data = player:WaitForChild("PlayerData")
+coins = data:WaitForChild("Coins")
 
-local coinUpgrades = data:WaitForChild("CoinUpgrades")
-local coinValueLevel = coinUpgrades:WaitForChild("CoinValueLevel")
-local coinMultiplierLevel = coinUpgrades:WaitForChild("MultiplierLevel")
-local coinSpawnLevel = coinUpgrades:WaitForChild("SpawnSpeedLevel")
-local coinWoodBoostLevel = coinUpgrades:WaitForChild("WoodBoostLevel")
+coinUpgrades = data:WaitForChild("CoinUpgrades")
+coinValueLevel = coinUpgrades:WaitForChild("CoinValueLevel")
+coinMultiplierLevel = coinUpgrades:WaitForChild("MultiplierLevel")
+coinSpawnLevel = coinUpgrades:WaitForChild("SpawnSpeedLevel")
+coinWoodBoostLevel = coinUpgrades:WaitForChild("WoodBoostLevel")
 
-local coinValueCost = coinUpgrades:WaitForChild("CoinValueCost")
-local coinMultiplierCost = coinUpgrades:WaitForChild("MultiplierCost")
-local coinSpawnCost = coinUpgrades:WaitForChild("SpawnSpeedCost")
-local coinWoodBoostCost = coinUpgrades:WaitForChild("WoodBoostCost")
+coinValueCost = coinUpgrades:WaitForChild("CoinValueCost")
+coinMultiplierCost = coinUpgrades:WaitForChild("MultiplierCost")
+coinSpawnCost = coinUpgrades:WaitForChild("SpawnSpeedCost")
+coinWoodBoostCost = coinUpgrades:WaitForChild("WoodBoostCost")
 
-local coinValueActive = coinUpgrades:WaitForChild("CoinValueActive")
-local coinMultiplierActive = coinUpgrades:WaitForChild("MultiplierActive")
-local coinSpawnActive = coinUpgrades:WaitForChild("SpawnSpeedActive")
-local coinWoodBoostActive = coinUpgrades:WaitForChild("WoodBoostActive")
+coinValueActive = coinUpgrades:WaitForChild("CoinValueActive")
+coinMultiplierActive = coinUpgrades:WaitForChild("MultiplierActive")
+coinSpawnActive = coinUpgrades:WaitForChild("SpawnSpeedActive")
+coinWoodBoostActive = coinUpgrades:WaitForChild("WoodBoostActive")
 
-local woodFolder = data:WaitForChild("Wood")
-local woodCurrency = woodFolder:WaitForChild("WoodCurrency")
+woodFolder = data:WaitForChild("Wood")
+woodCurrency = woodFolder:WaitForChild("WoodCurrency")
 
-local woodUpgrades = woodFolder:WaitForChild("WoodUpgrades")
-local woodValueLevel = woodUpgrades:WaitForChild("WoodValueLevel")
-local woodMultiplierLevel = woodUpgrades:WaitForChild("WoodMultiplierLevel")
-local woodSpeedLevel = woodUpgrades:WaitForChild("WoodSpeedLevel")
-local woodCoinBoostLevel = woodUpgrades:WaitForChild("CoinBoostLevel")
+woodUpgrades = woodFolder:WaitForChild("WoodUpgrades")
+woodValueLevel = woodUpgrades:WaitForChild("WoodValueLevel")
+woodMultiplierLevel = woodUpgrades:WaitForChild("WoodMultiplierLevel")
+woodSpeedLevel = woodUpgrades:WaitForChild("WoodSpeedLevel")
+woodCoinBoostLevel = woodUpgrades:WaitForChild("CoinBoostLevel")
 
-local woodValueCost = woodUpgrades:WaitForChild("WoodValueCost")
-local woodMultiplierCost = woodUpgrades:WaitForChild("WoodMultiplierCost")
-local woodSpeedCost = woodUpgrades:WaitForChild("WoodSpeedCost")
-local woodCoinBoostCost = woodUpgrades:WaitForChild("CoinBoostCost")
+woodValueCost = woodUpgrades:WaitForChild("WoodValueCost")
+woodMultiplierCost = woodUpgrades:WaitForChild("WoodMultiplierCost")
+woodSpeedCost = woodUpgrades:WaitForChild("WoodSpeedCost")
+woodCoinBoostCost = woodUpgrades:WaitForChild("CoinBoostCost")
 
-local woodValueActive = woodUpgrades:WaitForChild("WoodValueActive")
-local woodMultiplierActive = woodUpgrades:WaitForChild("WoodMultiplierActive")
-local woodSpeedActive = woodUpgrades:WaitForChild("WoodSpeedActive")
-local woodCoinBoostActive = woodUpgrades:WaitForChild("CoinBoostActive")
+woodValueActive = woodUpgrades:WaitForChild("WoodValueActive")
+woodMultiplierActive = woodUpgrades:WaitForChild("WoodMultiplierActive")
+woodSpeedActive = woodUpgrades:WaitForChild("WoodSpeedActive")
+woodCoinBoostActive = woodUpgrades:WaitForChild("CoinBoostActive")
 
-local paperFactory = woodFolder:WaitForChild("PaperFactory")
-local paperValue = paperFactory:WaitForChild("Paper")
-local fuelValue = paperFactory:WaitForChild("Fuel")
-local factoryCountdown = paperFactory:WaitForChild("Countdown")
-local factoryRunning = paperFactory:WaitForChild("IsRunning")
+paperFactory = woodFolder:WaitForChild("PaperFactory")
+paperValue = paperFactory:WaitForChild("Paper")
+fuelValue = paperFactory:WaitForChild("Fuel")
+factoryCountdown = paperFactory:WaitForChild("Countdown")
+factoryRunning = paperFactory:WaitForChild("IsRunning")
+paperUpgrades = woodFolder:WaitForChild("PaperUpgrades")
+paperValueLevel = paperUpgrades:WaitForChild("PaperValueLevel")
+paperMultiplierLevel = paperUpgrades:WaitForChild("PaperMultiplierLevel")
+paperSpeedLevel = paperUpgrades:WaitForChild("PaperSpeedLevel")
+paperValueCost = paperUpgrades:WaitForChild("PaperValueCost")
+paperMultiplierCost = paperUpgrades:WaitForChild("PaperMultiplierCost")
+paperSpeedCost = paperUpgrades:WaitForChild("PaperSpeedCost")
+paperValueActive = paperUpgrades:WaitForChild("PaperValueActive")
+paperMultiplierActive = paperUpgrades:WaitForChild("PaperMultiplierActive")
+paperSpeedActive = paperUpgrades:WaitForChild("PaperSpeedActive")
 
-local rebirthFolder = data:WaitForChild("Rebirth")
-local rebirthCount = rebirthFolder:WaitForChild("Count")
-local rebirthNextCost = rebirthFolder:WaitForChild("NextCost")
-local rebirthNextCurrency = rebirthFolder:WaitForChild("NextCurrency")
-local rebirthCoinMultiplierBonus = rebirthFolder:WaitForChild("CoinMultiplierBonus")
-local rebirthSpawnSpeedBonus = rebirthFolder:WaitForChild("SpawnSpeedBonus")
-local secondAreaUnlocked = rebirthFolder:WaitForChild("SecondAreaUnlocked")
-local thirdUpgradeUnlocked = rebirthFolder:WaitForChild("ThirdUpgradeUnlocked")
-local fourthSystemsUnlocked = rebirthFolder:WaitForChild("FourthSystemsUnlocked")
+rebirthFolder = data:WaitForChild("Rebirth")
+rebirthCount = rebirthFolder:WaitForChild("Count")
+rebirthNextCost = rebirthFolder:WaitForChild("NextCost")
+rebirthNextCurrency = rebirthFolder:WaitForChild("NextCurrency")
+rebirthCoinMultiplierBonus = rebirthFolder:WaitForChild("CoinMultiplierBonus")
+rebirthSpawnSpeedBonus = rebirthFolder:WaitForChild("SpawnSpeedBonus")
+rebirthWoodMultiplierBonus = rebirthFolder:WaitForChild("WoodMultiplierBonus")
+secondAreaUnlocked = rebirthFolder:WaitForChild("SecondAreaUnlocked")
+thirdUpgradeUnlocked = rebirthFolder:WaitForChild("ThirdUpgradeUnlocked")
+fourthSystemsUnlocked = rebirthFolder:WaitForChild("FourthSystemsUnlocked")
+fifthSystemsUnlocked = rebirthFolder:WaitForChild("FifthSystemsUnlocked")
 
-local remotesFolder = ReplicatedStorage:WaitForChild("IncrementalRemotes")
-local purchaseUpgradeEvent = remotesFolder:WaitForChild("PurchaseUpgrade")
-local purchaseRebirthEvent = remotesFolder:WaitForChild("PurchaseRebirth")
-local adminActionEvent = remotesFolder:WaitForChild("AdminAction")
-local notifyEvent = remotesFolder:WaitForChild("Notify")
-local woodClickEvent = remotesFolder:WaitForChild("WoodClick")
-local factoryActionEvent = remotesFolder:WaitForChild("FactoryAction")
+passiveFolder = data:WaitForChild("Passives")
+passiveStateJson = passiveFolder:WaitForChild("StateJson")
 
-local doskaPart = workspace:WaitForChild("DoskaPart")
-local upgradeDoska = workspace:WaitForChild("UpgradeDoska")
-local rebirthDoska = workspace:WaitForChild("RebirthDoska")
-local rebirthWall = workspace:WaitForChild("RebirthWall")
-local treeBlock = workspace:WaitForChild("TreeBlock")
-local treeDoska = workspace:WaitForChild("TreeDoska")
-local treeUpgradeDoska = workspace:WaitForChild("TreeUpgradeDoska")
-local boostDoska = workspace:WaitForChild("BoostDoska")
-local paperFactoryDoska = workspace:WaitForChild("PaperFactoryDoska")
+remotesFolder = ReplicatedStorage:WaitForChild("IncrementalRemotes")
+purchaseUpgradeEvent = remotesFolder:WaitForChild("PurchaseUpgrade")
+purchaseRebirthEvent = remotesFolder:WaitForChild("PurchaseRebirth")
+adminActionEvent = remotesFolder:WaitForChild("AdminAction")
+notifyEvent = remotesFolder:WaitForChild("Notify")
+woodClickEvent = remotesFolder:WaitForChild("WoodClick")
+factoryActionEvent = remotesFolder:WaitForChild("FactoryAction")
+passiveActionEvent = remotesFolder:WaitForChild("PassiveAction")
+
+doskaPart = workspace:WaitForChild("DoskaPart")
+upgradeDoska = workspace:WaitForChild("UpgradeDoska")
+rebirthDoska = workspace:WaitForChild("RebirthDoska")
+rebirthWall = workspace:WaitForChild("RebirthWall")
+treeBlock = workspace:WaitForChild("TreeBlock")
+treeDoska = workspace:WaitForChild("TreeDoska")
+treeUpgradeDoska = workspace:WaitForChild("TreeUpgradeDoska")
+boostDoska = workspace:WaitForChild("BoostDoska")
+paperFactoryDoska = workspace:WaitForChild("PaperFactoryDoska")
+paperUpgradeDoska = workspace:FindFirstChild("PaperUpgradeDoska")
+passiveRollBlock = workspace:FindFirstChild("PassiveRollBlock")
+passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
 
 local ADMIN_NAME = "Doter24_7"
 local MAX_COIN_SPAWN_SPEED_LEVEL = 3
-local MAX_REBIRTH_COUNT = 4
+local MAX_REBIRTH_COUNT = 5
+local PASSIVE_ROLL_COST = 50
+local PASSIVE_INVENTORY_CAPACITY = 15
+local isRovRolling = false
 
 local ICON_ASSET_IDS = {
 	Coin = "rbxassetid://PASTE_COIN_ICON_ID",
 	Rebirth = "rbxassetid://PASTE_REBIRTH_ICON_ID",
 	Tree = "rbxassetid://PASTE_TREE_ICON_ID",
 	Paper = "rbxassetid://PASTE_PAPER_ICON_ID",
+}
+
+local PASSIVE_DEFS = {
+	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
+	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
+	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "15%"},
+	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "12%"},
+	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2, globalMultiplier = 1, speedMultiplier = 1, chance = "7%"},
+	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3, globalMultiplier = 1, speedMultiplier = 1, chance = "6%"},
+	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "4%"},
+	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
+	SwiftLeaf = {name = "Swift Leaf", rarity = "Epic", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
+	MythicCore = {name = "Mythic Core", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
 }
 
 local selectedAdminCurrency = "Coins"
@@ -326,7 +363,7 @@ currencySelector.BackgroundTransparency = 1
 currencySelector.Parent = adminFrame
 
 local selectCoinsButton = Instance.new("TextButton")
-selectCoinsButton.Size = UDim2.new(0.48, 0, 1, 0)
+selectCoinsButton.Size = UDim2.new(0.31, 0, 1, 0)
 selectCoinsButton.BackgroundColor3 = Color3.fromRGB(255, 206, 80)
 selectCoinsButton.TextColor3 = Color3.fromRGB(20, 42, 56)
 selectCoinsButton.Text = "COINS"
@@ -338,8 +375,8 @@ createCorner(selectCoinsButton, 12)
 addScaleHover(selectCoinsButton)
 
 local selectWoodButton = Instance.new("TextButton")
-selectWoodButton.Size = UDim2.new(0.48, 0, 1, 0)
-selectWoodButton.Position = UDim2.new(0.52, 0, 0, 0)
+selectWoodButton.Size = UDim2.new(0.31, 0, 1, 0)
+selectWoodButton.Position = UDim2.new(0.345, 0, 0, 0)
 selectWoodButton.BackgroundColor3 = Color3.fromRGB(130, 160, 120)
 selectWoodButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 selectWoodButton.Text = "WOOD"
@@ -349,6 +386,19 @@ selectWoodButton.Parent = currencySelector
 selectWoodButton.BorderSizePixel = 0
 createCorner(selectWoodButton, 12)
 addScaleHover(selectWoodButton)
+
+local selectPaperButton = Instance.new("TextButton")
+selectPaperButton.Size = UDim2.new(0.31, 0, 1, 0)
+selectPaperButton.Position = UDim2.new(0.69, 0, 0, 0)
+selectPaperButton.BackgroundColor3 = Color3.fromRGB(206, 216, 240)
+selectPaperButton.TextColor3 = Color3.fromRGB(45, 56, 77)
+selectPaperButton.Text = "PAPER"
+selectPaperButton.Font = Enum.Font.GothamBlack
+selectPaperButton.TextSize = 16
+selectPaperButton.Parent = currencySelector
+selectPaperButton.BorderSizePixel = 0
+createCorner(selectPaperButton, 12)
+addScaleHover(selectPaperButton)
 
 local giveCurrencyButton = Instance.new("TextButton")
 giveCurrencyButton.Position = UDim2.new(0, 0, 0, 126)
@@ -382,11 +432,22 @@ local function refreshAdminCurrencyButtons()
 		selectCoinsButton.TextColor3 = Color3.fromRGB(20, 42, 56)
 		selectWoodButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
 		selectWoodButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+		selectPaperButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+		selectPaperButton.TextColor3 = Color3.fromRGB(240, 244, 255)
 	else
 		selectCoinsButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
 		selectCoinsButton.TextColor3 = Color3.fromRGB(240, 244, 255)
-		selectWoodButton.BackgroundColor3 = Color3.fromRGB(130, 160, 120)
-		selectWoodButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		if selectedAdminCurrency == "Wood" then
+			selectWoodButton.BackgroundColor3 = Color3.fromRGB(130, 160, 120)
+			selectWoodButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			selectPaperButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+			selectPaperButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+		else
+			selectWoodButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+			selectWoodButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+			selectPaperButton.BackgroundColor3 = Color3.fromRGB(206, 216, 240)
+			selectPaperButton.TextColor3 = Color3.fromRGB(45, 56, 77)
+		end
 	end
 end
 
@@ -993,6 +1054,23 @@ local paperText = createStatRow(factoryStats, "Бумага")
 local fuelText = createStatRow(factoryStats, "Топливо")
 local countdownText = createStatRow(factoryStats, "До цикла")
 local factoryStatusText = createStatRow(factoryStats, "Статус")
+local paperProductionText = createStatRow(factoryStats, "Производство/цикл")
+
+local productionBarBg = Instance.new("Frame")
+productionBarBg.Size = UDim2.new(1, 0, 0, 16)
+productionBarBg.Position = UDim2.new(0, 0, 0, 162)
+productionBarBg.BackgroundColor3 = Color3.fromRGB(53, 66, 98)
+productionBarBg.BorderSizePixel = 0
+productionBarBg.Parent = factoryBoard
+createCorner(productionBarBg, 999)
+
+local productionBarFill = Instance.new("Frame")
+productionBarFill.Size = UDim2.new(0, 0, 1, 0)
+productionBarFill.BackgroundColor3 = Color3.fromRGB(194, 224, 255)
+productionBarFill.BorderSizePixel = 0
+productionBarFill.Parent = productionBarBg
+createCorner(productionBarFill, 999)
+createGradient(productionBarFill, Color3.fromRGB(164, 216, 255), Color3.fromRGB(224, 239, 255), 0)
 
 local factoryButtonsFrame = Instance.new("Frame")
 factoryButtonsFrame.BackgroundTransparency = 1
@@ -1025,23 +1103,308 @@ addFuelMaxButton.BorderSizePixel = 0
 createCorner(addFuelMaxButton, 12)
 addScaleHover(addFuelMaxButton)
 
+local function createPaperUpgradeUi()
+	if not paperUpgradeDoska then
+		return nil, nil
+	end
+
+	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
+	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
+	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
+
+	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
+		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
+	})
+	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
+		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
+	})
+	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
+		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
+	})
+
+	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
+	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
+	return cards, lockedOverlay
+end
+
+local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
+
 local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
 local factoryLockedOverlay = createLockedOverlay(factoryBoard, "Откроется на 4-м перерождении")
+local function createPassiveUi()
+	local ui = {
+		indexPanel = nil,
+		inventoryPanel = nil,
+		hintGui = nil,
+		hintEmoji = nil,
+		rollButton = nil,
+		rollButtonInventory = nil,
+		slots = {},
+		indexButtons = {},
+		indexDetail = nil,
+		rollFxLayer = nil,
+		equippedText = nil,
+		lastState = {inventory = {}, equippedUid = ""},
+	}
+
+	if not passiveInventoryBlock then
+		return ui
+	end
+
+	ui.hintGui = Instance.new("BillboardGui")
+	ui.hintGui.Name = "PassiveHintGui"
+	ui.hintGui.Adornee = passiveInventoryBlock
+	ui.hintGui.Size = UDim2.new(0, 260, 0, 140)
+	ui.hintGui.StudsOffset = Vector3.new(0, 4.5, 0)
+	ui.hintGui.AlwaysOnTop = true
+	ui.hintGui.MaxDistance = 80
+	ui.hintGui.Parent = screenGui
+
+	local circle = Instance.new("Frame")
+	circle.Size = UDim2.new(0, 120, 0, 120)
+	circle.Position = UDim2.new(0.5, -60, 0.45, -60)
+	circle.BackgroundColor3 = Color3.fromRGB(104, 150, 237)
+	circle.BorderSizePixel = 0
+	circle.Parent = ui.hintGui
+	createCorner(circle, 999)
+	createGradient(circle, Color3.fromRGB(160, 199, 255), Color3.fromRGB(94, 126, 214), 90)
+	createStroke(circle, Color3.fromRGB(255, 255, 255), 2, 0.15)
+
+	local arrow = Instance.new("TextLabel")
+	arrow.BackgroundTransparency = 1
+	arrow.Size = UDim2.new(1, 0, 0, 28)
+	arrow.Position = UDim2.new(0, 0, 0, -22)
+	arrow.Text = "▼ ПАССИВЫ ТУТ ▼"
+	arrow.TextColor3 = Color3.fromRGB(246, 250, 255)
+	arrow.Font = Enum.Font.GothamBlack
+	arrow.TextScaled = true
+	arrow.Parent = circle
+
+	ui.hintEmoji = Instance.new("TextLabel")
+	ui.hintEmoji.BackgroundTransparency = 1
+	ui.hintEmoji.Size = UDim2.new(1, 0, 1, 0)
+	ui.hintEmoji.Text = "😊"
+	ui.hintEmoji.TextScaled = false
+	ui.hintEmoji.TextSize = 64
+	ui.hintEmoji.Font = Enum.Font.GothamBlack
+	ui.hintEmoji.Parent = circle
+
+	ui.rollFxLayer = Instance.new("Frame")
+	ui.rollFxLayer.Size = UDim2.new(1, 0, 1, 0)
+	ui.rollFxLayer.BackgroundTransparency = 1
+	ui.rollFxLayer.Visible = false
+	ui.rollFxLayer.ZIndex = 90
+	ui.rollFxLayer.Parent = screenGui
+
+	ui.indexPanel = Instance.new("Frame")
+	ui.indexPanel.Size = UDim2.new(0, 640, 0, 460)
+	ui.indexPanel.AnchorPoint = Vector2.new(0.5, 0.5)
+	ui.indexPanel.Position = UDim2.new(0.5, 0, 0.55, 0)
+	ui.indexPanel.Visible = false
+	ui.indexPanel.BackgroundColor3 = Color3.fromRGB(66, 90, 145)
+	ui.indexPanel.BorderSizePixel = 0
+	ui.indexPanel.Parent = screenGui
+	createCorner(ui.indexPanel, 20)
+	createGradient(ui.indexPanel, Color3.fromRGB(118, 153, 234), Color3.fromRGB(72, 93, 154), 90)
+
+	createHeader(ui.indexPanel, "PASSIVE INDEX", "Нажми на пассив и смотри статы")
+	ui.rollButton = Instance.new("TextButton")
+	ui.rollButton.Size = UDim2.new(0.5, -12, 0, 40)
+	ui.rollButton.Position = UDim2.new(0, 8, 0, 70)
+	ui.rollButton.BackgroundColor3 = Color3.fromRGB(255, 216, 120)
+	ui.rollButton.Text = "ROV / ROLL (50 Paper)"
+	ui.rollButton.TextColor3 = Color3.fromRGB(48, 55, 71)
+	ui.rollButton.Font = Enum.Font.GothamBlack
+	ui.rollButton.TextScaled = true
+	ui.rollButton.Parent = ui.indexPanel
+	createCorner(ui.rollButton, 12)
+	addScaleHover(ui.rollButton)
+
+	local openInvButton = Instance.new("TextButton")
+	openInvButton.Size = UDim2.new(0.5, -12, 0, 40)
+	openInvButton.Position = UDim2.new(0.5, 4, 0, 70)
+	openInvButton.BackgroundColor3 = Color3.fromRGB(166, 196, 106)
+	openInvButton.TextColor3 = Color3.fromRGB(35, 46, 23)
+	openInvButton.Text = "ОТКРЫТЬ ИНВЕНТАРЬ"
+	openInvButton.Font = Enum.Font.GothamBlack
+	openInvButton.TextScaled = true
+	openInvButton.Parent = ui.indexPanel
+	createCorner(openInvButton, 12)
+	addScaleHover(openInvButton)
+
+	local indexList = Instance.new("Frame")
+	indexList.Size = UDim2.new(1, -16, 1, -122)
+	indexList.Position = UDim2.new(0, 8, 0, 114)
+	indexList.BackgroundTransparency = 1
+	indexList.Parent = ui.indexPanel
+	local grid = Instance.new("UIGridLayout")
+	grid.CellSize = UDim2.new(0, 102, 0, 58)
+	grid.CellPadding = UDim2.new(0, 8, 0, 8)
+	grid.Parent = indexList
+
+	for passiveId, passiveDef in pairs(PASSIVE_DEFS) do
+		local b = Instance.new("TextButton")
+		b.Text = passiveDef.name
+		b.BackgroundColor3 = Color3.fromRGB(98, 120, 173)
+		b.TextColor3 = Color3.fromRGB(245, 250, 255)
+		b.TextScaled = true
+		b.Font = Enum.Font.GothamBold
+		b.BorderSizePixel = 0
+		b.Parent = indexList
+		createCorner(b, 10)
+		ui.indexButtons[b] = passiveId
+	end
+
+	ui.indexDetail = Instance.new("Frame")
+	ui.indexDetail.Size = UDim2.new(0, 360, 0, 260)
+	ui.indexDetail.AnchorPoint = Vector2.new(0.5, 0.5)
+	ui.indexDetail.Position = UDim2.new(0.5, 0, 0.5, 0)
+	ui.indexDetail.BackgroundColor3 = Color3.fromRGB(52, 70, 118)
+	ui.indexDetail.BorderSizePixel = 0
+	ui.indexDetail.Visible = false
+	ui.indexDetail.Parent = ui.indexPanel
+	createCorner(ui.indexDetail, 16)
+	createStroke(ui.indexDetail, Color3.fromRGB(255, 255, 255), 2, 0.14)
+	ui.indexDetail.Name = "Detail"
+	local detailText = Instance.new("TextLabel")
+	detailText.Name = "Text"
+	detailText.Size = UDim2.new(1, -16, 1, -56)
+	detailText.Position = UDim2.new(0, 8, 0, 8)
+	detailText.BackgroundTransparency = 1
+	detailText.TextWrapped = true
+	detailText.TextScaled = true
+	detailText.Font = Enum.Font.GothamBold
+	detailText.TextColor3 = Color3.fromRGB(245, 250, 255)
+	detailText.Parent = ui.indexDetail
+	local closeDetail = Instance.new("TextButton")
+	closeDetail.Size = UDim2.new(1, -16, 0, 36)
+	closeDetail.Position = UDim2.new(0, 8, 1, -44)
+	closeDetail.Text = "X"
+	closeDetail.BackgroundColor3 = Color3.fromRGB(255, 121, 121)
+	closeDetail.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeDetail.Font = Enum.Font.GothamBlack
+	closeDetail.TextScaled = true
+	closeDetail.Parent = ui.indexDetail
+	createCorner(closeDetail, 10)
+
+	ui.inventoryPanel = Instance.new("Frame")
+	ui.inventoryPanel.Size = UDim2.new(0, 600, 0, 430)
+	ui.inventoryPanel.AnchorPoint = Vector2.new(0.5, 0.5)
+	ui.inventoryPanel.Position = UDim2.new(0.5, 0, 0.55, 0)
+	ui.inventoryPanel.Visible = false
+	ui.inventoryPanel.BackgroundColor3 = Color3.fromRGB(66, 90, 145)
+	ui.inventoryPanel.BorderSizePixel = 0
+	ui.inventoryPanel.Parent = screenGui
+	createCorner(ui.inventoryPanel, 20)
+	createGradient(ui.inventoryPanel, Color3.fromRGB(118, 153, 234), Color3.fromRGB(72, 93, 154), 90)
+	createHeader(ui.inventoryPanel, "PASSIVE INVENTORY", "ЛКМ экипировка, ПКМ удаление")
+
+	ui.rollButtonInventory = Instance.new("TextButton")
+	ui.rollButtonInventory.Size = UDim2.new(0.5, -12, 0, 40)
+	ui.rollButtonInventory.Position = UDim2.new(0, 8, 0, 70)
+	ui.rollButtonInventory.BackgroundColor3 = Color3.fromRGB(255, 216, 120)
+	ui.rollButtonInventory.Text = "ROV / ROLL (50 Paper)"
+	ui.rollButtonInventory.TextColor3 = Color3.fromRGB(48, 55, 71)
+	ui.rollButtonInventory.Font = Enum.Font.GothamBlack
+	ui.rollButtonInventory.TextScaled = true
+	ui.rollButtonInventory.Parent = ui.inventoryPanel
+	createCorner(ui.rollButtonInventory, 12)
+	addScaleHover(ui.rollButtonInventory)
+
+	ui.equippedText = Instance.new("TextLabel")
+	ui.equippedText.Size = UDim2.new(0.5, -12, 0, 40)
+	ui.equippedText.Position = UDim2.new(0.5, 4, 0, 70)
+	ui.equippedText.BackgroundTransparency = 1
+	ui.equippedText.Text = "Equipped: none"
+	ui.equippedText.TextColor3 = Color3.fromRGB(245, 250, 255)
+	ui.equippedText.Font = Enum.Font.GothamBold
+	ui.equippedText.TextScaled = true
+	ui.equippedText.Parent = ui.inventoryPanel
+
+	local slots = Instance.new("Frame")
+	slots.Size = UDim2.new(1, -16, 1, -122)
+	slots.Position = UDim2.new(0, 8, 0, 114)
+	slots.BackgroundTransparency = 1
+	slots.Parent = ui.inventoryPanel
+	local slotsGrid = Instance.new("UIGridLayout")
+	slotsGrid.CellSize = UDim2.new(0, 102, 0, 58)
+	slotsGrid.CellPadding = UDim2.new(0, 8, 0, 8)
+	slotsGrid.Parent = slots
+	for _ = 1, PASSIVE_INVENTORY_CAPACITY do
+		local slot = Instance.new("TextButton")
+		slot.Text = "Пусто"
+		slot.BackgroundColor3 = Color3.fromRGB(90, 112, 162)
+		slot.TextColor3 = Color3.fromRGB(245, 250, 255)
+		slot.TextScaled = true
+		slot.Font = Enum.Font.GothamBold
+		slot.BorderSizePixel = 0
+		slot.Parent = slots
+		createCorner(slot, 10)
+		table.insert(ui.slots, slot)
+	end
+
+	local backToIndex = Instance.new("TextButton")
+	backToIndex.Size = UDim2.new(0, 140, 0, 34)
+	backToIndex.Position = UDim2.new(1, -148, 0, 8)
+	backToIndex.Text = "INDEX"
+	backToIndex.BackgroundColor3 = Color3.fromRGB(177, 122, 255)
+	backToIndex.TextColor3 = Color3.fromRGB(255, 255, 255)
+	backToIndex.Font = Enum.Font.GothamBlack
+	backToIndex.TextScaled = true
+	backToIndex.Parent = ui.inventoryPanel
+	createCorner(backToIndex, 10)
+
+	openInvButton.MouseButton1Click:Connect(function()
+		ui.indexPanel.Visible = false
+		ui.inventoryPanel.Visible = true
+	end)
+	backToIndex.MouseButton1Click:Connect(function()
+		ui.inventoryPanel.Visible = false
+		ui.indexPanel.Visible = true
+	end)
+	closeDetail.MouseButton1Click:Connect(function()
+		ui.indexDetail.Visible = false
+	end)
+	for button, passiveId in pairs(ui.indexButtons) do
+		button.MouseButton1Click:Connect(function()
+			local def = PASSIVE_DEFS[passiveId]
+			if not def then
+				return
+			end
+			detailText.Text = def.name .. "\nRarity: " .. def.rarity .. "\nChance: " .. tostring(def.chance or "?")
+				.. "\nCoin x" .. tostring(def.coinMultiplier or 1)
+				.. "\nWood x" .. tostring(def.woodMultiplier or 1)
+				.. "\nGlobal x" .. tostring(def.globalMultiplier or 1)
+				.. "\nSpeed x" .. tostring(def.speedMultiplier or 1)
+			ui.indexDetail.Visible = true
+		end)
+	end
+
+	return ui
+end
+
+local passiveUi = createPassiveUi()
 
 local function getCoinUpgradeMultiplier()
 	return 1 + (coinMultiplierLevel.Value * 0.1)
 end
 
 local function getCoinReward()
+	local passive = getEquippedPassiveDef()
+	local passiveCoin = passive and (passive.coinMultiplier or 1) or 1
+	local passiveGlobal = passive and (passive.globalMultiplier or 1) or 1
 	local baseValue = 1 + coinValueLevel.Value
 	local woodCoinBoostMultiplier = 1.1 ^ woodCoinBoostLevel.Value
-	return roundToTenth(baseValue * getCoinUpgradeMultiplier() * rebirthCoinMultiplierBonus.Value * woodCoinBoostMultiplier)
+	return roundToTenth(baseValue * getCoinUpgradeMultiplier() * rebirthCoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobal)
 end
 
 local function getCoinRespawn()
+	local passive = getEquippedPassiveDef()
+	local passiveSpeed = passive and (passive.speedMultiplier or 1) or 1
 	local value = 3 - (coinSpawnLevel.Value * 0.5) - rebirthSpawnSpeedBonus.Value
+	value /= math.max(1, passiveSpeed)
 	if value < 0.5 then
 		value = 0.5
 	end
@@ -1063,6 +1426,9 @@ local function computeGoalWoodFactor(coinAmount)
 end
 
 local function getWoodReward()
+	local passive = getEquippedPassiveDef()
+	local passiveWood = passive and (passive.woodMultiplier or 1) or 1
+	local passiveGlobal = passive and (passive.globalMultiplier or 1) or 1
 	local baseValue = 1 + woodValueLevel.Value
 	local baseMultiplier = 1 + woodMultiplierLevel.Value + (coinWoodBoostLevel.Value * 0.25)
 
@@ -1071,15 +1437,17 @@ local function getWoodReward()
 		goalFactor = select(1, computeGoalWoodFactor(coins.Value))
 	end
 
-	return roundToTenth(baseValue * baseMultiplier * goalFactor)
+	return roundToTenth(baseValue * baseMultiplier * goalFactor * rebirthWoodMultiplierBonus.Value * passiveWood * passiveGlobal)
 end
 
 local function getWoodCooldown()
+	local passive = getEquippedPassiveDef()
+	local passiveSpeed = passive and (passive.speedMultiplier or 1) or 1
 	local value = 3 - (woodSpeedLevel.Value * 0.25)
 	if value < 0.5 then
 		value = 0.5
 	end
-	return roundToTenth(value)
+	return roundToTenth(value / math.max(1, passiveSpeed))
 end
 
 local function showToast(text)
@@ -1125,91 +1493,34 @@ local function showPickup(iconKey, amount)
 	local holder = Instance.new("Frame")
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
 	holder.Position = UDim2.new(0.5 + math.random(-12, 12) / 100, 0, 0.72, 0)
-	holder.Size = UDim2.new(0, 150, 0, 60)
+	holder.Size = UDim2.new(0, 170, 0, 64)
 	holder.BackgroundTransparency = 1
 	holder.Parent = pickupLayer
 
-	local iconWrap = Instance.new("Frame")
-	iconWrap.Size = UDim2.new(0, 48, 0, 48)
-	iconWrap.Position = UDim2.new(0, 0, 0.5, -24)
-	iconWrap.BackgroundColor3 = iconKey == "Tree" and Color3.fromRGB(171, 123, 76) or Color3.fromRGB(255, 206, 80)
-	iconWrap.BorderSizePixel = 0
-	iconWrap.Parent = holder
-	createCorner(iconWrap, 999)
-	createGradient(iconWrap, iconWrap.BackgroundColor3, iconKey == "Tree" and Color3.fromRGB(118, 82, 52) or Color3.fromRGB(255, 160, 70), 45)
-	createStroke(iconWrap, Color3.fromRGB(255, 255, 255), 2, 0.14)
-
-	local image = Instance.new("ImageLabel")
-	image.Size = UDim2.new(1, -10, 1, -10)
-	image.Position = UDim2.new(0, 5, 0, 5)
-	image.BackgroundTransparency = 1
-	image.ScaleType = Enum.ScaleType.Fit
-	image.Image = getAssetOrEmpty(ICON_ASSET_IDS[iconKey])
-	image.Parent = iconWrap
-
-	local fallback = Instance.new("TextLabel")
-	fallback.Size = UDim2.new(1, 0, 1, 0)
-	fallback.BackgroundTransparency = 1
-	fallback.Text = iconKey == "Tree" and "T" or iconKey == "Paper" and "P" or "$"
-	fallback.TextColor3 = Color3.fromRGB(255, 255, 255)
-	fallback.Font = Enum.Font.GothamBlack
-	fallback.TextScaled = true
-	fallback.Parent = iconWrap
-
-	if image.Image ~= "" then
-		fallback.Visible = false
-	else
-		image.Visible = false
-	end
+	local icon = Instance.new("ImageLabel")
+	icon.Size = UDim2.new(0, 48, 0, 48)
+	icon.Position = UDim2.new(0, 0, 0.5, -24)
+	icon.BackgroundTransparency = 1
+	icon.ScaleType = Enum.ScaleType.Fit
+	icon.Image = getAssetOrEmpty(ICON_ASSET_IDS[iconKey]) ~= "" and getAssetOrEmpty(ICON_ASSET_IDS[iconKey]) or getAssetOrEmpty(ICON_ASSET_IDS.Coin)
+	icon.Parent = holder
 
 	local text = Instance.new("TextLabel")
 	text.BackgroundTransparency = 1
-	text.Position = UDim2.new(0, 58, 0, 7)
-	text.Size = UDim2.new(0, 88, 0, 46)
+	text.Position = UDim2.new(0, 56, 0, 7)
+	text.Size = UDim2.new(0, 114, 0, 50)
 	text.Text = "+" .. formatNumber(amount)
 	text.TextColor3 = iconKey == "Tree" and Color3.fromRGB(207, 255, 183) or iconKey == "Paper" and Color3.fromRGB(230, 235, 255) or Color3.fromRGB(255, 239, 126)
 	text.Font = Enum.Font.GothamBlack
 	text.TextScaled = true
 	text.Parent = holder
 
-	local scale = Instance.new("UIScale")
-	scale.Scale = 0.75
-	scale.Parent = holder
-
-	local tweenUp1 = TweenService:Create(holder, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Position = holder.Position - UDim2.new(0, 0, 0.08, 0)
+	local move = TweenService:Create(holder, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Position = holder.Position - UDim2.new(0, 0, 0.1, 0)
 	})
-
-	local tweenUp2 = TweenService:Create(holder, TweenInfo.new(0.28, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {
-		Position = holder.Position - UDim2.new(0, 0, 0.12, 0)
-	})
-
-	local scaleTween = TweenService:Create(scale, TweenInfo.new(0.2), {
-		Scale = 1.08
-	})
-
-	local fadeText = TweenService:Create(text, TweenInfo.new(0.85), {
-		TextTransparency = 1
-	})
-
-	local fadeIcon = TweenService:Create(iconWrap, TweenInfo.new(0.85), {
-		BackgroundTransparency = 1
-	})
-
-	local moveDown = TweenService:Create(holder, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Position = holder.Position - UDim2.new(0, 0, 0.04, 0)
-	})
-
-	tweenUp1:Play()
-	scaleTween:Play()
-
-	tweenUp1.Completed:Connect(function()
-		tweenUp2:Play()
-		fadeText:Play()
-		fadeIcon:Play()
-		moveDown:Play()
-	end)
-
+	local fade = TweenService:Create(text, TweenInfo.new(0.9), {TextTransparency = 1})
+	move:Play()
+	fade:Play()
 	task.delay(1, function()
 		holder:Destroy()
 	end)
@@ -1245,6 +1556,44 @@ local function setButtonVisual(button, text, canBuy, atMax, activeColor, disable
 	button.Text = text
 end
 
+local function playRovAnimation(resultText)
+	if not passiveUi.rollFxLayer then
+		return
+	end
+	for _, c in ipairs(passiveUi.rollFxLayer:GetChildren()) do
+		c:Destroy()
+	end
+	passiveUi.rollFxLayer.Visible = true
+	for _ = 1, 160 do
+		local coin = Instance.new("ImageLabel")
+		coin.BackgroundTransparency = 1
+		coin.Size = UDim2.new(0, math.random(16, 32), 0, math.random(16, 32))
+		coin.Position = UDim2.new(math.random(), -10, -0.3 - math.random() * 0.6, 0)
+		coin.Image = getAssetOrEmpty(ICON_ASSET_IDS.Coin)
+		coin.ZIndex = 95
+		coin.Parent = passiveUi.rollFxLayer
+		TweenService:Create(coin, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = UDim2.new(coin.Position.X.Scale, 0, 0.9 + math.random() * 0.2, 0),
+		}):Play()
+	end
+	local result = Instance.new("TextLabel")
+	result.Size = UDim2.new(0.7, 0, 0, 90)
+	result.Position = UDim2.new(0.15, 0, 0.42, 0)
+	result.BackgroundTransparency = 1
+	result.Text = resultText
+	result.TextColor3 = Color3.fromRGB(255, 248, 176)
+	result.Font = Enum.Font.GothamBlack
+	result.TextScaled = true
+	result.ZIndex = 100
+	result.Parent = passiveUi.rollFxLayer
+	result.TextTransparency = 1
+	TweenService:Create(result, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
+	task.delay(5.1, function()
+		passiveUi.rollFxLayer.Visible = false
+		isRovRolling = false
+	end)
+end
+
 local function updateCard(card, levelValue, costValue, activeValue, maxLevel, currentCurrency, lockedReason)
 	local locked = lockedReason ~= nil
 	local atMax = (not locked) and maxLevel ~= math.huge and levelValue >= maxLevel
@@ -1269,6 +1618,40 @@ local function updateCard(card, levelValue, costValue, activeValue, maxLevel, cu
 
 	setButtonVisual(card.buyButton, "BUY!", canBuy, atMax, Color3.fromRGB(99, 243, 200), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), locked)
 	setButtonVisual(card.maxButton, "MAX!", canBuy, atMax, Color3.fromRGB(177, 122, 255), Color3.fromRGB(136, 148, 175), Color3.fromRGB(255, 255, 255), locked)
+end
+
+local function getPaperCycleTime()
+	local value = 10 - (paperSpeedLevel.Value * 0.5)
+	if value < 5 then
+		value = 5
+	end
+	return roundToTenth(value)
+end
+
+local function getPaperProductionAmount()
+	local baseValue = 1 + paperValueLevel.Value
+	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
+	return roundToTenth(baseValue * multiplier)
+end
+
+local function parsePassiveState()
+	local ok, decoded = pcall(function()
+		return HttpService:JSONDecode(passiveStateJson.Value)
+	end)
+	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
+		return decoded
+	end
+	return {inventory = {}, equippedUid = ""}
+end
+
+local function getEquippedPassiveDef()
+	local state = parsePassiveState()
+	for _, entry in ipairs(state.inventory) do
+		if entry.uid == state.equippedUid then
+			return PASSIVE_DEFS[entry.passiveId]
+		end
+	end
+	return nil
 end
 
 local wallParts = {}
@@ -1305,7 +1688,7 @@ local function updateBoards()
 		coinWoodBoostActive.Value,
 		10,
 		coins.Value,
-		thirdUpgradeUnlocked.Value and nil or "Откроется на 3-м"
+		rebirthCount.Value >= 3 and nil or "Откроется на 3-м"
 	)
 
 	rebirthLevelText.Text = "Rebirth " .. tostring(rebirthCount.Value) .. "/" .. tostring(MAX_REBIRTH_COUNT)
@@ -1318,7 +1701,9 @@ local function updateBoards()
 	elseif rebirthCount.Value == 2 then
 		rebirthNextText.Text = "3-е: x10 монет и новые апгрейды"
 	elseif rebirthCount.Value == 3 then
-		rebirthNextText.Text = "4-е: доска буста и производство бумаги"
+		rebirthNextText.Text = "4-е: x2 дерево, буст-доска, бумага"
+	elseif rebirthCount.Value == 4 then
+		rebirthNextText.Text = "5-е: пассивы и инвентарь (50 бумаги)"
 	else
 		rebirthNextText.Text = "Все перерождения куплены"
 	end
@@ -1333,6 +1718,8 @@ local function updateBoards()
 			rebirthCanBuy = coins.Value >= rebirthNextCost.Value
 		elseif currencyLabel == "Wood" then
 			rebirthCanBuy = woodCurrency.Value >= rebirthNextCost.Value
+		elseif currencyLabel == "Paper" then
+			rebirthCanBuy = paperValue.Value >= rebirthNextCost.Value
 		end
 	end
 
@@ -1360,7 +1747,7 @@ local function updateBoards()
 		woodCoinBoostActive.Value,
 		20,
 		woodCurrency.Value,
-		thirdUpgradeUnlocked.Value and nil or "Откроется на 3-м"
+		rebirthCount.Value >= 3 and nil or "Откроется на 3-м"
 	)
 
 	local goalFactor, goalsReached, nextTarget = computeGoalWoodFactor(coins.Value)
@@ -1373,14 +1760,79 @@ local function updateBoards()
 	fuelText.Text = tostring(fuelValue.Value)
 	countdownText.Text = tostring(factoryCountdown.Value) .. "s"
 	factoryStatusText.Text = factoryRunning.Value and "Работает" or "Нет топлива"
+	paperProductionText.Text = "x" .. formatNumber(getPaperProductionAmount())
+	local cycleTime = getPaperCycleTime()
+	local progress = 0
+	if factoryRunning.Value and cycleTime > 0 then
+		progress = math.clamp(1 - (factoryCountdown.Value / cycleTime), 0, 1)
+	end
+	TweenService:Create(productionBarFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
+
+	if paperUpgradeCards then
+		updateCard(paperUpgradeCards.gain, paperValueLevel.Value, paperValueCost.Value, paperValueActive.Value, math.huge, paperValue.Value)
+		updateCard(paperUpgradeCards.multi, paperMultiplierLevel.Value, paperMultiplierCost.Value, paperMultiplierActive.Value, math.huge, paperValue.Value)
+		updateCard(paperUpgradeCards.speed, paperSpeedLevel.Value, paperSpeedCost.Value, paperSpeedActive.Value, 10, paperValue.Value)
+		if paperUpgradeLockedOverlay then
+			paperUpgradeLockedOverlay.Visible = not fourthSystemsUnlocked.Value
+		end
+	end
 
 	treeInfoLockedOverlay.Visible = not secondAreaUnlocked.Value
 	treeUpgradeLockedOverlay.Visible = not secondAreaUnlocked.Value
 	boostLockedOverlay.Visible = not fourthSystemsUnlocked.Value
 	factoryLockedOverlay.Visible = not fourthSystemsUnlocked.Value
 
+	if passiveUi.hintGui then
+		passiveUi.hintGui.Enabled = fifthSystemsUnlocked.Value
+	end
+	if passiveUi.inventoryPanel then
+		local state = parsePassiveState()
+		passiveUi.lastState = state
+		local equippedName = "none"
+		for index, slot in ipairs(passiveUi.slots) do
+			local entry = state.inventory[index]
+			if entry and PASSIVE_DEFS[entry.passiveId] then
+				local def = PASSIVE_DEFS[entry.passiveId]
+				local isEquipped = entry.uid == state.equippedUid
+				slot.Text = def.name .. (isEquipped and " [E]" or "")
+				slot.BackgroundColor3 = isEquipped and Color3.fromRGB(129, 211, 160) or Color3.fromRGB(90, 112, 162)
+				if isEquipped then
+					equippedName = def.name
+				end
+			else
+				slot.Text = "Пусто"
+				slot.BackgroundColor3 = Color3.fromRGB(90, 112, 162)
+			end
+		end
+		passiveUi.equippedText.Text = "Equipped: " .. equippedName .. " | Slots: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
+		if passiveUi.rollButton then
+			setButtonVisual(passiveUi.rollButton, "ROV / ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
+		end
+		if passiveUi.rollButtonInventory then
+			setButtonVisual(passiveUi.rollButtonInventory, "ROV / ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
+		end
+	end
+
 	updateWallVisual()
 	refreshAdminCurrencyButtons()
+end
+
+local passiveEffectParts = {}
+if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, passiveRollBlock)
+end
+if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, passiveInventoryBlock)
+end
+for _, p in ipairs(passiveEffectParts) do
+	if not p:FindFirstChild("PassiveFxLight") then
+		local l = Instance.new("PointLight")
+		l.Name = "PassiveFxLight"
+		l.Range = 12
+		l.Brightness = 1.7
+		l.Color = Color3.fromRGB(181, 219, 255)
+		l.Parent = p
+	end
 end
 
 selectCoinsButton.MouseButton1Click:Connect(function()
@@ -1390,6 +1842,11 @@ end)
 
 selectWoodButton.MouseButton1Click:Connect(function()
 	selectedAdminCurrency = "Wood"
+	refreshAdminCurrencyButtons()
+end)
+
+selectPaperButton.MouseButton1Click:Connect(function()
+	selectedAdminCurrency = "Paper"
 	refreshAdminCurrencyButtons()
 end)
 
@@ -1449,6 +1906,27 @@ treeCoinBoostCard.maxButton.MouseButton1Click:Connect(function()
 	purchaseUpgradeEvent:FireServer("Wood", "CoinBoost", "Max")
 end)
 
+if paperUpgradeCards then
+	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
+	end)
+	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
+	end)
+	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
+	end)
+	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
+	end)
+	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
+	end)
+	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
+		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
+	end)
+end
+
 rebirthButton.MouseButton1Click:Connect(function()
 	purchaseRebirthEvent:FireServer()
 end)
@@ -1460,6 +1938,49 @@ end)
 addFuelMaxButton.MouseButton1Click:Connect(function()
 	factoryActionEvent:FireServer("AddFuelMax")
 end)
+
+if passiveUi.rollButton then
+	passiveUi.rollButton.MouseButton1Click:Connect(function()
+		if isRovRolling then
+			showToast("Подожди, ролл уже идет")
+			return
+		end
+		passiveActionEvent:FireServer("Roll")
+	end)
+	if passiveUi.rollButtonInventory then
+		passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
+			if isRovRolling then
+				showToast("Подожди, ролл уже идет")
+				return
+			end
+			passiveActionEvent:FireServer("Roll")
+		end)
+	end
+	for _, slot in ipairs(passiveUi.slots) do
+		slot.MouseButton1Click:Connect(function()
+			if not passiveUi.inventoryPanel.Visible then
+				return
+			end
+			local index = table.find(passiveUi.slots, slot)
+			local entry = passiveUi.lastState.inventory[index]
+			if not entry then
+				return
+			end
+			if passiveUi.lastState.equippedUid == entry.uid then
+				passiveActionEvent:FireServer("Unequip")
+			else
+				passiveActionEvent:FireServer("Equip", entry.uid)
+			end
+		end)
+		slot.MouseButton2Click:Connect(function()
+			local index = table.find(passiveUi.slots, slot)
+			local entry = passiveUi.lastState.inventory[index]
+			if entry then
+				passiveActionEvent:FireServer("Delete", entry.uid)
+			end
+		end)
+	end
+end
 
 giveCurrencyButton.MouseButton1Click:Connect(function()
 	local amount = tonumber(adminAmountBox.Text)
@@ -1481,7 +2002,20 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 	end
 
 	if payload.kind == "pickup" then
-		showPickup(payload.icon or "Coin", payload.amount or 1)
+		local ok = pcall(function()
+			showPickup(payload.icon or "Coin", payload.amount or 1)
+		end)
+		if not ok then
+			showToast("+" .. tostring(payload.amount or 1))
+		end
+	elseif payload.kind == "passive_roll_result" then
+		local def = PASSIVE_DEFS[payload.passiveId or ""]
+		if def then
+			playRovAnimation("Выпало: " .. def.name .. " [" .. def.rarity .. "]")
+			showToast("Новый пассив: " .. def.name .. " [" .. def.rarity .. "]")
+		else
+			showToast("Пассив получен")
+		end
 	else
 		showToast(payload.text or "Готово")
 	end
@@ -1493,11 +2027,36 @@ mouse.Button1Down:Connect(function()
 	end
 
 	if not secondAreaUnlocked.Value then
+		if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
+			passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
+		elseif passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
+			passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
+		end
 		return
 	end
 
 	if mouse.Target == treeBlock then
 		woodClickEvent:FireServer()
+		return
+	end
+
+	if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
+		if fifthSystemsUnlocked.Value then
+			passiveUi.inventoryPanel.Visible = false
+			passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
+		else
+			showToast("Пассивы откроются на 5-м перерождении")
+		end
+		return
+	end
+
+	if passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
+		if fifthSystemsUnlocked.Value then
+			passiveUi.indexPanel.Visible = false
+			passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
+		else
+			showToast("Пассивы откроются на 5-м перерождении")
+		end
 	end
 end)
 
@@ -1514,14 +2073,51 @@ local watchedValues = {
 	woodValueActive, woodMultiplierActive, woodSpeedActive, woodCoinBoostActive,
 
 	paperValue, fuelValue, factoryCountdown, factoryRunning,
+	paperValueLevel, paperMultiplierLevel, paperSpeedLevel,
+	paperValueCost, paperMultiplierCost, paperSpeedCost,
+	paperValueActive, paperMultiplierActive, paperSpeedActive,
 
 	rebirthCount, rebirthNextCost, rebirthNextCurrency,
-	rebirthCoinMultiplierBonus, rebirthSpawnSpeedBonus,
-	secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked,
+	rebirthCoinMultiplierBonus, rebirthSpawnSpeedBonus, rebirthWoodMultiplierBonus,
+	secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked, fifthSystemsUnlocked,
+	passiveStateJson,
 }
 
 for _, obj in ipairs(watchedValues) do
 	obj:GetPropertyChangedSignal("Value"):Connect(updateBoards)
 end
 
+if passiveUi.hintEmoji then
+	RunService.RenderStepped:Connect(function()
+		local t = os.clock()
+		local blink = math.sin(t * 1.2)
+		if blink > 0.985 then
+			passiveUi.hintEmoji.Text = ";)"
+		elseif blink < -0.985 then
+			passiveUi.hintEmoji.Text = "-_-"
+		else
+			passiveUi.hintEmoji.Text = "😊"
+		end
+		passiveUi.hintEmoji.Rotation = math.sin(t * 0.8) * 6
+	end)
+end
+
+if #passiveEffectParts > 0 then
+	RunService.RenderStepped:Connect(function()
+		local t = os.clock()
+		for idx, part in ipairs(passiveEffectParts) do
+			local alpha = (math.sin(t * (1.3 + idx * 0.2)) + 1) / 2
+			part.Color = Color3.fromRGB(95 + math.floor(alpha * 90), 130 + math.floor(alpha * 70), 210 + math.floor(alpha * 45))
+			local light = part:FindFirstChild("PassiveFxLight")
+			if light then
+				light.Brightness = 1.2 + alpha * 2.1
+			end
+		end
+	end)
+end
+
 updateBoards()
+	if isRovRolling then
+		return
+	end
+	isRovRolling = true

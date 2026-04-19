@@ -239,6 +239,8 @@ local PASSIVE_DEFS = {
 		rarity = "Common",
 		coinMultiplier = 1.5,
 		woodMultiplier = 1,
+		globalMultiplier = 1,
+		speedMultiplier = 1,
 		weight = 35,
 	},
 	CoinBallB = {
@@ -247,6 +249,8 @@ local PASSIVE_DEFS = {
 		rarity = "Common",
 		coinMultiplier = 2,
 		woodMultiplier = 1,
+		globalMultiplier = 1,
+		speedMultiplier = 1,
 		weight = 25,
 	},
 	WoodBallA = {
@@ -255,6 +259,8 @@ local PASSIVE_DEFS = {
 		rarity = "Uncommon",
 		coinMultiplier = 1,
 		woodMultiplier = 1.5,
+		globalMultiplier = 1,
+		speedMultiplier = 1,
 		weight = 15,
 	},
 	DualBall = {
@@ -263,7 +269,19 @@ local PASSIVE_DEFS = {
 		rarity = "Uncommon",
 		coinMultiplier = 1.5,
 		woodMultiplier = 1.5,
+		globalMultiplier = 1,
+		speedMultiplier = 1,
 		weight = 12,
+	},
+	RareSprout = {
+		id = "RareSprout",
+		name = "Rare Sprout",
+		rarity = "Rare",
+		coinMultiplier = 1,
+		woodMultiplier = 2,
+		globalMultiplier = 1,
+		speedMultiplier = 1,
+		weight = 7,
 	},
 	RareForest = {
 		id = "RareForest",
@@ -271,7 +289,9 @@ local PASSIVE_DEFS = {
 		rarity = "Rare",
 		coinMultiplier = 1,
 		woodMultiplier = 3,
-		weight = 8,
+		globalMultiplier = 1,
+		speedMultiplier = 1,
+		weight = 6,
 	},
 	EpicBloom = {
 		id = "EpicBloom",
@@ -279,6 +299,8 @@ local PASSIVE_DEFS = {
 		rarity = "Epic",
 		coinMultiplier = 3,
 		woodMultiplier = 5,
+		globalMultiplier = 1,
+		speedMultiplier = 1,
 		weight = 4,
 	},
 	LegendSeed = {
@@ -287,6 +309,28 @@ local PASSIVE_DEFS = {
 		rarity = "Legendary",
 		coinMultiplier = 5,
 		woodMultiplier = 5,
+		globalMultiplier = 1,
+		speedMultiplier = 1,
+		weight = 1,
+	},
+	SwiftLeaf = {
+		id = "SwiftLeaf",
+		name = "Swift Leaf",
+		rarity = "Epic",
+		coinMultiplier = 1.2,
+		woodMultiplier = 1.2,
+		globalMultiplier = 1,
+		speedMultiplier = 1.35,
+		weight = 2,
+	},
+	MythicCore = {
+		id = "MythicCore",
+		name = "Mythic Core",
+		rarity = "Mythic",
+		coinMultiplier = 1,
+		woodMultiplier = 1,
+		globalMultiplier = 2,
+		speedMultiplier = 1,
 		weight = 1,
 	},
 }
@@ -340,6 +384,7 @@ local characterConnections = {}
 local woodCooldowns = {}
 local paperProcessAnchors = {}
 local passiveStates = {}
+local passiveRollCooldowns = {}
 local isClosing = false
 
 local treeBaseSize = treeBlock.Size
@@ -561,10 +606,10 @@ end
 local function getPassiveMultipliers(player)
 	local passiveDef = getEquippedPassiveDef(player)
 	if not passiveDef then
-		return 1, 1
+		return 1, 1, 1, 1
 	end
 
-	return passiveDef.coinMultiplier or 1, passiveDef.woodMultiplier or 1
+	return passiveDef.coinMultiplier or 1, passiveDef.woodMultiplier or 1, passiveDef.globalMultiplier or 1, passiveDef.speedMultiplier or 1
 end
 
 local function chooseRandomPassiveId()
@@ -849,16 +894,13 @@ local function getCoinReward(player)
 		return 1
 	end
 
-	local passiveCoinMultiplier = getPassiveMultipliers(player)
-	local passiveCoin = passiveCoinMultiplier
-	local _, passiveWood = getPassiveMultipliers(player)
-	_ = passiveWood
+	local passiveCoin, _, passiveGlobalMultiplier = getPassiveMultipliers(player)
 
 	local baseValue = 1 + coinUpgrades.CoinValueLevel.Value
 	local baseMultiplier = 1 + (coinUpgrades.MultiplierLevel.Value * 0.1)
 	local woodCoinBoostMultiplier = 1.1 ^ woodUpgrades.CoinBoostLevel.Value
 
-	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin)
+	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier)
 end
 
 local function getCoinRespawnDelay(player)
@@ -872,6 +914,8 @@ local function getCoinRespawnDelay(player)
 	local value = BASE_COIN_RESPAWN
 	value -= coinUpgrades.SpawnSpeedLevel.Value * 0.5
 	value -= rebirth.SpawnSpeedBonus.Value
+	local _, _, _, passiveSpeedMultiplier = getPassiveMultipliers(player)
+	value /= math.max(1, passiveSpeedMultiplier)
 
 	if value < MIN_COIN_RESPAWN then
 		value = MIN_COIN_RESPAWN
@@ -890,7 +934,7 @@ local function getWoodReward(player)
 		return 1
 	end
 
-	local _, passiveWoodMultiplier = getPassiveMultipliers(player)
+	local _, passiveWoodMultiplier, passiveGlobalMultiplier = getPassiveMultipliers(player)
 
 	local baseValue = 1 + woodUpgrades.WoodValueLevel.Value
 	local woodMultiplier = 1 + woodUpgrades.WoodMultiplierLevel.Value + (coinUpgrades.WoodBoostLevel.Value * 0.25)
@@ -900,7 +944,7 @@ local function getWoodReward(player)
 		goalFactor = computeGoalWoodFactorFromCoins(coins.Value)
 	end
 
-	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier)
+	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier * passiveGlobalMultiplier)
 end
 
 local function getWoodCooldown(player)
@@ -910,6 +954,8 @@ local function getWoodCooldown(player)
 	end
 
 	local value = BASE_WOOD_COOLDOWN - (woodUpgrades.WoodSpeedLevel.Value * WOOD_COOLDOWN_STEP)
+	local _, _, _, passiveSpeedMultiplier = getPassiveMultipliers(player)
+	value /= math.max(1, passiveSpeedMultiplier)
 	if value < MIN_WOOD_COOLDOWN then
 		value = MIN_WOOD_COOLDOWN
 	end
@@ -924,7 +970,7 @@ local function getPaperProductionAmount(player)
 	end
 
 	local baseValue = 1 + paperUpgrades.PaperValueLevel.Value
-	local multiplier = 1 + paperUpgrades.PaperMultiplierLevel.Value
+	local multiplier = 1 + (paperUpgrades.PaperMultiplierLevel.Value * 0.1)
 
 	return roundToTenth(baseValue * multiplier)
 end
@@ -1204,6 +1250,12 @@ local function handlePassiveAction(player, actionName, argument)
 	local state = getPassiveState(player)
 
 	if actionName == "Roll" then
+		local now = os.clock()
+		local nextRollAt = passiveRollCooldowns[player.UserId] or 0
+		if now < nextRollAt then
+			fireSimple(player, "Подожди, предыдущий ролл еще идет")
+			return
+		end
 		if #state.inventory >= PASSIVE_INVENTORY_CAPACITY then
 			fireSimple(player, "Инвентарь пассивов заполнен")
 			return
@@ -1219,6 +1271,7 @@ local function handlePassiveAction(player, actionName, argument)
 		end
 
 		local passiveId = chooseRandomPassiveId()
+		passiveRollCooldowns[player.UserId] = now + 5
 		table.insert(state.inventory, {
 			uid = HttpService:GenerateGUID(false),
 			passiveId = passiveId,
@@ -1717,6 +1770,7 @@ Players.PlayerRemoving:Connect(function(player)
 	lastSaveTimes[player] = nil
 	pendingTeleportTransforms[player] = nil
 	woodCooldowns[player.UserId] = nil
+	passiveRollCooldowns[player.UserId] = nil
 	paperProcessAnchors[player] = nil
 	passiveStates[player] = nil
 end)
