@@ -115,19 +115,28 @@ local ICON_ASSET_IDS = {
 }
 
 local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "15%"},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "12%"},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2, globalMultiplier = 1, speedMultiplier = 1, chance = "7%"},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3, globalMultiplier = 1, speedMultiplier = 1, chance = "6%"},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "4%"},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
-	SwiftLeaf = {name = "Swift Leaf", rarity = "Epic", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
-	MythicCore = {name = "Mythic Core", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
+	CoinBallA = {name = "Золотой поток", rarity = "Common", currencyType = "Coins", desc = "Стабильный бонус монет.", effect = "+50% монет", iconKey = "Coin", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
+	CoinBallB = {name = "Монетный дождь", rarity = "Common", currencyType = "Coins", desc = "Сильный денежный поток.", effect = "+100% монет", iconKey = "Coin", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
+	WoodBallA = {name = "Лесной импульс", rarity = "Uncommon", currencyType = "Wood", desc = "Мощнее добыча древесины.", effect = "+50% дерева", iconKey = "Tree", coinMultiplier = 1, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "15%"},
+	DualBall = {name = "Дар дубравы", rarity = "Uncommon", currencyType = "Wood", desc = "Баланс монет и дерева.", effect = "+50% монет и дерева", iconKey = "Tree", coinMultiplier = 1.5, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "12%"},
+	RareSprout = {name = "Росток процветания", rarity = "Rare", currencyType = "Wood", desc = "Редкий лесной усилитель.", effect = "+100% дерева", iconKey = "Tree", coinMultiplier = 1, woodMultiplier = 2, globalMultiplier = 1, speedMultiplier = 1, chance = "7%"},
+	RareForest = {name = "Сердце чащи", rarity = "Rare", currencyType = "Wood", desc = "Экстремальный прирост древесины.", effect = "+200% дерева", iconKey = "Tree", coinMultiplier = 1, woodMultiplier = 3, globalMultiplier = 1, speedMultiplier = 1, chance = "6%"},
+	EpicBloom = {name = "Печатный шквал", rarity = "Epic", currencyType = "Paper", desc = "Эпическое усиление экономики.", effect = "+200% монет, +400% дерева", iconKey = "Paper", coinMultiplier = 3, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "4%"},
+	LegendSeed = {name = "Бумажный поток", rarity = "Legendary", currencyType = "Paper", desc = "Легендарная синергия ресурсов.", effect = "+400% монет и дерева", iconKey = "Paper", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
+	SwiftLeaf = {name = "Ветер мастерства", rarity = "Epic", currencyType = "Coins", desc = "Ускоряет циклы и дроп.", effect = "+20% монет/дерева, +35% скорость", iconKey = "Coin", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
+	MythicCore = {name = "Мифическое ядро", rarity = "Mythic", currencyType = "Paper", desc = "Универсальный мифический буст.", effect = "+100% ко всему", iconKey = "Rebirth", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
 }
 
 local selectedAdminCurrency = "Coins"
+local ROLL_ANIMATION_CONFIG = {
+	duration = 10,
+	totalCoins = 100,
+	rewardRevealTime = 8,
+	fadeOutTime = 0.6,
+	minCoinSize = 28,
+	maxCoinSize = 86,
+	coinSpawnInterval = 0.1,
+}
 
 local function roundToTenth(value)
 	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
@@ -1164,6 +1173,22 @@ local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроет
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
 local factoryLockedOverlay = createLockedOverlay(factoryBoard, "Откроется на 4-м перерождении")
+
+local function getRarityColor(rarity)
+	if rarity == "Mythic" then return Color3.fromRGB(255, 112, 184) end
+	if rarity == "Legendary" then return Color3.fromRGB(255, 197, 92) end
+	if rarity == "Epic" then return Color3.fromRGB(204, 133, 255) end
+	if rarity == "Rare" then return Color3.fromRGB(97, 171, 255) end
+	if rarity == "Uncommon" then return Color3.fromRGB(124, 210, 139) end
+	return Color3.fromRGB(198, 212, 238)
+end
+
+local function getCurrencyColor(currencyType)
+	if currencyType == "Wood" then return Color3.fromRGB(121, 194, 118) end
+	if currencyType == "Paper" then return Color3.fromRGB(214, 221, 255) end
+	return Color3.fromRGB(252, 206, 104)
+end
+
 local function createPassiveUi()
 	local ui = {
 		indexPanel = nil,
@@ -1371,15 +1396,41 @@ local function createPassiveUi()
 		ui.slotsList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 8)
 	end)
 
+	ui.emptyState = Instance.new("Frame")
+	ui.emptyState.Size = UDim2.new(1, -8, 0, 190)
+	ui.emptyState.Position = UDim2.new(0, 4, 0, 4)
+	ui.emptyState.BackgroundColor3 = Color3.fromRGB(64, 84, 132)
+	ui.emptyState.BackgroundTransparency = 0.15
+	ui.emptyState.BorderSizePixel = 0
+	ui.emptyState.Parent = ui.slotsList
+	createCorner(ui.emptyState, 10)
+	local emptyIcon = Instance.new("TextLabel")
+	emptyIcon.Size = UDim2.new(1, 0, 0, 72)
+	emptyIcon.Position = UDim2.new(0, 0, 0, 6)
+	emptyIcon.BackgroundTransparency = 1
+	emptyIcon.Text = "🎴"
+	emptyIcon.TextScaled = true
+	emptyIcon.Parent = ui.emptyState
 	ui.emptyText = Instance.new("TextLabel")
-	ui.emptyText.Size = UDim2.new(1, -8, 0, 42)
-	ui.emptyText.Position = UDim2.new(0, 4, 0, 0)
+	ui.emptyText.Size = UDim2.new(1, -12, 0, 42)
+	ui.emptyText.Position = UDim2.new(0, 6, 0, 78)
 	ui.emptyText.BackgroundTransparency = 1
-	ui.emptyText.Text = "Пассивов нет"
+	ui.emptyText.Text = "Ваш инвентарь пуст"
 	ui.emptyText.TextColor3 = Color3.fromRGB(230, 238, 255)
 	ui.emptyText.TextScaled = true
 	ui.emptyText.Font = Enum.Font.GothamBold
-	ui.emptyText.Parent = ui.slotsList
+	ui.emptyText.Parent = ui.emptyState
+	local emptyHint = Instance.new("TextLabel")
+	emptyHint.Size = UDim2.new(1, -14, 0, 62)
+	emptyHint.Position = UDim2.new(0, 7, 0, 122)
+	emptyHint.BackgroundTransparency = 1
+	emptyHint.TextWrapped = true
+	emptyHint.TextYAlignment = Enum.TextYAlignment.Top
+	emptyHint.Text = "Сделайте ролл пассива, чтобы получить первую карточку и бонусы."
+	emptyHint.TextColor3 = Color3.fromRGB(208, 221, 250)
+	emptyHint.TextScaled = true
+	emptyHint.Font = Enum.Font.Gotham
+	emptyHint.Parent = ui.emptyState
 
 	ui.managePanel = Instance.new("Frame")
 	ui.managePanel.Size = UDim2.new(0.52, -8, 1, -122)
@@ -1428,6 +1479,51 @@ local function createPassiveUi()
 	ui.deleteBtn.TextScaled = true
 	ui.deleteBtn.Parent = ui.managePanel
 	createCorner(ui.deleteBtn, 10)
+
+	ui.deleteConfirm = Instance.new("Frame")
+	ui.deleteConfirm.Size = UDim2.new(0, 320, 0, 170)
+	ui.deleteConfirm.AnchorPoint = Vector2.new(0.5, 0.5)
+	ui.deleteConfirm.Position = UDim2.new(0.5, 0, 0.5, 0)
+	ui.deleteConfirm.BackgroundColor3 = Color3.fromRGB(57, 70, 108)
+	ui.deleteConfirm.BorderSizePixel = 0
+	ui.deleteConfirm.Visible = false
+	ui.deleteConfirm.ZIndex = 250
+	ui.deleteConfirm.Parent = ui.inventoryPanel
+	createCorner(ui.deleteConfirm, 12)
+	createStroke(ui.deleteConfirm, Color3.fromRGB(255, 145, 145), 2, 0.1)
+	ui.deleteConfirmText = Instance.new("TextLabel")
+	ui.deleteConfirmText.Size = UDim2.new(1, -16, 0, 96)
+	ui.deleteConfirmText.Position = UDim2.new(0, 8, 0, 8)
+	ui.deleteConfirmText.BackgroundTransparency = 1
+	ui.deleteConfirmText.TextWrapped = true
+	ui.deleteConfirmText.TextScaled = true
+	ui.deleteConfirmText.Text = "Удалить выбранный пассив?\nДействие необратимо."
+	ui.deleteConfirmText.TextColor3 = Color3.fromRGB(240, 246, 255)
+	ui.deleteConfirmText.Font = Enum.Font.GothamBold
+	ui.deleteConfirmText.ZIndex = 251
+	ui.deleteConfirmText.Parent = ui.deleteConfirm
+	ui.deleteConfirmYes = Instance.new("TextButton")
+	ui.deleteConfirmYes.Size = UDim2.new(0.48, -8, 0, 38)
+	ui.deleteConfirmYes.Position = UDim2.new(0, 8, 1, -46)
+	ui.deleteConfirmYes.Text = "Удалить"
+	ui.deleteConfirmYes.TextScaled = true
+	ui.deleteConfirmYes.Font = Enum.Font.GothamBlack
+	ui.deleteConfirmYes.BackgroundColor3 = Color3.fromRGB(255, 116, 116)
+	ui.deleteConfirmYes.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ui.deleteConfirmYes.ZIndex = 251
+	ui.deleteConfirmYes.Parent = ui.deleteConfirm
+	createCorner(ui.deleteConfirmYes, 10)
+	ui.deleteConfirmNo = Instance.new("TextButton")
+	ui.deleteConfirmNo.Size = UDim2.new(0.48, -8, 0, 38)
+	ui.deleteConfirmNo.Position = UDim2.new(0.52, 0, 1, -46)
+	ui.deleteConfirmNo.Text = "Отмена"
+	ui.deleteConfirmNo.TextScaled = true
+	ui.deleteConfirmNo.Font = Enum.Font.GothamBlack
+	ui.deleteConfirmNo.BackgroundColor3 = Color3.fromRGB(120, 150, 221)
+	ui.deleteConfirmNo.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ui.deleteConfirmNo.ZIndex = 251
+	ui.deleteConfirmNo.Parent = ui.deleteConfirm
+	createCorner(ui.deleteConfirmNo, 10)
 	ui.selectedUid = ""
 
 	local backToIndex = Instance.new("TextButton")
@@ -1452,6 +1548,11 @@ local function createPassiveUi()
 	closeDetail.MouseButton1Click:Connect(function()
 		ui.indexDetail.Visible = false
 	end)
+	if ui.deleteConfirmNo then
+		ui.deleteConfirmNo.MouseButton1Click:Connect(function()
+			ui.deleteConfirm.Visible = false
+		end)
+	end
 	for button, passiveId in pairs(ui.indexButtons) do
 		button.MouseButton1Click:Connect(function()
 			local def = PASSIVE_DEFS[passiveId]
@@ -1664,15 +1765,109 @@ local function setButtonVisual(button, text, canBuy, atMax, activeColor, disable
 	button.Text = text
 end
 
-local function playRovAnimation(resultText)
-	if not passiveUi.rollFxLayer then
-		return
+local function spawnCoin(layer, progress)
+	local coin = Instance.new("ImageLabel")
+	local size = math.random(ROLL_ANIMATION_CONFIG.minCoinSize, ROLL_ANIMATION_CONFIG.maxCoinSize)
+	coin.Size = UDim2.new(0, size, 0, size)
+	coin.AnchorPoint = Vector2.new(0.5, 0.5)
+	coin.Position = UDim2.new(math.random(), 0, -0.2 - math.random() * 0.25, 0)
+	coin.BackgroundTransparency = 1
+	coin.Image = getAssetOrEmpty(ICON_ASSET_IDS.Coin)
+	coin.ImageTransparency = 0.08 + math.random() * 0.28
+	coin.Rotation = math.random(-30, 30)
+	coin.ZIndex = 95 + math.random(0, 8)
+	coin.Parent = layer
+
+	local targetY = math.clamp(0.35 + progress * 0.72 + math.random() * 0.18, 0.35, 1.12)
+	local targetX = math.clamp(coin.Position.X.Scale + ((math.random() - 0.5) * 0.08), 0.02, 0.98)
+	local tween = TweenService:Create(coin, TweenInfo.new(1.7 + math.random() * 1.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		Position = UDim2.new(targetX, 0, targetY, 0),
+		Rotation = coin.Rotation + math.random(-160, 160),
+	})
+	tween:Play()
+
+	if math.random() > 0.55 then
+		task.spawn(function()
+			for _ = 1, 2 do
+				if not coin.Parent then break end
+				TweenService:Create(coin, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					Position = coin.Position + UDim2.new((math.random() - 0.5) * 0.03, 0, 0, 0),
+				}):Play()
+				task.wait(0.25)
+			end
+		end)
 	end
+	return coin
+end
+
+local function showReward(layer, passiveName, passiveIcon, rarityColor)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0, 420, 0, 210)
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.Position = UDim2.new(0.5, 0, 0.52, 0)
+	frame.BackgroundColor3 = Color3.fromRGB(44, 57, 92)
+	frame.BackgroundTransparency = 1
+	frame.BorderSizePixel = 0
+	frame.ZIndex = 140
+	frame.Parent = layer
+	createCorner(frame, 18)
+	createStroke(frame, rarityColor, 3, 0.05)
+	createGradient(frame, Color3.fromRGB(88, 114, 176), Color3.fromRGB(42, 53, 90), 90)
+
+	local icon = Instance.new("ImageLabel")
+	icon.Size = UDim2.new(0, 108, 0, 108)
+	icon.AnchorPoint = Vector2.new(0.5, 0)
+	icon.Position = UDim2.new(0.5, 0, 0, 20)
+	icon.BackgroundTransparency = 1
+	icon.Image = passiveIcon
+	icon.ZIndex = 141
+	icon.Parent = frame
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -24, 0, 58)
+	label.Position = UDim2.new(0, 12, 1, -70)
+	label.BackgroundTransparency = 1
+	label.Text = passiveName
+	label.TextColor3 = Color3.fromRGB(255, 247, 197)
+	label.Font = Enum.Font.GothamBlack
+	label.TextScaled = true
+	label.TextStrokeTransparency = 0.45
+	label.ZIndex = 141
+	label.Parent = frame
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.72
+	scale.Parent = frame
+	TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 0.04}):Play()
+	TweenService:Create(scale, TweenInfo.new(0.36, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+	return frame
+end
+
+local function cleanupAnimation(layer, dimmer, coins, rewardFrame)
+	local fadeInfo = TweenInfo.new(ROLL_ANIMATION_CONFIG.fadeOutTime)
+	TweenService:Create(dimmer, fadeInfo, {BackgroundTransparency = 1}):Play()
+	if rewardFrame then
+		TweenService:Create(rewardFrame, fadeInfo, {BackgroundTransparency = 1}):Play()
+	end
+	for _, coin in ipairs(coins) do
+		if coin and coin.Parent then
+			TweenService:Create(coin, fadeInfo, {ImageTransparency = 1}):Play()
+		end
+	end
+	task.wait(ROLL_ANIMATION_CONFIG.fadeOutTime + 0.05)
+	layer.Visible = false
+	for _, c in ipairs(layer:GetChildren()) do
+		c:Destroy()
+	end
+	isRovRolling = false
+end
+
+local function startRollAnimation(passiveName, passiveIcon, rarityColor)
+	if not passiveUi.rollFxLayer then return end
 	isRovRolling = true
 	for _, c in ipairs(passiveUi.rollFxLayer:GetChildren()) do
 		c:Destroy()
 	end
-
 	passiveUi.rollFxLayer.Visible = true
 
 	local dimmer = Instance.new("Frame")
@@ -1681,54 +1876,39 @@ local function playRovAnimation(resultText)
 	dimmer.BackgroundTransparency = 1
 	dimmer.ZIndex = 91
 	dimmer.Parent = passiveUi.rollFxLayer
-	TweenService:Create(dimmer, TweenInfo.new(0.25), {BackgroundTransparency = 0.3}):Play()
+	TweenService:Create(dimmer, TweenInfo.new(0.8), {BackgroundTransparency = 0.28}):Play()
 
-	for _ = 1, 32 do
-		local shard = Instance.new("Frame")
-		shard.Size = UDim2.new(0, math.random(6, 16), 0, math.random(18, 36))
-		shard.Position = UDim2.new(math.random(), 0, 0.5, 0)
-		shard.BackgroundColor3 = Color3.fromRGB(255, 228, 141)
-		shard.BackgroundTransparency = 0.2
-		shard.BorderSizePixel = 0
-		shard.Rotation = math.random(-35, 35)
-		shard.ZIndex = 94
-		shard.Parent = passiveUi.rollFxLayer
-		createCorner(shard, 12)
+	local coinLayer = Instance.new("Frame")
+	coinLayer.Size = UDim2.new(1, 0, 1, 0)
+	coinLayer.BackgroundTransparency = 1
+	coinLayer.ZIndex = 93
+	coinLayer.Parent = passiveUi.rollFxLayer
 
-		TweenService:Create(shard, TweenInfo.new(0.6 + math.random() * 0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Position = UDim2.new(shard.Position.X.Scale, 0, math.random() * 0.2, 0),
-			BackgroundTransparency = 1,
-		}):Play()
-	end
-
-	local result = Instance.new("TextLabel")
-	result.Size = UDim2.new(0.78, 0, 0, 96)
-	result.Position = UDim2.new(0.11, 0, 0.42, 0)
-	result.BackgroundTransparency = 1
-	result.Text = resultText
-	result.TextColor3 = Color3.fromRGB(255, 248, 176)
-	result.TextStrokeTransparency = 0.35
-	result.Font = Enum.Font.GothamBlack
-	result.TextScaled = true
-	result.ZIndex = 100
-	result.TextTransparency = 1
-	result.Parent = passiveUi.rollFxLayer
-
-	local resultScale = Instance.new("UIScale")
-	resultScale.Scale = 0.8
-	resultScale.Parent = result
-
-	TweenService:Create(result, TweenInfo.new(0.22), {TextTransparency = 0}):Play()
-	TweenService:Create(resultScale, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
-
-	task.delay(0.85, function()
-		local fadeOut = TweenService:Create(result, TweenInfo.new(0.25), {TextTransparency = 1})
-		fadeOut:Play()
-		TweenService:Create(dimmer, TweenInfo.new(0.25), {BackgroundTransparency = 1}):Play()
-		fadeOut.Completed:Wait()
-		passiveUi.rollFxLayer.Visible = false
-		isRovRolling = false
+	local coins = {}
+	task.spawn(function()
+		local elapsed = 0
+		local rewardFrame = nil
+		while elapsed < ROLL_ANIMATION_CONFIG.duration do
+			local progress = math.clamp(elapsed / ROLL_ANIMATION_CONFIG.duration, 0, 1)
+			table.insert(coins, spawnCoin(coinLayer, progress))
+			if elapsed >= ROLL_ANIMATION_CONFIG.rewardRevealTime and not rewardFrame then
+				rewardFrame = showReward(passiveUi.rollFxLayer, passiveName, passiveIcon, rarityColor)
+			end
+			elapsed += ROLL_ANIMATION_CONFIG.coinSpawnInterval
+			task.wait(ROLL_ANIMATION_CONFIG.coinSpawnInterval)
+		end
+		while #coins < ROLL_ANIMATION_CONFIG.totalCoins do
+			table.insert(coins, spawnCoin(coinLayer, 1))
+		end
+		cleanupAnimation(passiveUi.rollFxLayer, dimmer, coins, rewardFrame)
 	end)
+end
+
+local function playRovAnimation(passiveDef)
+	local name = passiveDef and passiveDef.name or "Новый пассив"
+	local icon = getAssetOrEmpty(ICON_ASSET_IDS[(passiveDef and passiveDef.iconKey) or "Coin"])
+	local rarityColor = getRarityColor(passiveDef and passiveDef.rarity or "Common")
+	startRollAnimation(name, icon, rarityColor)
 end
 
 local function updateCard(card, levelValue, costValue, activeValue, maxLevel, currentCurrency, lockedReason)
@@ -1917,30 +2097,61 @@ local function updateBoards()
 					local b = Instance.new("TextButton")
 					local isEquipped = entry.uid == state.equippedUid
 					local isSelected = entry.uid == passiveUi.selectedUid
-					b.Size = UDim2.new(1, -8, 0, 42)
-					b.Text = def.name .. (isEquipped and " [E]" or "")
-					if isEquipped then
-						b.BackgroundColor3 = Color3.fromRGB(129, 211, 160)
-					elseif isSelected then
-						b.BackgroundColor3 = Color3.fromRGB(129, 155, 235)
-					else
-						b.BackgroundColor3 = Color3.fromRGB(90, 112, 162)
-					end
-					b.TextColor3 = Color3.fromRGB(245, 250, 255)
-					b.TextScaled = true
-					b.Font = Enum.Font.GothamBold
+					b.Size = UDim2.new(1, -8, 0, 112)
+					b.Text = ""
+					b.BackgroundColor3 = getCurrencyColor(def.currencyType)
+					b.BackgroundTransparency = isSelected and 0.05 or 0.15
 					b.BorderSizePixel = 0
 					b.Parent = passiveUi.slotsList
-					createCorner(b, 8)
+					createCorner(b, 10)
+					createStroke(b, isEquipped and Color3.fromRGB(206, 255, 192) or getRarityColor(def.rarity), isEquipped and 3 or 2, isSelected and 0.05 or 0.2)
 					addScaleHover(b)
+					local icon = Instance.new("ImageLabel")
+					icon.Size = UDim2.new(0, 72, 0, 72)
+					icon.Position = UDim2.new(0, 8, 0, 8)
+					icon.BackgroundTransparency = 1
+					icon.Image = getAssetOrEmpty(ICON_ASSET_IDS[def.iconKey or "Coin"])
+					icon.Parent = b
+					local title = Instance.new("TextLabel")
+					title.Size = UDim2.new(1, -90, 0, 28)
+					title.Position = UDim2.new(0, 84, 0, 8)
+					title.BackgroundTransparency = 1
+					title.TextXAlignment = Enum.TextXAlignment.Left
+					title.TextScaled = true
+					title.Font = Enum.Font.GothamBlack
+					title.TextColor3 = Color3.fromRGB(245, 250, 255)
+					title.Text = def.name
+					title.Parent = b
+					local info = Instance.new("TextLabel")
+					info.Size = UDim2.new(1, -90, 0, 44)
+					info.Position = UDim2.new(0, 84, 0, 34)
+					info.BackgroundTransparency = 1
+					info.TextXAlignment = Enum.TextXAlignment.Left
+					info.TextYAlignment = Enum.TextYAlignment.Top
+					info.TextWrapped = true
+					info.TextScaled = true
+					info.Font = Enum.Font.GothamSemibold
+					info.TextColor3 = Color3.fromRGB(228, 236, 255)
+					info.Text = tostring(def.effect or "") .. " | " .. tostring(def.currencyType or "") .. " | " .. tostring(def.rarity or "")
+					info.Parent = b
+					local status = Instance.new("TextLabel")
+					status.Size = UDim2.new(1, -90, 0, 18)
+					status.Position = UDim2.new(0, 84, 1, -24)
+					status.BackgroundTransparency = 1
+					status.TextXAlignment = Enum.TextXAlignment.Left
+					status.TextScaled = true
+					status.Font = Enum.Font.GothamBold
+					status.TextColor3 = isEquipped and Color3.fromRGB(198, 255, 190) or Color3.fromRGB(225, 235, 255)
+					status.Text = isEquipped and "Экипировано" or "Не экипировано"
+					status.Parent = b
 					b.MouseButton1Click:Connect(function()
 						passiveUi.selectedUid = entry.uid
 						passiveUi.manageTitle.Text = def.name
-						passiveUi.manageInfo.Text = "Rarity: " .. tostring(def.rarity) .. "\nChance: " .. tostring(def.chance or "?")
-							.. "\nCoin x" .. tostring(def.coinMultiplier or 1)
-							.. "\nWood x" .. tostring(def.woodMultiplier or 1)
-							.. "\nGlobal x" .. tostring(def.globalMultiplier or 1)
-							.. "\nSpeed x" .. tostring(def.speedMultiplier or 1)
+						passiveUi.manageInfo.Text = "Тип: " .. tostring(def.currencyType or "Coins")
+							.. "\nРедкость: " .. tostring(def.rarity or "Common")
+							.. "\nШанс: " .. tostring(def.chance or "?")
+							.. "\nЭффект: " .. tostring(def.effect or "—")
+							.. "\n\n" .. tostring(def.desc or "")
 					end)
 					if isEquipped then
 						equippedName = def.name
@@ -1959,8 +2170,8 @@ local function updateBoards()
 				passiveUi.manageTitle.Text = "Выбери пассив"
 				passiveUi.manageInfo.Text = "Нажми слева на пассив"
 			end
-			passiveUi.emptyText.Visible = #state.inventory == 0
-			passiveUi.equippedText.Text = "Equipped: " .. equippedName .. " | Slots: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
+			passiveUi.emptyState.Visible = #state.inventory == 0
+			passiveUi.equippedText.Text = "Экипировано: " .. equippedName .. " | Слоты: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
 		if passiveUi.rollButton then
 			setButtonVisual(passiveUi.rollButton, "ROV / ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
 		end
@@ -2135,8 +2346,19 @@ if passiveUi.deleteBtn then
 			showToast("Выбери пассив")
 			return
 		end
-		passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
-		passiveUi.selectedUid = ""
+		if passiveUi.deleteConfirm then
+			passiveUi.deleteConfirm.Visible = true
+		end
+	end)
+end
+
+if passiveUi.deleteConfirmYes then
+	passiveUi.deleteConfirmYes.MouseButton1Click:Connect(function()
+		if passiveUi.selectedUid ~= "" then
+			passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
+			passiveUi.selectedUid = ""
+		end
+		passiveUi.deleteConfirm.Visible = false
 	end)
 end
 
@@ -2169,7 +2391,7 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 	elseif payload.kind == "passive_roll_result" then
 		local def = PASSIVE_DEFS[payload.passiveId or ""]
 		if def then
-			playRovAnimation("Выпало: " .. def.name .. " [" .. def.rarity .. "]")
+			playRovAnimation(def)
 			showToast("Новый пассив: " .. def.name .. " [" .. def.rarity .. "]")
 		else
 			showToast("Пассив получен")
