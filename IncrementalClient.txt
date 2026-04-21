@@ -127,65 +127,6 @@ local PASSIVE_DEFS = {
 	MythicCore = {name = "Mythic Core", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
 }
 
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "15%"},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "12%"},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2, globalMultiplier = 1, speedMultiplier = 1, chance = "7%"},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3, globalMultiplier = 1, speedMultiplier = 1, chance = "6%"},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "4%"},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
-	SwiftLeaf = {name = "Swift Leaf", rarity = "Epic", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
-	MythicCore = {name = "Mythic Core", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
-}
-
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "15%"},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "12%"},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2, globalMultiplier = 1, speedMultiplier = 1, chance = "7%"},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3, globalMultiplier = 1, speedMultiplier = 1, chance = "6%"},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "4%"},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
-	SwiftLeaf = {name = "Swift Leaf", rarity = "Epic", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
-	MythicCore = {name = "Mythic Core", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
-}
-
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5},
-}
-
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5},
-}
-
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5},
-}
-
 local selectedAdminCurrency = "Coins"
 
 local function roundToTenth(value)
@@ -782,10 +723,15 @@ local function createHorizontalScroller(parent, positionY, height)
 	scrolling.Position = UDim2.new(0, 0, 0, positionY)
 	scrolling.Size = UDim2.new(1, 0, 1, -positionY - height)
 	scrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scrolling.ScrollBarThickness = 10
-	scrolling.BackgroundTransparency = 1
+	scrolling.ScrollBarThickness = 12
+	scrolling.ScrollBarImageColor3 = Color3.fromRGB(170, 194, 255)
+	scrolling.BackgroundColor3 = Color3.fromRGB(15, 22, 38)
+	scrolling.BackgroundTransparency = 0.25
 	scrolling.BorderSizePixel = 0
 	scrolling.ScrollingDirection = Enum.ScrollingDirection.X
+	scrolling.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+	scrolling.ScrollingEnabled = true
+	scrolling.AutomaticCanvasSize = Enum.AutomaticSize.None
 	scrolling.HorizontalScrollBarInset = Enum.ScrollBarInset.Always
 	scrolling.VerticalScrollBarInset = Enum.ScrollBarInset.Always
 	scrolling.Parent = parent
@@ -1214,130 +1160,6 @@ end
 
 local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
 
-local function createPaperUpgradeUi()
-	if not paperUpgradeDoska then
-		return nil, nil
-	end
-
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
-	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
-	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
-	})
-
-	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
-	return cards, lockedOverlay
-end
-
-local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
-
-local function createPaperUpgradeUi()
-	if not paperUpgradeDoska then
-		return nil, nil
-	end
-
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
-	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
-	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
-	})
-
-	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
-	return cards, lockedOverlay
-end
-
-local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
-
-local function createPaperUpgradeUi()
-	if not paperUpgradeDoska then
-		return nil, nil
-	end
-
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
-	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
-	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
-	})
-
-	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
-	return cards, lockedOverlay
-end
-
-local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
-
-local function createPaperUpgradeUi()
-	if not paperUpgradeDoska then
-		return nil, nil
-	end
-
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
-	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
-	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
-	})
-
-	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
-	return cards, lockedOverlay
-end
-
-local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
-
-local paperUpgradeCards = nil
-local paperUpgradeLockedOverlay = nil
-if paperUpgradeDoska then
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
-	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
-	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
-	})
-	paperUpgradeCards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	paperUpgradeLockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
-end
-
 local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
@@ -1535,8 +1357,11 @@ local function createPassiveUi()
 	ui.slotsList = Instance.new("ScrollingFrame")
 	ui.slotsList.Size = UDim2.new(0.48, -8, 1, -122)
 	ui.slotsList.Position = UDim2.new(0, 8, 0, 114)
-	ui.slotsList.BackgroundTransparency = 1
-	ui.slotsList.ScrollBarThickness = 8
+	ui.slotsList.BackgroundColor3 = Color3.fromRGB(23, 31, 52)
+	ui.slotsList.BackgroundTransparency = 0.2
+	ui.slotsList.ScrollBarThickness = 10
+	ui.slotsList.ScrollBarImageColor3 = Color3.fromRGB(158, 182, 240)
+	ui.slotsList.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
 	ui.slotsList.CanvasSize = UDim2.new(0, 0, 0, 0)
 	ui.slotsList.Parent = ui.inventoryPanel
 	local listLayout = Instance.new("UIListLayout")
@@ -1646,6 +1471,26 @@ local function createPassiveUi()
 end
 
 local passiveUi = createPassiveUi()
+
+local function parsePassiveState()
+	local ok, decoded = pcall(function()
+		return HttpService:JSONDecode(passiveStateJson.Value)
+	end)
+	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
+		return decoded
+	end
+	return {inventory = {}, equippedUid = ""}
+end
+
+local function getEquippedPassiveDef()
+	local state = parsePassiveState()
+	for _, entry in ipairs(state.inventory) do
+		if entry.uid == state.equippedUid then
+			return PASSIVE_DEFS[entry.passiveId]
+		end
+	end
+	return nil
+end
 
 local function getCoinUpgradeMultiplier()
 	return 1 + (coinMultiplierLevel.Value * 0.1)
@@ -1827,32 +1672,60 @@ local function playRovAnimation(resultText)
 	for _, c in ipairs(passiveUi.rollFxLayer:GetChildren()) do
 		c:Destroy()
 	end
+
 	passiveUi.rollFxLayer.Visible = true
-	for _ = 1, 280 do
-		local coin = Instance.new("ImageLabel")
-		coin.BackgroundTransparency = 1
-		coin.Size = UDim2.new(0, math.random(16, 32), 0, math.random(16, 32))
-		coin.Position = UDim2.new(math.random(), -10, -0.3 - math.random() * 0.6, 0)
-		coin.Image = getAssetOrEmpty(ICON_ASSET_IDS.Coin)
-		coin.ZIndex = 95
-		coin.Parent = passiveUi.rollFxLayer
-		TweenService:Create(coin, TweenInfo.new(10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Position = UDim2.new(coin.Position.X.Scale, 0, 0.9 + math.random() * 0.2, 0),
+
+	local dimmer = Instance.new("Frame")
+	dimmer.Size = UDim2.new(1, 0, 1, 0)
+	dimmer.BackgroundColor3 = Color3.fromRGB(8, 14, 28)
+	dimmer.BackgroundTransparency = 1
+	dimmer.ZIndex = 91
+	dimmer.Parent = passiveUi.rollFxLayer
+	TweenService:Create(dimmer, TweenInfo.new(0.25), {BackgroundTransparency = 0.3}):Play()
+
+	for _ = 1, 32 do
+		local shard = Instance.new("Frame")
+		shard.Size = UDim2.new(0, math.random(6, 16), 0, math.random(18, 36))
+		shard.Position = UDim2.new(math.random(), 0, 0.5, 0)
+		shard.BackgroundColor3 = Color3.fromRGB(255, 228, 141)
+		shard.BackgroundTransparency = 0.2
+		shard.BorderSizePixel = 0
+		shard.Rotation = math.random(-35, 35)
+		shard.ZIndex = 94
+		shard.Parent = passiveUi.rollFxLayer
+		createCorner(shard, 12)
+
+		TweenService:Create(shard, TweenInfo.new(0.6 + math.random() * 0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = UDim2.new(shard.Position.X.Scale, 0, math.random() * 0.2, 0),
+			BackgroundTransparency = 1,
 		}):Play()
 	end
+
 	local result = Instance.new("TextLabel")
-	result.Size = UDim2.new(0.7, 0, 0, 90)
-	result.Position = UDim2.new(0.15, 0, 0.42, 0)
+	result.Size = UDim2.new(0.78, 0, 0, 96)
+	result.Position = UDim2.new(0.11, 0, 0.42, 0)
 	result.BackgroundTransparency = 1
 	result.Text = resultText
 	result.TextColor3 = Color3.fromRGB(255, 248, 176)
+	result.TextStrokeTransparency = 0.35
 	result.Font = Enum.Font.GothamBlack
 	result.TextScaled = true
 	result.ZIndex = 100
-	result.Parent = passiveUi.rollFxLayer
 	result.TextTransparency = 1
-	TweenService:Create(result, TweenInfo.new(1.1), {TextTransparency = 0}):Play()
-	task.delay(10.2, function()
+	result.Parent = passiveUi.rollFxLayer
+
+	local resultScale = Instance.new("UIScale")
+	resultScale.Scale = 0.8
+	resultScale.Parent = result
+
+	TweenService:Create(result, TweenInfo.new(0.22), {TextTransparency = 0}):Play()
+	TweenService:Create(resultScale, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+
+	task.delay(0.85, function()
+		local fadeOut = TweenService:Create(result, TweenInfo.new(0.25), {TextTransparency = 1})
+		fadeOut:Play()
+		TweenService:Create(dimmer, TweenInfo.new(0.25), {BackgroundTransparency = 1}):Play()
+		fadeOut.Completed:Wait()
 		passiveUi.rollFxLayer.Visible = false
 		isRovRolling = false
 	end)
@@ -1896,166 +1769,6 @@ local function getPaperProductionAmount()
 	local baseValue = 1 + paperValueLevel.Value
 	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
 	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getEquippedPassiveDef()
-	local state = parsePassiveState()
-	for _, entry in ipairs(state.inventory) do
-		if entry.uid == state.equippedUid then
-			return PASSIVE_DEFS[entry.passiveId]
-		end
-	end
-	return nil
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getEquippedPassiveDef()
-	local state = parsePassiveState()
-	for _, entry in ipairs(state.inventory) do
-		if entry.uid == state.equippedUid then
-			return PASSIVE_DEFS[entry.passiveId]
-		end
-	end
-	return nil
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getEquippedPassiveDef()
-	local state = parsePassiveState()
-	for _, entry in ipairs(state.inventory) do
-		if entry.uid == state.equippedUid then
-			return PASSIVE_DEFS[entry.passiveId]
-		end
-	end
-	return nil
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
 end
 
 local wallParts = {}
@@ -2203,15 +1916,23 @@ local function updateBoards()
 				if def then
 					local b = Instance.new("TextButton")
 					local isEquipped = entry.uid == state.equippedUid
+					local isSelected = entry.uid == passiveUi.selectedUid
 					b.Size = UDim2.new(1, -8, 0, 42)
 					b.Text = def.name .. (isEquipped and " [E]" or "")
-					b.BackgroundColor3 = isEquipped and Color3.fromRGB(129, 211, 160) or Color3.fromRGB(90, 112, 162)
+					if isEquipped then
+						b.BackgroundColor3 = Color3.fromRGB(129, 211, 160)
+					elseif isSelected then
+						b.BackgroundColor3 = Color3.fromRGB(129, 155, 235)
+					else
+						b.BackgroundColor3 = Color3.fromRGB(90, 112, 162)
+					end
 					b.TextColor3 = Color3.fromRGB(245, 250, 255)
 					b.TextScaled = true
 					b.Font = Enum.Font.GothamBold
 					b.BorderSizePixel = 0
 					b.Parent = passiveUi.slotsList
 					createCorner(b, 8)
+					addScaleHover(b)
 					b.MouseButton1Click:Connect(function()
 						passiveUi.selectedUid = entry.uid
 						passiveUi.manageTitle.Text = def.name
@@ -2270,42 +1991,6 @@ for _, p in ipairs(passiveEffectParts) do
 	end
 end
 
-local passiveEffectParts = {}
-if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
-	table.insert(passiveEffectParts, passiveRollBlock)
-end
-if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
-	table.insert(passiveEffectParts, passiveInventoryBlock)
-end
-for _, p in ipairs(passiveEffectParts) do
-	if not p:FindFirstChild("PassiveFxLight") then
-		local l = Instance.new("PointLight")
-		l.Name = "PassiveFxLight"
-		l.Range = 12
-		l.Brightness = 1.7
-		l.Color = Color3.fromRGB(181, 219, 255)
-		l.Parent = p
-	end
-end
-
-local passiveEffectParts = {}
-if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
-	table.insert(passiveEffectParts, passiveRollBlock)
-end
-if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
-	table.insert(passiveEffectParts, passiveInventoryBlock)
-end
-for _, p in ipairs(passiveEffectParts) do
-	if not p:FindFirstChild("PassiveFxLight") then
-		local l = Instance.new("PointLight")
-		l.Name = "PassiveFxLight"
-		l.Range = 12
-		l.Brightness = 1.7
-		l.Color = Color3.fromRGB(181, 219, 255)
-		l.Parent = p
-	end
-end
-
 selectCoinsButton.MouseButton1Click:Connect(function()
 	selectedAdminCurrency = "Coins"
 	refreshAdminCurrencyButtons()
@@ -2313,16 +1998,6 @@ end)
 
 selectWoodButton.MouseButton1Click:Connect(function()
 	selectedAdminCurrency = "Wood"
-	refreshAdminCurrencyButtons()
-end)
-
-selectPaperButton.MouseButton1Click:Connect(function()
-	selectedAdminCurrency = "Paper"
-	refreshAdminCurrencyButtons()
-end)
-
-selectPaperButton.MouseButton1Click:Connect(function()
-	selectedAdminCurrency = "Paper"
 	refreshAdminCurrencyButtons()
 end)
 
@@ -2408,111 +2083,6 @@ if paperUpgradeCards then
 	end)
 end
 
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
-end
-
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
-end
-
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
-end
-
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
-end
-
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
-end
-
 rebirthButton.MouseButton1Click:Connect(function()
 	purchaseRebirthEvent:FireServer()
 end)
@@ -2533,206 +2103,41 @@ if passiveUi.rollButton then
 		end
 		passiveActionEvent:FireServer("Roll")
 	end)
-	if passiveUi.rollButtonInventory then
-		passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
-			if isRovRolling then
-				showToast("Подожди, ролл уже идет")
-				return
-			end
-			passiveActionEvent:FireServer("Roll")
-		end)
-	end
-	if passiveUi.equipBtn then
-		passiveUi.equipBtn.MouseButton1Click:Connect(function()
-			if passiveUi.selectedUid == "" then
-				showToast("Выбери пассив")
-				return
-			end
-			if passiveUi.lastState.equippedUid == passiveUi.selectedUid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", passiveUi.selectedUid)
-			end
-		end)
-	end
-	if passiveUi.deleteBtn then
-		passiveUi.deleteBtn.MouseButton1Click:Connect(function()
-			if passiveUi.selectedUid == "" then
-				showToast("Выбери пассив")
-				return
-			end
-			passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
-			passiveUi.selectedUid = ""
-		end)
-	end
 end
 
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
+if passiveUi.rollButtonInventory then
+	passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
 		if isRovRolling then
 			showToast("Подожди, ролл уже идет")
 			return
 		end
 		passiveActionEvent:FireServer("Roll")
 	end)
-	if passiveUi.rollButtonInventory then
-		passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
-			if isRovRolling then
-				showToast("Подожди, ролл уже идет")
-				return
-			end
-			passiveActionEvent:FireServer("Roll")
-		end)
-	end
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.inventoryPanel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
 end
 
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
-		passiveActionEvent:FireServer("Roll")
+if passiveUi.equipBtn then
+	passiveUi.equipBtn.MouseButton1Click:Connect(function()
+		if passiveUi.selectedUid == "" then
+			showToast("Выбери пассив")
+			return
+		end
+		if passiveUi.lastState.equippedUid == passiveUi.selectedUid then
+			passiveActionEvent:FireServer("Unequip")
+		else
+			passiveActionEvent:FireServer("Equip", passiveUi.selectedUid)
+		end
 	end)
-	if passiveUi.rollButtonInventory then
-		passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
-			passiveActionEvent:FireServer("Roll")
-		end)
-	end
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.inventoryPanel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
 end
 
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
-		passiveActionEvent:FireServer("Roll")
+if passiveUi.deleteBtn then
+	passiveUi.deleteBtn.MouseButton1Click:Connect(function()
+		if passiveUi.selectedUid == "" then
+			showToast("Выбери пассив")
+			return
+		end
+		passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
+		passiveUi.selectedUid = ""
 	end)
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.panel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
-end
-
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
-		passiveActionEvent:FireServer("Roll")
-	end)
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.panel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
-end
-
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
-		passiveActionEvent:FireServer("Roll")
-	end)
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.panel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
 end
 
 giveCurrencyButton.MouseButton1Click:Connect(function()
@@ -2870,7 +2275,3 @@ if #passiveEffectParts > 0 then
 end
 
 updateBoards()
-	if isRovRolling then
-		return
-	end
-	isRovRolling = true
