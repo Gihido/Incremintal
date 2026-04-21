@@ -72,11 +72,21 @@ rebirthSpawnSpeedBonus = rebirthFolder:WaitForChild("SpawnSpeedBonus")
 rebirthWoodMultiplierBonus = rebirthFolder:WaitForChild("WoodMultiplierBonus")
 secondAreaUnlocked = rebirthFolder:WaitForChild("SecondAreaUnlocked")
 thirdUpgradeUnlocked = rebirthFolder:WaitForChild("ThirdUpgradeUnlocked")
-fourthSystemsUnlocked = rebirthFolder:WaitForChild("FourthSystemsUnlocked")
-fifthSystemsUnlocked = rebirthFolder:WaitForChild("FifthSystemsUnlocked")
+	fourthSystemsUnlocked = rebirthFolder:WaitForChild("FourthSystemsUnlocked")
+	fifthSystemsUnlocked = rebirthFolder:WaitForChild("FifthSystemsUnlocked")
+	sixthSystemsUnlocked = rebirthFolder:WaitForChild("SixthSystemsUnlocked")
 
-passiveFolder = data:WaitForChild("Passives")
-passiveStateJson = passiveFolder:WaitForChild("StateJson")
+	passiveFolder = data:WaitForChild("Passives")
+	passiveStateJson = passiveFolder:WaitForChild("StateJson")
+	runeFolder = data:WaitForChild("Runes")
+	runeStateJson = runeFolder:WaitForChild("StateJson")
+	runeUpgrades = runeFolder:WaitForChild("Upgrades")
+	runeLuckLevel = runeUpgrades:WaitForChild("RuneLuckLevel")
+	runeSpeedLevel = runeUpgrades:WaitForChild("RuneSpeedLevel")
+	runeBulkLevel = runeUpgrades:WaitForChild("RuneBulkLevel")
+	runeLuckCost = runeUpgrades:WaitForChild("RuneLuckCost")
+	runeSpeedCost = runeUpgrades:WaitForChild("RuneSpeedCost")
+	runeBulkCost = runeUpgrades:WaitForChild("RuneBulkCost")
 
 remotesFolder = ReplicatedStorage:WaitForChild("IncrementalRemotes")
 purchaseUpgradeEvent = remotesFolder:WaitForChild("PurchaseUpgrade")
@@ -84,8 +94,9 @@ purchaseRebirthEvent = remotesFolder:WaitForChild("PurchaseRebirth")
 adminActionEvent = remotesFolder:WaitForChild("AdminAction")
 notifyEvent = remotesFolder:WaitForChild("Notify")
 woodClickEvent = remotesFolder:WaitForChild("WoodClick")
-factoryActionEvent = remotesFolder:WaitForChild("FactoryAction")
-passiveActionEvent = remotesFolder:WaitForChild("PassiveAction")
+	factoryActionEvent = remotesFolder:WaitForChild("FactoryAction")
+	passiveActionEvent = remotesFolder:WaitForChild("PassiveAction")
+	runeActionEvent = remotesFolder:WaitForChild("RuneAction")
 
 doskaPart = workspace:WaitForChild("DoskaPart")
 upgradeDoska = workspace:WaitForChild("UpgradeDoska")
@@ -96,22 +107,28 @@ treeDoska = workspace:WaitForChild("TreeDoska")
 treeUpgradeDoska = workspace:WaitForChild("TreeUpgradeDoska")
 boostDoska = workspace:WaitForChild("BoostDoska")
 paperFactoryDoska = workspace:WaitForChild("PaperFactoryDoska")
-paperUpgradeDoska = workspace:FindFirstChild("PaperUpgradeDoska")
-passiveRollBlock = workspace:FindFirstChild("PassiveRollBlock")
-passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
+	paperUpgradeDoska = workspace:FindFirstChild("PaperUpgradeDoska")
+	passiveRollBlock = workspace:FindFirstChild("PassiveRollBlock")
+	passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
+	runeRollBlock = workspace:FindFirstChild("RuneRollBlock")
+	runeIndexBlock = workspace:FindFirstChild("RuneIndexBlock")
 
 local ADMIN_NAME = "Doter24_7"
 local MAX_COIN_SPAWN_SPEED_LEVEL = 3
-local MAX_REBIRTH_COUNT = 5
+local MAX_REBIRTH_COUNT = 6
 local PASSIVE_ROLL_COST = 50
 local PASSIVE_INVENTORY_CAPACITY = 10
 local isRovRolling = false
 
 local ICON_ASSET_IDS = {
-	Coin = "rbxassetid://PASTE_COIN_ICON_ID",
-	Rebirth = "rbxassetid://PASTE_REBIRTH_ICON_ID",
-	Tree = "rbxassetid://PASTE_TREE_ICON_ID",
-	Paper = "rbxassetid://PASTE_PAPER_ICON_ID",
+	Coin = "rbxassetid://6031094678",
+	Rebirth = "rbxassetid://6035067843",
+	Tree = "rbxassetid://6031068423",
+	Paper = "rbxassetid://6031075931",
+	Fuel = "rbxassetid://6031280882",
+	Upgrade = "rbxassetid://6031260785",
+	PassiveCard = "rbxassetid://6031229361",
+	Rune = "rbxassetid://6031079152",
 }
 
 local PASSIVE_DEFS = {
@@ -129,13 +146,13 @@ local PASSIVE_DEFS = {
 
 local selectedAdminCurrency = "Coins"
 local ROLL_ANIMATION_CONFIG = {
-	duration = 10,
-	totalCoins = 100,
-	rewardRevealTime = 8,
-	fadeOutTime = 0.6,
+	duration = 3,
+	totalCoins = 45,
+	rewardRevealTime = 0.9,
+	fadeOutTime = 0.4,
 	minCoinSize = 28,
 	maxCoinSize = 86,
-	coinSpawnInterval = 0.1,
+	coinSpawnInterval = 0.05,
 }
 
 local function roundToTenth(value)
@@ -1573,6 +1590,84 @@ end
 
 local passiveUi = createPassiveUi()
 
+local runeUi = {
+	panel = nil,
+	openBtn = nil,
+	indexText = nil,
+	luckBtn = nil,
+	speedBtn = nil,
+	bulkBtn = nil,
+}
+
+local function createRuneUi()
+	local ui = runeUi
+	ui.panel = Instance.new("Frame")
+	ui.panel.Size = UDim2.new(0, 460, 0, 370)
+	ui.panel.AnchorPoint = Vector2.new(0.5, 0.5)
+	ui.panel.Position = UDim2.new(0.5, 0, 0.54, 0)
+	ui.panel.Visible = false
+	ui.panel.BackgroundColor3 = Color3.fromRGB(62, 80, 132)
+	ui.panel.BorderSizePixel = 0
+	ui.panel.Parent = screenGui
+	createCorner(ui.panel, 18)
+	createGradient(ui.panel, Color3.fromRGB(112, 149, 232), Color3.fromRGB(67, 86, 142), 90)
+	createHeader(ui.panel, "RUNE INDEX", "Открытие рун после 6-го перерождения")
+
+	ui.openBtn = Instance.new("TextButton")
+	ui.openBtn.Size = UDim2.new(1, -16, 0, 40)
+	ui.openBtn.Position = UDim2.new(0, 8, 0, 70)
+	ui.openBtn.Text = "ОТКРЫТЬ РУНЫ (50 дерева)"
+	ui.openBtn.BackgroundColor3 = Color3.fromRGB(151, 227, 184)
+	ui.openBtn.TextColor3 = Color3.fromRGB(22, 56, 41)
+	ui.openBtn.TextScaled = true
+	ui.openBtn.Font = Enum.Font.GothamBlack
+	ui.openBtn.Parent = ui.panel
+	createCorner(ui.openBtn, 12)
+	addScaleHover(ui.openBtn)
+
+	ui.indexText = Instance.new("TextLabel")
+	ui.indexText.Size = UDim2.new(1, -16, 0, 170)
+	ui.indexText.Position = UDim2.new(0, 8, 0, 116)
+	ui.indexText.BackgroundColor3 = Color3.fromRGB(33, 46, 80)
+	ui.indexText.BackgroundTransparency = 0.15
+	ui.indexText.TextColor3 = Color3.fromRGB(236, 243, 255)
+	ui.indexText.TextWrapped = true
+	ui.indexText.TextYAlignment = Enum.TextYAlignment.Top
+	ui.indexText.TextScaled = true
+	ui.indexText.Font = Enum.Font.GothamBold
+	ui.indexText.Text = "Руны еще не открыты."
+	ui.indexText.Parent = ui.panel
+	createCorner(ui.indexText, 10)
+
+	local upgradesFrame = Instance.new("Frame")
+	upgradesFrame.Size = UDim2.new(1, -16, 0, 74)
+	upgradesFrame.Position = UDim2.new(0, 8, 1, -82)
+	upgradesFrame.BackgroundTransparency = 1
+	upgradesFrame.Parent = ui.panel
+	local lay = Instance.new("UIListLayout")
+	lay.FillDirection = Enum.FillDirection.Horizontal
+	lay.Padding = UDim.new(0, 6)
+	lay.Parent = upgradesFrame
+
+	local function mkBtn(text)
+		local b = Instance.new("TextButton")
+		b.Size = UDim2.new(0.333, -4, 1, 0)
+		b.BackgroundColor3 = Color3.fromRGB(168, 188, 255)
+		b.TextColor3 = Color3.fromRGB(36, 47, 80)
+		b.Font = Enum.Font.GothamBlack
+		b.TextScaled = true
+		b.Text = text
+		b.Parent = upgradesFrame
+		createCorner(b, 10)
+		return b
+	end
+	ui.luckBtn = mkBtn("Rune Luck")
+	ui.speedBtn = mkBtn("Rune Speed")
+	ui.bulkBtn = mkBtn("Rune Bulk")
+end
+
+createRuneUi()
+
 local function parsePassiveState()
 	local ok, decoded = pcall(function()
 		return HttpService:JSONDecode(passiveStateJson.Value)
@@ -1581,6 +1676,16 @@ local function parsePassiveState()
 		return decoded
 	end
 	return {inventory = {}, equippedUid = ""}
+end
+
+local function parseRuneState()
+	local ok, decoded = pcall(function()
+		return HttpService:JSONDecode(runeStateJson.Value)
+	end)
+	if ok and type(decoded) == "table" and type(decoded.counts) == "table" then
+		return decoded
+	end
+	return {counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0}}
 end
 
 local function getEquippedPassiveDef()
@@ -1800,7 +1905,7 @@ local function spawnCoin(layer, progress)
 	return coin
 end
 
-local function showReward(layer, passiveName, passiveIcon, rarityColor)
+local function showReward(layer, passiveName, passiveIcon, rarityColor, onClose)
 	local frame = Instance.new("Frame")
 	frame.Size = UDim2.new(0, 420, 0, 210)
 	frame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1840,6 +1945,24 @@ local function showReward(layer, passiveName, passiveIcon, rarityColor)
 	scale.Parent = frame
 	TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 0.04}):Play()
 	TweenService:Create(scale, TweenInfo.new(0.36, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 34, 0, 34)
+	closeBtn.Position = UDim2.new(0.5, -17, 1, 8)
+	closeBtn.Text = "✕"
+	closeBtn.Font = Enum.Font.GothamBlack
+	closeBtn.TextScaled = true
+	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 122, 122)
+	closeBtn.BorderSizePixel = 0
+	closeBtn.ZIndex = 145
+	closeBtn.Parent = frame
+	createCorner(closeBtn, 999)
+	closeBtn.MouseButton1Click:Connect(function()
+		if onClose then
+			onClose()
+		end
+	end)
 	return frame
 end
 
@@ -1888,11 +2011,17 @@ local function startRollAnimation(passiveName, passiveIcon, rarityColor)
 	task.spawn(function()
 		local elapsed = 0
 		local rewardFrame = nil
+		local closeRequested = false
 		while elapsed < ROLL_ANIMATION_CONFIG.duration do
 			local progress = math.clamp(elapsed / ROLL_ANIMATION_CONFIG.duration, 0, 1)
 			table.insert(coins, spawnCoin(coinLayer, progress))
 			if elapsed >= ROLL_ANIMATION_CONFIG.rewardRevealTime and not rewardFrame then
-				rewardFrame = showReward(passiveUi.rollFxLayer, passiveName, passiveIcon, rarityColor)
+				rewardFrame = showReward(passiveUi.rollFxLayer, passiveName, passiveIcon, rarityColor, function()
+					closeRequested = true
+				end)
+			end
+			if closeRequested then
+				break
 			end
 			elapsed += ROLL_ANIMATION_CONFIG.coinSpawnInterval
 			task.wait(ROLL_ANIMATION_CONFIG.coinSpawnInterval)
@@ -2001,6 +2130,8 @@ local function updateBoards()
 		rebirthNextText.Text = "4-е: x2 дерево, буст-доска, бумага"
 	elseif rebirthCount.Value == 4 then
 		rebirthNextText.Text = "5-е: пассивы и инвентарь (50 бумаги)"
+	elseif rebirthCount.Value == 5 then
+		rebirthNextText.Text = "6-е: система рун и индекса рун"
 	else
 		rebirthNextText.Text = "Все перерождения куплены"
 	end
@@ -2178,6 +2309,28 @@ local function updateBoards()
 		if passiveUi.rollButtonInventory then
 			setButtonVisual(passiveUi.rollButtonInventory, "ROV / ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
 		end
+	end
+
+	if runeUi.panel then
+		local runeUnlocked = sixthSystemsUnlocked.Value
+		if runeUi.panel.Visible and not runeUnlocked then
+			runeUi.panel.Visible = false
+		end
+		local rs = parseRuneState()
+		local c = rs.counts or {}
+		local function stacks(v)
+			return math.min(10, tonumber(v) or 0)
+		end
+		runeUi.indexText.Text = "Обычная: " .. tostring(c.Common or 0) .. " (эф. " .. tostring(stacks(c.Common)) .. ")\n"
+			.. "Необычная: " .. tostring(c.Uncommon or 0) .. " (эф. " .. tostring(stacks(c.Uncommon)) .. ")\n"
+			.. "Редкая: " .. tostring(c.Rare or 0) .. " (эф. " .. tostring(stacks(c.Rare)) .. ")\n"
+			.. "Эпическая: " .. tostring(c.Epic or 0) .. " (эф. " .. tostring(stacks(c.Epic)) .. ")\n"
+			.. "Легендарная: " .. tostring(c.Legendary or 0) .. " (эф. " .. tostring(stacks(c.Legendary)) .. ")\n\n"
+			.. "Luck x" .. tostring(runeLuckLevel.Value) .. " | Speed x" .. tostring(runeSpeedLevel.Value) .. " | Bulk +" .. tostring(runeBulkLevel.Value)
+		setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ РУНЫ (50 дерева)", woodCurrency.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
+		runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)"
+		runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)"
+		runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)"
 	end
 
 	updateWallVisual()
@@ -2362,6 +2515,27 @@ if passiveUi.deleteConfirmYes then
 	end)
 end
 
+if runeUi.openBtn then
+	runeUi.openBtn.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("Open")
+	end)
+end
+if runeUi.luckBtn then
+	runeUi.luckBtn.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeLuck")
+	end)
+end
+if runeUi.speedBtn then
+	runeUi.speedBtn.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeSpeed")
+	end)
+end
+if runeUi.bulkBtn then
+	runeUi.bulkBtn.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeBulk")
+	end)
+end
+
 giveCurrencyButton.MouseButton1Click:Connect(function()
 	local amount = tonumber(adminAmountBox.Text)
 	if amount then
@@ -2396,6 +2570,9 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 		else
 			showToast("Пассив получен")
 		end
+	elseif payload.kind == "rune_roll_result" then
+		local rolled = payload.rolled or {}
+		showToast("Открыто рун: " .. tostring(#rolled))
 	else
 		showToast(payload.text or "Готово")
 	end
@@ -2437,6 +2614,15 @@ mouse.Button1Down:Connect(function()
 		else
 			showToast("Пассивы откроются на 5-м перерождении")
 		end
+		return
+	end
+
+	if runeUi.panel and (mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock) then
+		if sixthSystemsUnlocked.Value then
+			runeUi.panel.Visible = not runeUi.panel.Visible
+		else
+			showToast("Руны откроются на 6-м перерождении")
+		end
 	end
 end)
 
@@ -2459,8 +2645,8 @@ local watchedValues = {
 
 	rebirthCount, rebirthNextCost, rebirthNextCurrency,
 	rebirthCoinMultiplierBonus, rebirthSpawnSpeedBonus, rebirthWoodMultiplierBonus,
-	secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked, fifthSystemsUnlocked,
-	passiveStateJson,
+	secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked, fifthSystemsUnlocked, sixthSystemsUnlocked,
+	passiveStateJson, runeStateJson, runeLuckLevel, runeSpeedLevel, runeBulkLevel, runeLuckCost, runeSpeedCost, runeBulkCost,
 }
 
 for _, obj in ipairs(watchedValues) do
