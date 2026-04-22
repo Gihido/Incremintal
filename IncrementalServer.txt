@@ -11,8 +11,9 @@ local zonePart = Workspace:WaitForChild("ZonePart")
 local coinTemplate = ServerStorage:WaitForChild("CoinPart")
 local rebirthWall = Workspace:WaitForChild("RebirthWall")
 local treeBlock = Workspace:WaitForChild("TreeBlock")
+local runeRollBlock = Workspace:FindFirstChild("RuneRollBlock")
 
-local SAVE_STORE_NAME = "IncrementalSave_v8"
+local SAVE_STORE_NAME = "IncrementalSave_v9"
 
 local MAX_COINS = 10
 local BASE_COIN_RESPAWN = 3
@@ -51,7 +52,24 @@ local ADMIN_NAME = "Doter24_7"
 local SAVE_INTERVAL = 45
 local SAVE_COOLDOWN = 20
 
-local MAX_REBIRTH_COUNT = 5
+local MAX_REBIRTH_COUNT = 6
+local RUNE_OPEN_WOOD_COST = 50
+local RUNE_OPEN_BASE_TIME = 10
+local RUNE_MAX_EFFECTIVE_STACKS = 10
+
+local RUNE_TYPES = {
+	Common = {displayName = "Обычная", rarity = "Common", weight = 1/1, coinBonus = 0.01, woodBonus = 0, paperBonus = 0},
+	Uncommon = {displayName = "Необычная", rarity = "Uncommon", weight = 1/5, coinBonus = 0.10, woodBonus = 0, paperBonus = 0},
+	Rare = {displayName = "Редкая", rarity = "Rare", weight = 1/25, coinBonus = 0.25, woodBonus = 0, paperBonus = 0},
+	Epic = {displayName = "Эпическая", rarity = "Epic", weight = 1/100, coinBonus = 0, woodBonus = 0.01, paperBonus = 0},
+	Legendary = {displayName = "Легендарная", rarity = "Legendary", weight = 1/1000, coinBonus = 0, woodBonus = 0, paperBonus = 0.01},
+}
+
+local RUNE_UPGRADES = {
+	Luck = {levelName = "RuneLuckLevel", costName = "RuneLuckCost", startCost = 50000, maxLevel = 3, currency = "Coins"},
+	Speed = {levelName = "RuneSpeedLevel", costName = "RuneSpeedCost", startCost = 5000, maxLevel = 2, currency = "Wood"},
+	Bulk = {levelName = "RuneBulkLevel", costName = "RuneBulkCost", startCost = 50, maxLevel = 5, currency = "Paper"},
+}
 
 local REBIRTH_STAGES = {
 	[1] = {
@@ -98,18 +116,31 @@ local REBIRTH_STAGES = {
 		unlockFourthSystems = true,
 		unlockFifthSystems = false,
 	},
-	[5] = {
-		cost = 50,
-		currency = "Paper",
+		[5] = {
+			cost = 50,
+			currency = "Paper",
 		coinMultiplier = 1,
 		spawnBonus = 0,
 		woodMultiplier = 1,
-		unlockTree = true,
-		unlockThirdUpgrades = true,
-		unlockFourthSystems = true,
-		unlockFifthSystems = true,
-	},
-}
+			unlockTree = true,
+			unlockThirdUpgrades = true,
+			unlockFourthSystems = true,
+			unlockFifthSystems = true,
+			unlockSixthSystems = false,
+		},
+		[6] = {
+			cost = 500,
+			currency = "Paper",
+			coinMultiplier = 1,
+			spawnBonus = 0,
+			woodMultiplier = 1,
+			unlockTree = true,
+			unlockThirdUpgrades = true,
+			unlockFourthSystems = true,
+			unlockFifthSystems = true,
+			unlockSixthSystems = true,
+		},
+	}
 
 local COIN_UPGRADES = {
 	CoinValue = {
@@ -374,6 +405,7 @@ local notifyEvent = ensureRemote("Notify")
 local woodClickEvent = ensureRemote("WoodClick")
 local factoryActionEvent = ensureRemote("FactoryAction")
 local passiveActionEvent = ensureRemote("PassiveAction")
+local runeActionEvent = ensureRemote("RuneAction")
 
 local activeCoinCount = 0
 local animatedCoins = {}
@@ -385,6 +417,9 @@ local woodCooldowns = {}
 local paperProcessAnchors = {}
 local passiveStates = {}
 local passiveRollCooldowns = {}
+local runeStates = {}
+local runeOpenCooldowns = {}
+local runeRollingSessions = {}
 local isClosing = false
 
 local treeBaseSize = treeBlock.Size
@@ -612,6 +647,77 @@ local function getPassiveMultipliers(player)
 	return passiveDef.coinMultiplier or 1, passiveDef.woodMultiplier or 1, passiveDef.globalMultiplier or 1, passiveDef.speedMultiplier or 1
 end
 
+local function emptyRuneState()
+	return {
+		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+	}
+end
+
+local function getRuneFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("Runes") or nil
+end
+
+local function getRuneState(player)
+	if not runeStates[player] then
+		runeStates[player] = emptyRuneState()
+	end
+	return runeStates[player]
+end
+
+local function writeRuneStateValue(player)
+	local folder = getRuneFolder(player)
+	if not folder then return end
+	local jsonValue = folder:FindFirstChild("StateJson")
+	if jsonValue then
+		jsonValue.Value = HttpService:JSONEncode(getRuneState(player))
+	end
+end
+
+local function getRuneUpgradeFolder(player)
+	local folder = getRuneFolder(player)
+	return folder and folder:FindFirstChild("Upgrades") or nil
+end
+
+local function chooseRuneType(luckLevel)
+	local luckFactor = 1 + (math.max(0, luckLevel or 0) * 0.12)
+	local weighted = {}
+	local total = 0
+	for runeId, runeDef in pairs(RUNE_TYPES) do
+		local weight = runeDef.weight or 0
+		if runeId ~= "Common" then
+			weight *= luckFactor
+		end
+		total += weight
+		weighted[runeId] = weight
+	end
+	local roll = math.random() * total
+	local running = 0
+	for runeId, weight in pairs(weighted) do
+		running += weight
+		if roll <= running then
+			return runeId
+		end
+	end
+	return "Common"
+end
+
+local function getRuneBonusMultipliers(player)
+	local state = getRuneState(player)
+	local coinMul, woodMul, paperMul = 1, 1, 1
+	for runeId, runeDef in pairs(RUNE_TYPES) do
+		local count = 0
+		if state.counts then
+			count = tonumber(state.counts[runeId]) or 0
+		end
+		local stacks = math.clamp(count, 0, RUNE_MAX_EFFECTIVE_STACKS)
+		coinMul += (runeDef.coinBonus or 0) * stacks
+		woodMul += (runeDef.woodBonus or 0) * stacks
+		paperMul += (runeDef.paperBonus or 0) * stacks
+	end
+	return coinMul, woodMul, paperMul
+end
+
 local function chooseRandomPassiveId()
 	local totalWeight = 0
 	for _, passiveDef in pairs(PASSIVE_DEFS) do
@@ -677,9 +783,17 @@ local function setupPlayerDataObjects(player)
 	createValue(rebirthFolder, "BoolValue", "ThirdUpgradeUnlocked", false)
 	createValue(rebirthFolder, "BoolValue", "FourthSystemsUnlocked", false)
 	createValue(rebirthFolder, "BoolValue", "FifthSystemsUnlocked", false)
+	createValue(rebirthFolder, "BoolValue", "SixthSystemsUnlocked", false)
 
 	local passiveFolder = ensureFolder(playerData, "Passives")
 	createValue(passiveFolder, "StringValue", "StateJson", HttpService:JSONEncode(emptyPassiveState()))
+	local runeFolder = ensureFolder(playerData, "Runes")
+	createValue(runeFolder, "StringValue", "StateJson", HttpService:JSONEncode(emptyRuneState()))
+	local runeUpgrades = ensureFolder(runeFolder, "Upgrades")
+	for _, config in pairs(RUNE_UPGRADES) do
+		createValue(runeUpgrades, "IntValue", config.levelName, 0)
+		createValue(runeUpgrades, "NumberValue", config.costName, config.startCost)
+	end
 
 	updateUpgradeActiveFlags(coinUpgrades, COIN_UPGRADES)
 	updateUpgradeActiveFlags(woodUpgrades, WOOD_UPGRADES)
@@ -730,6 +844,7 @@ local function recalculateRebirthStats(player)
 	local thirdUnlocked = false
 	local fourthUnlocked = false
 	local fifthUnlocked = false
+	local sixthUnlocked = false
 
 	for i = 1, count do
 		local stage = REBIRTH_STAGES[i]
@@ -747,11 +862,14 @@ local function recalculateRebirthStats(player)
 			if stage.unlockFourthSystems then
 				fourthUnlocked = true
 			end
-			if stage.unlockFifthSystems then
-				fifthUnlocked = true
+				if stage.unlockFifthSystems then
+					fifthUnlocked = true
+				end
+				if stage.unlockSixthSystems then
+					sixthUnlocked = true
+				end
 			end
 		end
-	end
 
 	rebirth.CoinMultiplierBonus.Value = totalCoinMultiplier
 	rebirth.SpawnSpeedBonus.Value = totalSpawnBonus
@@ -760,6 +878,7 @@ local function recalculateRebirthStats(player)
 	rebirth.ThirdUpgradeUnlocked.Value = thirdUnlocked
 	rebirth.FourthSystemsUnlocked.Value = fourthUnlocked
 	rebirth.FifthSystemsUnlocked.Value = fifthUnlocked
+	rebirth.SixthSystemsUnlocked.Value = sixthUnlocked
 
 	local nextStage = REBIRTH_STAGES[count + 1]
 	if nextStage then
@@ -881,6 +1000,17 @@ local function resetAllPlayerData(player)
 
 	passiveStates[player] = emptyPassiveState()
 	writePassiveStateValue(player)
+	runeStates[player] = emptyRuneState()
+	writeRuneStateValue(player)
+	local runeUpgrades = getRuneUpgradeFolder(player)
+	if runeUpgrades then
+		for _, cfg in pairs(RUNE_UPGRADES) do
+			local lvl = runeUpgrades:FindFirstChild(cfg.levelName)
+			local cost = runeUpgrades:FindFirstChild(cfg.costName)
+			if lvl then lvl.Value = 0 end
+			if cost then cost.Value = cfg.startCost end
+		end
+	end
 
 	markDirty(player)
 end
@@ -895,12 +1025,13 @@ local function getCoinReward(player)
 	end
 
 	local passiveCoin, _, passiveGlobalMultiplier = getPassiveMultipliers(player)
+	local runeCoinMultiplier = select(1, getRuneBonusMultipliers(player))
 
 	local baseValue = 1 + coinUpgrades.CoinValueLevel.Value
 	local baseMultiplier = 1 + (coinUpgrades.MultiplierLevel.Value * 0.1)
 	local woodCoinBoostMultiplier = 1.1 ^ woodUpgrades.CoinBoostLevel.Value
 
-	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier)
+	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier)
 end
 
 local function getCoinRespawnDelay(player)
@@ -935,6 +1066,7 @@ local function getWoodReward(player)
 	end
 
 	local _, passiveWoodMultiplier, passiveGlobalMultiplier = getPassiveMultipliers(player)
+	local _, runeWoodMultiplier = getRuneBonusMultipliers(player)
 
 	local baseValue = 1 + woodUpgrades.WoodValueLevel.Value
 	local woodMultiplier = 1 + woodUpgrades.WoodMultiplierLevel.Value + (coinUpgrades.WoodBoostLevel.Value * 0.25)
@@ -944,7 +1076,7 @@ local function getWoodReward(player)
 		goalFactor = computeGoalWoodFactorFromCoins(coins.Value)
 	end
 
-	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier * passiveGlobalMultiplier)
+	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier * passiveGlobalMultiplier * runeWoodMultiplier)
 end
 
 local function getWoodCooldown(player)
@@ -971,8 +1103,9 @@ local function getPaperProductionAmount(player)
 
 	local baseValue = 1 + paperUpgrades.PaperValueLevel.Value
 	local multiplier = 1 + (paperUpgrades.PaperMultiplierLevel.Value * 0.1)
+	local _, _, runePaperMultiplier = getRuneBonusMultipliers(player)
 
-	return roundToTenth(baseValue * multiplier)
+	return roundToTenth(baseValue * multiplier * runePaperMultiplier)
 end
 
 local function getPaperCycleTime(player)
@@ -1322,6 +1455,146 @@ local function handlePassiveAction(player, actionName, argument)
 	end
 end
 
+local function getRuneOpenDuration(player)
+	local upgrades = getRuneUpgradeFolder(player)
+	if not upgrades then
+		return RUNE_OPEN_BASE_TIME
+	end
+	local speedLevel = upgrades.RuneSpeedLevel.Value
+	local t = RUNE_OPEN_BASE_TIME - (speedLevel * 2.5)
+	return math.max(5, t)
+end
+
+local function getRuneRollInterval(player)
+	local upgrades = getRuneUpgradeFolder(player)
+	if not upgrades then
+		return 1
+	end
+	local baseInterval = 1.0
+	local interval = baseInterval / (1 + (upgrades.RuneSpeedLevel.Value * 0.5))
+	return math.max(0.2, interval)
+end
+
+local function rollRuneForPlayer(player)
+	local runeUpgrades = getRuneUpgradeFolder(player)
+	if not runeUpgrades then
+		return nil
+	end
+	local bulk = 1 + runeUpgrades.RuneBulkLevel.Value
+	local luck = runeUpgrades.RuneLuckLevel.Value
+	local state = getRuneState(player)
+	local rolled = {}
+	for _ = 1, bulk do
+		local runeId = chooseRuneType(luck)
+		state.counts[runeId] = (state.counts[runeId] or 0) + 1
+		table.insert(rolled, runeId)
+	end
+	writeRuneStateValue(player)
+	markDirty(player)
+	return rolled, state
+end
+
+local function startRuneRolling(player)
+	local session = runeRollingSessions[player]
+	if session and session.active then
+		return
+	end
+	runeRollingSessions[player] = {
+		active = true,
+		lastRollAt = 0,
+		sessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+	}
+	notifyEvent:FireClient(player, {kind = "rune_roll_state", active = true})
+end
+
+local function stopRuneRolling(player)
+	local session = runeRollingSessions[player]
+	if not session or not session.active then
+		return
+	end
+	session.active = false
+	notifyEvent:FireClient(player, {
+		kind = "rune_roll_state",
+		active = false,
+		session = session.sessionCounts,
+	})
+end
+
+local function isCharacterOnRuneBlock(player)
+	if not runeRollBlock then
+		return false
+	end
+	local character = player.Character
+	local hrp = character and character:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		return false
+	end
+	local localPos = runeRollBlock.CFrame:PointToObjectSpace(hrp.Position)
+	local half = runeRollBlock.Size * 0.5
+	local tolerance = Vector3.new(1.2, 3.5, 1.2)
+	return math.abs(localPos.X) <= (half.X + tolerance.X)
+		and math.abs(localPos.Z) <= (half.Z + tolerance.Z)
+		and math.abs(localPos.Y) <= (half.Y + tolerance.Y)
+end
+
+local function tryBuyRuneUpgrade(player, upgradeKey)
+	local cfg = RUNE_UPGRADES[upgradeKey]
+	local upgrades = getRuneUpgradeFolder(player)
+	if not cfg or not upgrades then return end
+	local rebirth = getRebirthFolder(player)
+	if not rebirth or not rebirth.SixthSystemsUnlocked.Value then
+		fireSimple(player, "Руны откроются на 6-м перерождении")
+		return
+	end
+	local levelObj = upgrades:FindFirstChild(cfg.levelName)
+	local costObj = upgrades:FindFirstChild(cfg.costName)
+	if not levelObj or not costObj then return end
+	if levelObj.Value >= cfg.maxLevel then
+		fireSimple(player, "Улучшение на максимуме")
+		return
+	end
+	local currencyObj
+	if cfg.currency == "Coins" then
+		currencyObj = getCoinsObject(player)
+	elseif cfg.currency == "Wood" then
+		currencyObj = getWoodCurrencyObject(player)
+	else
+		currencyObj = getPaperCurrencyObject(player)
+	end
+	if not currencyObj or currencyObj.Value < costObj.Value then
+		fireSimple(player, "Недостаточно ресурса")
+		return
+	end
+	if not spendCurrency(currencyObj, costObj.Value) then
+		return
+	end
+	levelObj.Value += 1
+	costObj.Value = math.floor(costObj.Value * 3 + 0.5)
+	fireSimple(player, "Улучшение рун куплено")
+	markDirty(player)
+end
+
+local function handleRuneAction(player, actionName)
+	local rebirth = getRebirthFolder(player)
+	local runeUpgrades = getRuneUpgradeFolder(player)
+	local wood = getWoodCurrencyObject(player)
+	if not rebirth or not runeUpgrades or not wood then return end
+	if not rebirth.SixthSystemsUnlocked.Value then
+		fireSimple(player, "Система рун откроется после 6-го перерождения")
+		return
+	end
+
+	if actionName == "Open" then
+		fireSimple(player, "Ролл рун теперь автоматический при стоянии на блоке")
+	elseif actionName == "UpgradeLuck" then
+		tryBuyRuneUpgrade(player, "Luck")
+	elseif actionName == "UpgradeSpeed" then
+		tryBuyRuneUpgrade(player, "Speed")
+	elseif actionName == "UpgradeBulk" then
+		tryBuyRuneUpgrade(player, "Bulk")
+	end
+end
+
 local function getRandomCoinCFrame()
 	local zoneSize = zonePart.Size
 	local coinSize = coinTemplate.Size
@@ -1482,13 +1755,14 @@ local function buildSaveData(player)
 	local paperFactory = getPaperFactoryFolder(player)
 	local paperUpgrades = getPaperUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
+	local runeUpgrades = getRuneUpgradeFolder(player)
 
-	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not paperFactory or not paperUpgrades or not rebirth then
+	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades then
 		return nil
 	end
 
 	return {
-		Version = 8,
+			Version = 9,
 		Coins = coins.Value,
 		CoinUpgrades = {
 			CoinValueLevel = coinUpgrades.CoinValueLevel.Value,
@@ -1521,12 +1795,21 @@ local function buildSaveData(player)
 			PaperMultiplierCost = paperUpgrades.PaperMultiplierCost.Value,
 			PaperSpeedCost = paperUpgrades.PaperSpeedCost.Value,
 		},
-		Rebirth = {
-			Count = rebirth.Count.Value,
-		},
-		Passives = getPassiveState(player),
-		Position = captureTransform(player),
-	}
+			Rebirth = {
+				Count = rebirth.Count.Value,
+			},
+			RuneUpgrades = {
+				RuneLuckLevel = runeUpgrades.RuneLuckLevel.Value,
+				RuneSpeedLevel = runeUpgrades.RuneSpeedLevel.Value,
+				RuneBulkLevel = runeUpgrades.RuneBulkLevel.Value,
+				RuneLuckCost = runeUpgrades.RuneLuckCost.Value,
+				RuneSpeedCost = runeUpgrades.RuneSpeedCost.Value,
+				RuneBulkCost = runeUpgrades.RuneBulkCost.Value,
+			},
+			Passives = getPassiveState(player),
+			Runes = getRuneState(player),
+			Position = captureTransform(player),
+		}
 end
 
 local function savePlayerData(player, force)
@@ -1568,6 +1851,8 @@ local function loadPlayerData(player)
 	setupPlayerDataObjects(player)
 	passiveStates[player] = emptyPassiveState()
 	writePassiveStateValue(player)
+	runeStates[player] = emptyRuneState()
+	writeRuneStateValue(player)
 
 	local success, data = pcall(function()
 		return playerDataStore:GetAsync("Player_" .. player.UserId)
@@ -1589,6 +1874,7 @@ local function loadPlayerData(player)
 	local paperFactory = getPaperFactoryFolder(player)
 	local paperUpgrades = getPaperUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
+	local runeUpgrades = getRuneUpgradeFolder(player)
 
 	coins.Value = roundToTenth(data.Coins or 0)
 
@@ -1633,6 +1919,14 @@ local function loadPlayerData(player)
 	rebirth.Count.Value = math.clamp(tonumber(savedRebirth.Count) or 0, 0, MAX_REBIRTH_COUNT)
 	recalculateRebirthStats(player)
 
+	local savedRuneUpgrades = data.RuneUpgrades or {}
+	runeUpgrades.RuneLuckLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneLuckLevel) or 0, 0, RUNE_UPGRADES.Luck.maxLevel)
+	runeUpgrades.RuneSpeedLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneSpeedLevel) or 0, 0, RUNE_UPGRADES.Speed.maxLevel)
+	runeUpgrades.RuneBulkLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneBulkLevel) or 0, 0, RUNE_UPGRADES.Bulk.maxLevel)
+	runeUpgrades.RuneLuckCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneLuckCost) or RUNE_UPGRADES.Luck.startCost)
+	runeUpgrades.RuneSpeedCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneSpeedCost) or RUNE_UPGRADES.Speed.startCost)
+	runeUpgrades.RuneBulkCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneBulkCost) or RUNE_UPGRADES.Bulk.startCost)
+
 	local savedPassives = data.Passives
 	if type(savedPassives) == "table" and type(savedPassives.inventory) == "table" then
 		passiveStates[player] = {
@@ -1643,6 +1937,17 @@ local function loadPlayerData(player)
 		passiveStates[player] = emptyPassiveState()
 	end
 	writePassiveStateValue(player)
+
+	local savedRunes = data.Runes
+	if type(savedRunes) == "table" and type(savedRunes.counts) == "table" then
+		runeStates[player] = {counts = {}}
+		for runeId, _ in pairs(RUNE_TYPES) do
+			runeStates[player].counts[runeId] = math.max(0, tonumber(savedRunes.counts[runeId]) or 0)
+		end
+	else
+		runeStates[player] = emptyRuneState()
+	end
+	writeRuneStateValue(player)
 
 	updateUpgradeActiveFlags(coinUpgrades, COIN_UPGRADES)
 	updateUpgradeActiveFlags(woodUpgrades, WOOD_UPGRADES)
@@ -1723,6 +2028,13 @@ passiveActionEvent.OnServerEvent:Connect(function(player, actionName, argument)
 	handlePassiveAction(player, actionName, argument)
 end)
 
+runeActionEvent.OnServerEvent:Connect(function(player, actionName)
+	if type(actionName) ~= "string" then
+		return
+	end
+	handleRuneAction(player, actionName)
+end)
+
 adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName, actionValue)
 	if player.Name ~= ADMIN_NAME then
 		return
@@ -1771,8 +2083,11 @@ Players.PlayerRemoving:Connect(function(player)
 	pendingTeleportTransforms[player] = nil
 	woodCooldowns[player.UserId] = nil
 	passiveRollCooldowns[player.UserId] = nil
+	runeOpenCooldowns[player.UserId] = nil
 	paperProcessAnchors[player] = nil
 	passiveStates[player] = nil
+	runeStates[player] = nil
+	runeRollingSessions[player] = nil
 end)
 
 task.spawn(function()
@@ -1790,9 +2105,9 @@ task.spawn(function()
 
 		local now = os.clock()
 
-		for _, player in ipairs(Players:GetPlayers()) do
-			local rebirth = getRebirthFolder(player)
-			local paperFactory = getPaperFactoryFolder(player)
+			for _, player in ipairs(Players:GetPlayers()) do
+				local rebirth = getRebirthFolder(player)
+				local paperFactory = getPaperFactoryFolder(player)
 
 			if rebirth and paperFactory then
 				if not rebirth.FourthSystemsUnlocked.Value then
@@ -1828,9 +2143,36 @@ task.spawn(function()
 						paperProcessAnchors[player] = now
 					end
 				end
+				end
+
+				if rebirth and rebirth.SixthSystemsUnlocked.Value and runeRollBlock then
+					if isCharacterOnRuneBlock(player) then
+						startRuneRolling(player)
+						local session = runeRollingSessions[player]
+						local interval = getRuneRollInterval(player)
+						if session and (now - (session.lastRollAt or 0)) >= interval then
+							session.lastRollAt = now
+							local rolled, state = rollRuneForPlayer(player)
+							if rolled then
+								for _, runeId in ipairs(rolled) do
+									session.sessionCounts[runeId] = (session.sessionCounts[runeId] or 0) + 1
+								end
+								notifyEvent:FireClient(player, {
+									kind = "rune_roll_tick",
+									rolled = rolled,
+									session = session.sessionCounts,
+									state = state,
+								})
+							end
+						end
+					else
+						stopRuneRolling(player)
+					end
+				else
+					stopRuneRolling(player)
+				end
 			end
 		end
-	end
 end)
 
 game:BindToClose(function()
