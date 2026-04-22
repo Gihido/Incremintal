@@ -9,7 +9,11 @@ player = Players.LocalPlayer
 mouse = player:GetMouse()
 playerGui = player:WaitForChild("PlayerGui")
 
-data = player:WaitForChild("PlayerData")
+data = player:WaitForChild("PlayerData", 30)
+if not data then
+	warn("PlayerData was not created within 30 seconds for " .. player.Name)
+	return
+end
 coins = data:WaitForChild("Coins")
 
 coinUpgrades = data:WaitForChild("CoinUpgrades")
@@ -150,80 +154,142 @@ local PASSIVE_INVENTORY_CAPACITY = 10
 local isRovRolling = false
 
 local ICON_ASSET_IDS = {
-	Coin = "rbxassetid://6031094678",
-	Rebirth = "rbxassetid://6035067843",
-	Tree = "rbxassetid://6031068423",
-	Paper = "rbxassetid://6031075931",
-	Fuel = "rbxassetid://6031280882",
-	Upgrade = "rbxassetid://6031260785",
-	PassiveCard = "rbxassetid://6031229361",
-	Rune = "rbxassetid://6031079152",
-	XP = "rbxassetid://6031271144",
+	CurrencyCoin = "rbxassetid://6031094678",
+	CurrencyTree = "rbxassetid://6031068423",
+	CurrencyPaper = "rbxassetid://6031075931",
+	CurrencyFuel = "rbxassetid://6031280882",
+	CurrencyRebirth = "rbxassetid://6035067843",
+	CurrencyXP = "rbxassetid://6031271144",
+
+	UpgradeCoinGain = "rbxassetid://6031260785",
+	UpgradeCoinMultiplier = "rbxassetid://6031260785",
+	UpgradeCoinSpawnSpeed = "rbxassetid://6031260785",
+	UpgradeCoinWoodBoost = "rbxassetid://6031260785",
+	UpgradeTreeGain = "rbxassetid://6031260785",
+	UpgradeTreeMultiplier = "rbxassetid://6031260785",
+	UpgradeTreeSpeed = "rbxassetid://6031260785",
+	UpgradeTreeCoinBoost = "rbxassetid://6031260785",
+	UpgradePaperGain = "rbxassetid://6031260785",
+	UpgradePaperMultiplier = "rbxassetid://6031260785",
+	UpgradePaperSpeed = "rbxassetid://6031260785",
+	UpgradeRuneLuck = "rbxassetid://6031260785",
+	UpgradeRuneSpeed = "rbxassetid://6031260785",
+	UpgradeRuneBulk = "rbxassetid://6031260785",
+	UpgradeCoinXP = "rbxassetid://6031271144",
+	UpgradePaperXP = "rbxassetid://6031271144",
+	UpgradeWoodXP = "rbxassetid://6031271144",
+	UpgradeXPMultiplier = "rbxassetid://6031271144",
+	UpgradeRuneLuckXP = "rbxassetid://6031079152",
+	UpgradeRuneBulkXP = "rbxassetid://6031079152",
+	UpgradeRuneSpeedXP = "rbxassetid://6031079152",
+	UpgradePassiveRoll = "rbxassetid://6031229361",
+	UpgradeRebirth = "rbxassetid://6035067843",
+
+	RuneCommon = "rbxassetid://6031079152",
+	RuneUncommon = "rbxassetid://6031079152",
+	RuneRare = "rbxassetid://6031079152",
+	RuneEpic = "rbxassetid://6031079152",
+	RuneLegendary = "rbxassetid://6031079152",
+
+	PassiveCoinBallA = "rbxassetid://6031094678",
+	PassiveCoinBallB = "rbxassetid://6031094678",
+	PassiveWoodBallA = "rbxassetid://6031068423",
+	PassiveDualBall = "rbxassetid://6031068423",
+	PassiveRareSprout = "rbxassetid://6031068423",
+	PassiveRareForest = "rbxassetid://6031068423",
+	PassiveEpicBloom = "rbxassetid://6031075931",
+	PassiveLegendSeed = "rbxassetid://6031075931",
+	PassiveSwiftLeaf = "rbxassetid://6031094678",
+	PassiveMythicCore = "rbxassetid://6035067843",
+	PassiveXPSeeker = "rbxassetid://6031271144",
+	PassivePaperPulse = "rbxassetid://6031075931",
+	PassiveForestMint = "rbxassetid://6031068423",
+	PassiveClockworkLeaf = "rbxassetid://6031094678",
+	PassiveRuneScout = "rbxassetid://6031079152",
+	PassiveBulkCrafter = "rbxassetid://6031079152",
+	PassiveVelocityRune = "rbxassetid://6031079152",
+	PassiveMythicPrism = "rbxassetid://6035067843",
+	PassiveMythicRunelord = "rbxassetid://6031079152",
+	PassiveMythicChronicle = "rbxassetid://6031271144",
+	PassiveCardDefault = "rbxassetid://6031229361",
+
+	WorldRuneRollBlock = "rbxassetid://6031079152",
+	WorldRuneIndexBlock = "rbxassetid://6031079152",
+	BoardRuneUpgrade = "rbxassetid://6031260785",
+	BoardXPUpgrade = "rbxassetid://6031260785",
+	BoardXPProgress = "rbxassetid://6031260785",
 }
 
 local AssetSlots = {
 	CurrencyIcons = {
-		Coin = ICON_ASSET_IDS.Coin,
-		Tree = ICON_ASSET_IDS.Tree,
-		Paper = ICON_ASSET_IDS.Paper,
-		Fuel = ICON_ASSET_IDS.Fuel,
-		Rebirth = ICON_ASSET_IDS.Rebirth,
-		XP = ICON_ASSET_IDS.XP,
+		Coin = ICON_ASSET_IDS.CurrencyCoin,
+		Tree = ICON_ASSET_IDS.CurrencyTree,
+		Paper = ICON_ASSET_IDS.CurrencyPaper,
+		Fuel = ICON_ASSET_IDS.CurrencyFuel,
+		Rebirth = ICON_ASSET_IDS.CurrencyRebirth,
+		XP = ICON_ASSET_IDS.CurrencyXP,
 	},
 	UpgradeIcons = {
-		CoinGain = ICON_ASSET_IDS.Upgrade,
-		CoinMultiplier = ICON_ASSET_IDS.Upgrade,
-		CoinSpawnSpeed = ICON_ASSET_IDS.Upgrade,
-		CoinWoodBoost = ICON_ASSET_IDS.Upgrade,
-		TreeGain = ICON_ASSET_IDS.Upgrade,
-		TreeMultiplier = ICON_ASSET_IDS.Upgrade,
-		TreeSpeed = ICON_ASSET_IDS.Upgrade,
-		TreeCoinBoost = ICON_ASSET_IDS.Upgrade,
-		PaperGain = ICON_ASSET_IDS.Upgrade,
-		PaperMultiplier = ICON_ASSET_IDS.Upgrade,
-		PaperSpeed = ICON_ASSET_IDS.Upgrade,
-		RuneLuck = ICON_ASSET_IDS.Upgrade,
-		RuneSpeed = ICON_ASSET_IDS.Upgrade,
-		RuneBulk = ICON_ASSET_IDS.Upgrade,
-		CoinXP = ICON_ASSET_IDS.XP,
-		PaperXP = ICON_ASSET_IDS.XP,
-		WoodXP = ICON_ASSET_IDS.XP,
-		XPMultiplier = ICON_ASSET_IDS.XP,
-		RuneLuckXP = ICON_ASSET_IDS.Rune,
-		RuneBulkXP = ICON_ASSET_IDS.Rune,
-		RuneSpeedXP = ICON_ASSET_IDS.Rune,
-		PassiveRoll = ICON_ASSET_IDS.PassiveCard,
-		RebirthUpgrade = ICON_ASSET_IDS.Rebirth,
+		CoinGain = ICON_ASSET_IDS.UpgradeCoinGain,
+		CoinMultiplier = ICON_ASSET_IDS.UpgradeCoinMultiplier,
+		CoinSpawnSpeed = ICON_ASSET_IDS.UpgradeCoinSpawnSpeed,
+		CoinWoodBoost = ICON_ASSET_IDS.UpgradeCoinWoodBoost,
+		TreeGain = ICON_ASSET_IDS.UpgradeTreeGain,
+		TreeMultiplier = ICON_ASSET_IDS.UpgradeTreeMultiplier,
+		TreeSpeed = ICON_ASSET_IDS.UpgradeTreeSpeed,
+		TreeCoinBoost = ICON_ASSET_IDS.UpgradeTreeCoinBoost,
+		PaperGain = ICON_ASSET_IDS.UpgradePaperGain,
+		PaperMultiplier = ICON_ASSET_IDS.UpgradePaperMultiplier,
+		PaperSpeed = ICON_ASSET_IDS.UpgradePaperSpeed,
+		RuneLuck = ICON_ASSET_IDS.UpgradeRuneLuck,
+		RuneSpeed = ICON_ASSET_IDS.UpgradeRuneSpeed,
+		RuneBulk = ICON_ASSET_IDS.UpgradeRuneBulk,
+		CoinXP = ICON_ASSET_IDS.UpgradeCoinXP,
+		PaperXP = ICON_ASSET_IDS.UpgradePaperXP,
+		WoodXP = ICON_ASSET_IDS.UpgradeWoodXP,
+		XPMultiplier = ICON_ASSET_IDS.UpgradeXPMultiplier,
+		RuneLuckXP = ICON_ASSET_IDS.UpgradeRuneLuckXP,
+		RuneBulkXP = ICON_ASSET_IDS.UpgradeRuneBulkXP,
+		RuneSpeedXP = ICON_ASSET_IDS.UpgradeRuneSpeedXP,
+		PassiveRoll = ICON_ASSET_IDS.UpgradePassiveRoll,
+		RebirthUpgrade = ICON_ASSET_IDS.UpgradeRebirth,
 	},
 	RuneIcons = {
-		Common = ICON_ASSET_IDS.Rune,
-		Uncommon = ICON_ASSET_IDS.Rune,
-		Rare = ICON_ASSET_IDS.Rune,
-		Epic = ICON_ASSET_IDS.Rune,
-		Legendary = ICON_ASSET_IDS.Rune,
+		Common = ICON_ASSET_IDS.RuneCommon,
+		Uncommon = ICON_ASSET_IDS.RuneUncommon,
+		Rare = ICON_ASSET_IDS.RuneRare,
+		Epic = ICON_ASSET_IDS.RuneEpic,
+		Legendary = ICON_ASSET_IDS.RuneLegendary,
 	},
 	NotificationIcons = {
-		Coin = ICON_ASSET_IDS.Coin,
-		Tree = ICON_ASSET_IDS.Tree,
-		Paper = ICON_ASSET_IDS.Paper,
-		Fuel = ICON_ASSET_IDS.Fuel,
-		XP = ICON_ASSET_IDS.XP,
+		Coin = ICON_ASSET_IDS.CurrencyCoin,
+		Tree = ICON_ASSET_IDS.CurrencyTree,
+		Paper = ICON_ASSET_IDS.CurrencyPaper,
+		Fuel = ICON_ASSET_IDS.CurrencyFuel,
+		XP = ICON_ASSET_IDS.CurrencyXP,
 	},
 	PassiveIcons = {},
 	PassiveCardImages = {},
 	IndexCardImages = {},
 	WorldPanelIcons = {
-		RuneRollBlock = ICON_ASSET_IDS.Rune,
-		RuneIndexBlock = ICON_ASSET_IDS.Rune,
+		RuneRollBlock = ICON_ASSET_IDS.WorldRuneRollBlock,
+		RuneIndexBlock = ICON_ASSET_IDS.WorldRuneIndexBlock,
 	},
 	BoardIcons = {
-		RuneUpgradeBoard = ICON_ASSET_IDS.Upgrade,
-		XPUpgradeBoard = ICON_ASSET_IDS.Upgrade,
-		XPProgressBoard = ICON_ASSET_IDS.Upgrade,
+		RuneUpgradeBoard = ICON_ASSET_IDS.BoardRuneUpgrade,
+		XPUpgradeBoard = ICON_ASSET_IDS.BoardXPUpgrade,
+		XPProgressBoard = ICON_ASSET_IDS.BoardXPProgress,
 	},
 	BillboardBackgrounds = {
 		RuneMain = "",
+	},
+	UiBackgrounds = {
 		RuneSession = "",
+	},
+	AdminEventIcons = {
+		RuneLuckEvent = "rbxassetid://6031079152",
+		RuneBulkEvent = "rbxassetid://6031079152",
+		RuneSpeedEvent = "rbxassetid://6031079152",
 	},
 }
 
@@ -238,11 +304,21 @@ local PASSIVE_DEFS = {
 	LegendSeed = {name = "Бумажный поток", rarity = "Legendary", currencyType = "Paper", desc = "Легендарная синергия ресурсов.", effect = "+400% монет и дерева", iconKey = "Paper", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
 	SwiftLeaf = {name = "Ветер мастерства", rarity = "Epic", currencyType = "Coins", desc = "Ускоряет циклы и дроп.", effect = "+20% монет/дерева, +35% скорость", iconKey = "Coin", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
 	MythicCore = {name = "Мифическое ядро", rarity = "Mythic", currencyType = "Paper", desc = "Универсальный мифический буст.", effect = "+100% ко всему", iconKey = "Rebirth", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
+	XPSeeker = {name = "Охотник XP", rarity = "Rare", currencyType = "XP", desc = "Стабильный рост XP.", effect = "+50% XP", iconKey = "XP", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, xpMultiplier = 1.5, chance = "6%"},
+	PaperPulse = {name = "Печатный импульс", rarity = "Rare", currencyType = "Paper", desc = "Ускоряет бумажную прогрессию.", effect = "+35% бумага", iconKey = "Paper", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1.15, speedMultiplier = 1, chance = "5%"},
+	ForestMint = {name = "Лесная монетница", rarity = "Uncommon", currencyType = "Wood", desc = "Синергия монет и дерева.", effect = "+35% монеты/дерево", iconKey = "Tree", coinMultiplier = 1.35, woodMultiplier = 1.35, globalMultiplier = 1, speedMultiplier = 1, chance = "10%"},
+	ClockworkLeaf = {name = "Часовой лист", rarity = "Epic", currencyType = "Coins", desc = "Немного ускоряет всё.", effect = "+25% скорость", iconKey = "Coin", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1.25, chance = "4%"},
+	RuneScout = {name = "Рунный разведчик", rarity = "Rare", currencyType = "XP", desc = "Добавляет удачу рунам.", effect = "+25% Rune Luck", iconKey = "RuneCommon", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, runeLuckMultiplier = 1.25, chance = "5%"},
+	BulkCrafter = {name = "Кузнец связок", rarity = "Epic", currencyType = "Paper", desc = "Улучшает массовый ролл рун.", effect = "+30% Rune Bulk", iconKey = "RuneRare", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, runeBulkMultiplier = 1.3, chance = "3%"},
+	VelocityRune = {name = "Руна ускорения", rarity = "Epic", currencyType = "XP", desc = "Ускоряет рунные циклы.", effect = "+40% Rune Speed", iconKey = "RuneEpic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, runeSpeedMultiplier = 1.4, chance = "3%"},
+	MythicPrism = {name = "Мифический призматик", rarity = "Mythic", currencyType = "Paper", desc = "x2 глобальная экономика без системных бонусов.", effect = "x2 Global (без rebirth/rune)", iconKey = "Rebirth", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "0.7%"},
+	MythicRunelord = {name = "Повелитель рун", rarity = "Mythic", currencyType = "Runes", desc = "Сильный рунный трипл-буст.", effect = "x3 Luck/Speed, x2 Bulk", iconKey = "RuneLegendary", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, runeLuckMultiplier = 3, runeSpeedMultiplier = 3, runeBulkMultiplier = 2, chance = "0.5%"},
+	MythicChronicle = {name = "Хроника бесконечности", rarity = "Mythic", currencyType = "XP", desc = "Секретная синергия XP + ресурсов.", effect = "x2 XP, +35% ко всем ресурсам", iconKey = "XP", coinMultiplier = 1.35, woodMultiplier = 1.35, globalMultiplier = 1.35, speedMultiplier = 1.1, xpMultiplier = 2, chance = "0.3%"},
 }
 
 for passiveId, def in pairs(PASSIVE_DEFS) do
 	def.id = passiveId
-	AssetSlots.PassiveIcons[passiveId] = ICON_ASSET_IDS[def.iconKey or "PassiveCard"] or ICON_ASSET_IDS.PassiveCard
+	AssetSlots.PassiveIcons[passiveId] = ICON_ASSET_IDS["Passive" .. passiveId] or ICON_ASSET_IDS.PassiveCardDefault
 	AssetSlots.PassiveCardImages[passiveId] = AssetSlots.PassiveIcons[passiveId]
 	AssetSlots.IndexCardImages[passiveId] = AssetSlots.PassiveIcons[passiveId]
 end
@@ -256,6 +332,14 @@ local ROLL_ANIMATION_CONFIG = {
 	minCoinSize = 28,
 	maxCoinSize = 86,
 	coinSpawnInterval = 0.05,
+}
+local RUNE_DISPLAY_ORDER = {"Common", "Uncommon", "Rare", "Epic", "Legendary"}
+local RUNE_VISUALS = {
+	Common = {name = "ОБЫЧНАЯ", chance = "60%", rowColor = Color3.fromRGB(61, 74, 79), accent = Color3.fromRGB(210, 210, 210), icon = "◈"},
+	Uncommon = {name = "НЕОБЫЧНАЯ", chance = "25%", rowColor = Color3.fromRGB(28, 96, 31), accent = Color3.fromRGB(154, 255, 84), icon = "ᛒ"},
+	Rare = {name = "РЕДКАЯ", chance = "10%", rowColor = Color3.fromRGB(12, 72, 108), accent = Color3.fromRGB(78, 201, 255), icon = "ᛟ"},
+	Epic = {name = "ЭПИЧЕСКАЯ", chance = "4%", rowColor = Color3.fromRGB(72, 16, 110), accent = Color3.fromRGB(196, 86, 255), icon = "ᚲ"},
+	Legendary = {name = "ЛЕГЕНДАРНАЯ", chance = "1%", rowColor = Color3.fromRGB(96, 72, 22), accent = Color3.fromRGB(255, 205, 64), icon = "ᛋ"},
 }
 
 local function roundToTenth(value)
@@ -445,10 +529,36 @@ toastHolder.Size = UDim2.new(0, 460, 0, 60)
 toastHolder.BackgroundTransparency = 1
 toastHolder.Parent = screenGui
 
+local adminEventGui = Instance.new("Frame")
+adminEventGui.Name = "AdminEventGui"
+adminEventGui.AnchorPoint = Vector2.new(0, 1)
+adminEventGui.Position = UDim2.new(0, 12, 1, -12)
+adminEventGui.Size = UDim2.new(0, 280, 0, 140)
+adminEventGui.BackgroundTransparency = 1
+adminEventGui.Parent = screenGui
+
+local adminEventLayout = Instance.new("UIListLayout")
+adminEventLayout.Padding = UDim.new(0, 6)
+adminEventLayout.Parent = adminEventGui
+adminEventLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+
+local adminEventTooltip = Instance.new("TextLabel")
+adminEventTooltip.Visible = false
+adminEventTooltip.Size = UDim2.new(0, 220, 0, 64)
+adminEventTooltip.BackgroundColor3 = Color3.fromRGB(25, 35, 52)
+adminEventTooltip.TextColor3 = Color3.fromRGB(237, 246, 255)
+adminEventTooltip.TextWrapped = true
+adminEventTooltip.TextScaled = true
+adminEventTooltip.Font = Enum.Font.GothamBold
+adminEventTooltip.BorderSizePixel = 0
+adminEventTooltip.ZIndex = 120
+adminEventTooltip.Parent = screenGui
+createCorner(adminEventTooltip, 10)
+
 local adminFrame = Instance.new("Frame")
 adminFrame.AnchorPoint = Vector2.new(1, 0)
 adminFrame.Position = UDim2.new(1, -18, 0, 18)
-adminFrame.Size = UDim2.new(0, 280, 0, 225)
+adminFrame.Size = UDim2.new(0, 320, 0, 390)
 adminFrame.Visible = player.Name == ADMIN_NAME
 adminFrame.BackgroundColor3 = Color3.fromRGB(84, 76, 128)
 adminFrame.BorderSizePixel = 0
@@ -492,7 +602,7 @@ currencySelector.BackgroundTransparency = 1
 currencySelector.Parent = adminFrame
 
 local selectCoinsButton = Instance.new("TextButton")
-selectCoinsButton.Size = UDim2.new(0.31, 0, 1, 0)
+selectCoinsButton.Size = UDim2.new(0.23, 0, 1, 0)
 selectCoinsButton.BackgroundColor3 = Color3.fromRGB(255, 206, 80)
 selectCoinsButton.TextColor3 = Color3.fromRGB(20, 42, 56)
 selectCoinsButton.Text = "COINS"
@@ -504,8 +614,8 @@ createCorner(selectCoinsButton, 12)
 addScaleHover(selectCoinsButton)
 
 local selectWoodButton = Instance.new("TextButton")
-selectWoodButton.Size = UDim2.new(0.31, 0, 1, 0)
-selectWoodButton.Position = UDim2.new(0.345, 0, 0, 0)
+selectWoodButton.Size = UDim2.new(0.23, 0, 1, 0)
+selectWoodButton.Position = UDim2.new(0.255, 0, 0, 0)
 selectWoodButton.BackgroundColor3 = Color3.fromRGB(130, 160, 120)
 selectWoodButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 selectWoodButton.Text = "WOOD"
@@ -517,8 +627,8 @@ createCorner(selectWoodButton, 12)
 addScaleHover(selectWoodButton)
 
 local selectPaperButton = Instance.new("TextButton")
-selectPaperButton.Size = UDim2.new(0.31, 0, 1, 0)
-selectPaperButton.Position = UDim2.new(0.69, 0, 0, 0)
+selectPaperButton.Size = UDim2.new(0.23, 0, 1, 0)
+selectPaperButton.Position = UDim2.new(0.51, 0, 0, 0)
 selectPaperButton.BackgroundColor3 = Color3.fromRGB(206, 216, 240)
 selectPaperButton.TextColor3 = Color3.fromRGB(45, 56, 77)
 selectPaperButton.Text = "PAPER"
@@ -529,31 +639,18 @@ selectPaperButton.BorderSizePixel = 0
 createCorner(selectPaperButton, 12)
 addScaleHover(selectPaperButton)
 
-local selectPaperButton = Instance.new("TextButton")
-selectPaperButton.Size = UDim2.new(0.31, 0, 1, 0)
-selectPaperButton.Position = UDim2.new(0.69, 0, 0, 0)
-selectPaperButton.BackgroundColor3 = Color3.fromRGB(206, 216, 240)
-selectPaperButton.TextColor3 = Color3.fromRGB(45, 56, 77)
-selectPaperButton.Text = "PAPER"
-selectPaperButton.Font = Enum.Font.GothamBlack
-selectPaperButton.TextSize = 16
-selectPaperButton.Parent = currencySelector
-selectPaperButton.BorderSizePixel = 0
-createCorner(selectPaperButton, 12)
-addScaleHover(selectPaperButton)
-
-local selectPaperButton = Instance.new("TextButton")
-selectPaperButton.Size = UDim2.new(0.31, 0, 1, 0)
-selectPaperButton.Position = UDim2.new(0.69, 0, 0, 0)
-selectPaperButton.BackgroundColor3 = Color3.fromRGB(206, 216, 240)
-selectPaperButton.TextColor3 = Color3.fromRGB(45, 56, 77)
-selectPaperButton.Text = "PAPER"
-selectPaperButton.Font = Enum.Font.GothamBlack
-selectPaperButton.TextSize = 16
-selectPaperButton.Parent = currencySelector
-selectPaperButton.BorderSizePixel = 0
-createCorner(selectPaperButton, 12)
-addScaleHover(selectPaperButton)
+local selectXPButton = Instance.new("TextButton")
+selectXPButton.Size = UDim2.new(0.23, 0, 1, 0)
+selectXPButton.Position = UDim2.new(0.765, 0, 0, 0)
+selectXPButton.BackgroundColor3 = Color3.fromRGB(140, 196, 255)
+selectXPButton.TextColor3 = Color3.fromRGB(24, 50, 70)
+selectXPButton.Text = "XP"
+selectXPButton.Font = Enum.Font.GothamBlack
+selectXPButton.TextSize = 16
+selectXPButton.Parent = currencySelector
+selectXPButton.BorderSizePixel = 0
+createCorner(selectXPButton, 12)
+addScaleHover(selectXPButton)
 
 local giveCurrencyButton = Instance.new("TextButton")
 giveCurrencyButton.Position = UDim2.new(0, 0, 0, 126)
@@ -581,6 +678,67 @@ resetButton.BorderSizePixel = 0
 createCorner(resetButton, 12)
 addScaleHover(resetButton)
 
+local adminPassiveBox = Instance.new("TextBox")
+adminPassiveBox.Position = UDim2.new(0, 0, 0, 212)
+adminPassiveBox.Size = UDim2.new(1, 0, 0, 30)
+adminPassiveBox.BackgroundColor3 = Color3.fromRGB(114, 104, 165)
+adminPassiveBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+adminPassiveBox.PlaceholderText = "Passive ID (например MythicRunelord)"
+adminPassiveBox.Text = "MythicRunelord"
+adminPassiveBox.Font = Enum.Font.Gotham
+adminPassiveBox.TextSize = 14
+adminPassiveBox.Parent = adminFrame
+createCorner(adminPassiveBox, 10)
+
+local givePassiveButton = Instance.new("TextButton")
+givePassiveButton.Position = UDim2.new(0, 0, 0, 248)
+givePassiveButton.Size = UDim2.new(1, 0, 0, 28)
+givePassiveButton.BackgroundColor3 = Color3.fromRGB(128, 228, 188)
+givePassiveButton.TextColor3 = Color3.fromRGB(20, 52, 38)
+givePassiveButton.Text = "Выдать пассив"
+givePassiveButton.Font = Enum.Font.GothamBlack
+givePassiveButton.TextSize = 14
+givePassiveButton.Parent = adminFrame
+givePassiveButton.BorderSizePixel = 0
+createCorner(givePassiveButton, 10)
+
+local adminRuneBoostButton = Instance.new("TextButton")
+adminRuneBoostButton.Position = UDim2.new(0, 0, 0, 280)
+adminRuneBoostButton.Size = UDim2.new(1, 0, 0, 28)
+adminRuneBoostButton.BackgroundColor3 = Color3.fromRGB(166, 212, 94)
+adminRuneBoostButton.TextColor3 = Color3.fromRGB(28, 46, 20)
+adminRuneBoostButton.Text = "Rune boosts x20"
+adminRuneBoostButton.Font = Enum.Font.GothamBlack
+adminRuneBoostButton.TextSize = 14
+adminRuneBoostButton.Parent = adminFrame
+adminRuneBoostButton.BorderSizePixel = 0
+createCorner(adminRuneBoostButton, 10)
+
+local startAllEventsButton = Instance.new("TextButton")
+startAllEventsButton.Position = UDim2.new(0, 0, 0, 312)
+startAllEventsButton.Size = UDim2.new(1, 0, 0, 28)
+startAllEventsButton.BackgroundColor3 = Color3.fromRGB(109, 195, 255)
+startAllEventsButton.TextColor3 = Color3.fromRGB(18, 44, 66)
+startAllEventsButton.Text = "Start all server events (5m)"
+startAllEventsButton.Font = Enum.Font.GothamBlack
+startAllEventsButton.TextSize = 13
+startAllEventsButton.Parent = adminFrame
+startAllEventsButton.BorderSizePixel = 0
+createCorner(startAllEventsButton, 10)
+
+local toggleAdminButton = Instance.new("TextButton")
+toggleAdminButton.AnchorPoint = Vector2.new(1, 0)
+toggleAdminButton.Position = UDim2.new(1, -18, 0, 412)
+toggleAdminButton.Size = UDim2.new(0, 96, 0, 30)
+toggleAdminButton.BackgroundColor3 = Color3.fromRGB(80, 92, 133)
+toggleAdminButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleAdminButton.Text = "Admin Hide"
+toggleAdminButton.Font = Enum.Font.GothamBold
+toggleAdminButton.TextSize = 13
+toggleAdminButton.Visible = player.Name == ADMIN_NAME
+toggleAdminButton.Parent = screenGui
+createCorner(toggleAdminButton, 10)
+
 local function refreshAdminCurrencyButtons()
 	if selectedAdminCurrency == "Coins" then
 		selectCoinsButton.BackgroundColor3 = Color3.fromRGB(255, 206, 80)
@@ -589,6 +747,8 @@ local function refreshAdminCurrencyButtons()
 		selectWoodButton.TextColor3 = Color3.fromRGB(240, 244, 255)
 		selectPaperButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
 		selectPaperButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+		selectXPButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+		selectXPButton.TextColor3 = Color3.fromRGB(240, 244, 255)
 	else
 		selectCoinsButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
 		selectCoinsButton.TextColor3 = Color3.fromRGB(240, 244, 255)
@@ -597,11 +757,24 @@ local function refreshAdminCurrencyButtons()
 			selectWoodButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 			selectPaperButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
 			selectPaperButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+			selectXPButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+			selectXPButton.TextColor3 = Color3.fromRGB(240, 244, 255)
 		else
-			selectWoodButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
-			selectWoodButton.TextColor3 = Color3.fromRGB(240, 244, 255)
-			selectPaperButton.BackgroundColor3 = Color3.fromRGB(206, 216, 240)
-			selectPaperButton.TextColor3 = Color3.fromRGB(45, 56, 77)
+			if selectedAdminCurrency == "Paper" then
+				selectWoodButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+				selectWoodButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+				selectPaperButton.BackgroundColor3 = Color3.fromRGB(206, 216, 240)
+				selectPaperButton.TextColor3 = Color3.fromRGB(45, 56, 77)
+				selectXPButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+				selectXPButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+			else
+				selectWoodButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+				selectWoodButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+				selectPaperButton.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+				selectPaperButton.TextColor3 = Color3.fromRGB(240, 244, 255)
+				selectXPButton.BackgroundColor3 = Color3.fromRGB(140, 196, 255)
+				selectXPButton.TextColor3 = Color3.fromRGB(24, 50, 70)
+			end
 		end
 	end
 end
@@ -830,7 +1003,7 @@ local function createLockedOverlay(parent, text)
 	createCorner(overlay, 18)
 	createStroke(overlay, Color3.fromRGB(255, 255, 255), 2, 0.18)
 
-	local icon = createIcon(overlay, ICON_ASSET_IDS.Tree, "?", Color3.fromRGB(171, 123, 76), Color3.fromRGB(108, 73, 44))
+	local icon = createIcon(overlay, ICON_ASSET_IDS.CurrencyTree, "?", Color3.fromRGB(171, 123, 76), Color3.fromRGB(108, 73, 44))
 	icon.Position = UDim2.new(0.5, -34, 0.28, -34)
 
 	local label = Instance.new("TextLabel")
@@ -1004,7 +1177,7 @@ createGradient(rebirthPanel, Color3.fromRGB(204, 162, 255), Color3.fromRGB(133, 
 createStroke(rebirthPanel, Color3.fromRGB(255, 255, 255), 2, 0.12)
 createDecorDots(rebirthPanel, 7)
 
-local rebirthIcon = createIcon(rebirthPanel, ICON_ASSET_IDS.Rebirth, "R", Color3.fromRGB(255, 153, 217), Color3.fromRGB(171, 114, 255))
+local rebirthIcon = createIcon(rebirthPanel, ICON_ASSET_IDS.CurrencyRebirth, "R", Color3.fromRGB(255, 153, 217), Color3.fromRGB(171, 114, 255))
 rebirthIcon.Position = UDim2.new(0.5, -34, 0, 10)
 
 local rebirthLevelText = Instance.new("TextLabel")
@@ -1357,6 +1530,47 @@ if xpProgressDoska then
 	xpProgressUi = {valueText = valueRow, costText = costRow, barFill = barFill, buyButton = buyBtn}
 end
 
+local runeIndexBoardRows = {}
+if runeIndexBlock then
+	local _, runeIndexBoard = createWorldBoard("RuneIndexBoardSurfaceGui", runeIndexBlock, Enum.NormalId.Front, 72)
+	createHeader(runeIndexBoard, "RUNE INDEX", "Инфо по эффектам рун")
+	local list = Instance.new("ScrollingFrame")
+	list.Size = UDim2.new(1, 0, 1, -66)
+	list.Position = UDim2.new(0, 0, 0, 66)
+	list.BackgroundTransparency = 1
+	list.BorderSizePixel = 0
+	list.ScrollBarThickness = 8
+	list.CanvasSize = UDim2.new(0, 0, 0, 0)
+	list.Parent = runeIndexBoard
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 6)
+	layout.Parent = list
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		list.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
+	end)
+	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, 0, 0, 72)
+		row.BackgroundColor3 = Color3.fromRGB(43, 67, 96)
+		row.BorderSizePixel = 0
+		row.Parent = list
+		createCorner(row, 10)
+		local text = Instance.new("TextLabel")
+		text.Size = UDim2.new(1, -12, 1, -8)
+		text.Position = UDim2.new(0, 6, 0, 4)
+		text.BackgroundTransparency = 1
+		text.TextXAlignment = Enum.TextXAlignment.Left
+		text.TextYAlignment = Enum.TextYAlignment.Top
+		text.TextWrapped = true
+		text.TextScaled = true
+		text.Font = Enum.Font.GothamBold
+		text.TextColor3 = Color3.fromRGB(236, 245, 255)
+		text.Text = runeId
+		text.Parent = row
+		runeIndexBoardRows[runeId] = text
+	end
+end
+
 local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
@@ -1443,22 +1657,23 @@ local function createPassiveUi()
 	ui.rollFxLayer.Parent = screenGui
 
 	ui.indexPanel = Instance.new("Frame")
-	ui.indexPanel.Size = UDim2.new(0, 640, 0, 460)
+	ui.indexPanel.Size = UDim2.new(0, 700, 0, 500)
 	ui.indexPanel.AnchorPoint = Vector2.new(0.5, 0.5)
 	ui.indexPanel.Position = UDim2.new(0.5, 0, 0.55, 0)
 	ui.indexPanel.Visible = false
-	ui.indexPanel.BackgroundColor3 = Color3.fromRGB(66, 90, 145)
+	ui.indexPanel.BackgroundColor3 = Color3.fromRGB(45, 66, 112)
 	ui.indexPanel.BorderSizePixel = 0
 	ui.indexPanel.Parent = screenGui
 	createCorner(ui.indexPanel, 20)
-	createGradient(ui.indexPanel, Color3.fromRGB(118, 153, 234), Color3.fromRGB(72, 93, 154), 90)
+	createGradient(ui.indexPanel, Color3.fromRGB(99, 141, 232), Color3.fromRGB(49, 72, 126), 90)
+	createStroke(ui.indexPanel, Color3.fromRGB(203, 224, 255), 2, 0.1)
 
 	createHeader(ui.indexPanel, "PASSIVE INDEX", "Нажми на пассив и смотри статы")
 	ui.rollButton = Instance.new("TextButton")
 	ui.rollButton.Size = UDim2.new(0.5, -12, 0, 40)
 	ui.rollButton.Position = UDim2.new(0, 8, 0, 70)
 	ui.rollButton.BackgroundColor3 = Color3.fromRGB(255, 216, 120)
-	ui.rollButton.Text = "ROV / ROLL (50 Paper)"
+	ui.rollButton.Text = "ROLL PASSIVE (50 Paper)"
 	ui.rollButton.TextColor3 = Color3.fromRGB(48, 55, 71)
 	ui.rollButton.Font = Enum.Font.GothamBlack
 	ui.rollButton.TextScaled = true
@@ -1484,25 +1699,25 @@ local function createPassiveUi()
 	indexList.BackgroundTransparency = 1
 	indexList.Parent = ui.indexPanel
 	local grid = Instance.new("UIGridLayout")
-	grid.CellSize = UDim2.new(0, 108, 0, 104)
-	grid.CellPadding = UDim2.new(0, 8, 0, 10)
+	grid.CellSize = UDim2.new(0, 122, 0, 116)
+	grid.CellPadding = UDim2.new(0, 10, 0, 12)
 	grid.Parent = indexList
 
 	for passiveId, passiveDef in pairs(PASSIVE_DEFS) do
 		local b = Instance.new("TextButton")
 		b.Text = ""
-		b.Size = UDim2.new(0, 108, 0, 104)
-		b.BackgroundColor3 = Color3.fromRGB(88, 110, 166)
+		b.Size = UDim2.new(0, 122, 0, 116)
+		b.BackgroundColor3 = Color3.fromRGB(74, 97, 156)
 		b.BorderSizePixel = 0
 		b.Parent = indexList
 		createCorner(b, 12)
 		createStroke(b, getRarityColor(passiveDef.rarity), 2, 0.15)
 		local cardIcon = Instance.new("ImageLabel")
-		cardIcon.Size = UDim2.new(0, 54, 0, 54)
+		cardIcon.Size = UDim2.new(0, 60, 0, 60)
 		cardIcon.AnchorPoint = Vector2.new(0.5, 0)
 		cardIcon.Position = UDim2.new(0.5, 0, 0, 8)
 		cardIcon.BackgroundTransparency = 1
-		cardIcon.Image = getAssetOrEmpty(AssetSlots.IndexCardImages[passiveId] or ICON_ASSET_IDS.PassiveCard)
+		cardIcon.Image = getAssetOrEmpty(AssetSlots.IndexCardImages[passiveId] or ICON_ASSET_IDS.PassiveCardDefault)
 		cardIcon.Parent = b
 		local shine = Instance.new("Frame")
 		shine.Size = UDim2.new(1, -8, 0, 18)
@@ -1558,22 +1773,23 @@ local function createPassiveUi()
 	createCorner(closeDetail, 10)
 
 	ui.inventoryPanel = Instance.new("Frame")
-	ui.inventoryPanel.Size = UDim2.new(0, 600, 0, 430)
+	ui.inventoryPanel.Size = UDim2.new(0, 700, 0, 500)
 	ui.inventoryPanel.AnchorPoint = Vector2.new(0.5, 0.5)
 	ui.inventoryPanel.Position = UDim2.new(0.5, 0, 0.55, 0)
 	ui.inventoryPanel.Visible = false
-	ui.inventoryPanel.BackgroundColor3 = Color3.fromRGB(66, 90, 145)
+	ui.inventoryPanel.BackgroundColor3 = Color3.fromRGB(45, 66, 112)
 	ui.inventoryPanel.BorderSizePixel = 0
 	ui.inventoryPanel.Parent = screenGui
 	createCorner(ui.inventoryPanel, 20)
-	createGradient(ui.inventoryPanel, Color3.fromRGB(118, 153, 234), Color3.fromRGB(72, 93, 154), 90)
+	createGradient(ui.inventoryPanel, Color3.fromRGB(99, 141, 232), Color3.fromRGB(49, 72, 126), 90)
+	createStroke(ui.inventoryPanel, Color3.fromRGB(203, 224, 255), 2, 0.1)
 	createHeader(ui.inventoryPanel, "PASSIVE INVENTORY", "ЛКМ экипировка, ПКМ удаление")
 
 	ui.rollButtonInventory = Instance.new("TextButton")
 	ui.rollButtonInventory.Size = UDim2.new(0.5, -12, 0, 40)
 	ui.rollButtonInventory.Position = UDim2.new(0, 8, 0, 70)
 	ui.rollButtonInventory.BackgroundColor3 = Color3.fromRGB(255, 216, 120)
-	ui.rollButtonInventory.Text = "ROV / ROLL (50 Paper)"
+	ui.rollButtonInventory.Text = "ROLL PASSIVE (50 Paper)"
 	ui.rollButtonInventory.TextColor3 = Color3.fromRGB(48, 55, 71)
 	ui.rollButtonInventory.Font = Enum.Font.GothamBlack
 	ui.rollButtonInventory.TextScaled = true
@@ -1803,7 +2019,7 @@ local function openPassiveIndexCard(passiveId)
 		icon.BackgroundTransparency = 1
 		icon.Parent = passiveUi.indexDetail
 	end
-	icon.Image = getAssetOrEmpty(AssetSlots.PassiveCardImages[passiveId] or ICON_ASSET_IDS.PassiveCard)
+	icon.Image = getAssetOrEmpty(AssetSlots.PassiveCardImages[passiveId] or ICON_ASSET_IDS.PassiveCardDefault)
 	local detailText = passiveUi.indexDetail:FindFirstChild("Text")
 	if detailText and detailText:IsA("TextLabel") then
 		detailText.Position = UDim2.new(0, 8, 0, 100)
@@ -1847,156 +2063,320 @@ local runeRollingActive = false
 local parseRuneState
 
 local function createRuneOverlays()
-	runeUi.summaryGui = Instance.new("Frame")
-	runeUi.summaryGui.Size = UDim2.new(0, 360, 0, 190)
-	runeUi.summaryGui.AnchorPoint = Vector2.new(1, 1)
-	runeUi.summaryGui.Position = UDim2.new(1, -16, 1, -190)
-	runeUi.summaryGui.BackgroundColor3 = Color3.fromRGB(48, 64, 108)
-	runeUi.summaryGui.BorderSizePixel = 0
-	runeUi.summaryGui.Visible = false
-	runeUi.summaryGui.Parent = screenGui
-	createCorner(runeUi.summaryGui, 12)
-	local t1 = Instance.new("TextLabel")
-	t1.Name = "Text"
-	t1.Size = UDim2.new(1, -12, 1, -12)
-	t1.Position = UDim2.new(0, 6, 0, 6)
-	t1.BackgroundTransparency = 1
-	t1.TextWrapped = true
-	t1.TextYAlignment = Enum.TextYAlignment.Top
-	t1.TextScaled = true
-	t1.Font = Enum.Font.GothamBold
-	t1.TextColor3 = Color3.fromRGB(236, 243, 255)
-	t1.Parent = runeUi.summaryGui
+	runeUi.summaryRows = {}
+	runeUi.sessionRows = {}
 
-	runeUi.sessionGui = Instance.new("Frame")
-	runeUi.sessionGui.Size = UDim2.new(0, 360, 0, 150)
-	runeUi.sessionGui.AnchorPoint = Vector2.new(1, 1)
-	runeUi.sessionGui.Position = UDim2.new(1, -16, 1, -24)
-	runeUi.sessionGui.BackgroundColor3 = Color3.fromRGB(56, 74, 122)
-	runeUi.sessionGui.BorderSizePixel = 0
-	runeUi.sessionGui.Visible = false
-	runeUi.sessionGui.Parent = screenGui
-	createCorner(runeUi.sessionGui, 12)
-	local t2 = Instance.new("TextLabel")
-	t2.Name = "Text"
-	t2.Size = UDim2.new(1, -12, 1, -12)
-	t2.Position = UDim2.new(0, 6, 0, 6)
-	t2.BackgroundTransparency = 1
-	t2.TextWrapped = true
-	t2.TextYAlignment = Enum.TextYAlignment.Top
-	t2.TextScaled = true
-	t2.Font = Enum.Font.GothamBold
-	t2.TextColor3 = Color3.fromRGB(236, 243, 255)
-	t2.Parent = runeUi.sessionGui
+	local function createRuneBillboard(adornee, name, size, offset, backgroundSlot)
+		local gui = Instance.new("BillboardGui")
+		gui.Name = name
+		gui.Adornee = adornee
+		gui.Size = size
+		gui.StudsOffset = offset
+		gui.AlwaysOnTop = true
+		gui.MaxDistance = 20
+		gui.LightInfluence = 0
+		gui.Parent = screenGui
 
-	if runeRollBlock then
-		runeUi.worldBillboard = Instance.new("BillboardGui")
-		runeUi.worldBillboard.Name = "RuneWorldDisplay"
-		runeUi.worldBillboard.Adornee = runeRollBlock
-		runeUi.worldBillboard.Size = UDim2.new(0, 420, 0, 220)
-			runeUi.worldBillboard.StudsOffset = Vector3.new(0, 5.5, 0)
-			runeUi.worldBillboard.AlwaysOnTop = true
-			runeUi.worldBillboard.MaxDistance = 32
-		runeUi.worldBillboard.Parent = screenGui
-		local bg = Instance.new("Frame")
-		bg.Size = UDim2.new(1, 0, 1, 0)
-		bg.BackgroundColor3 = Color3.fromRGB(34, 47, 80)
-		bg.BackgroundTransparency = 0.12
-		bg.BorderSizePixel = 0
-		bg.Parent = runeUi.worldBillboard
-		createCorner(bg, 12)
+		local root = Instance.new("Frame")
+		root.Size = UDim2.new(1, 0, 1, 0)
+		root.BackgroundColor3 = Color3.fromRGB(27, 94, 21)
+		root.BorderSizePixel = 0
+		root.Parent = gui
+		createCorner(root, 22)
+		createStroke(root, Color3.fromRGB(165, 255, 60), 4, 0)
+		createGradient(root, Color3.fromRGB(77, 156, 33), Color3.fromRGB(19, 72, 18), 90)
+
+		local bgImage = Instance.new("ImageLabel")
+		bgImage.Name = "TemplateBackground"
+		bgImage.Size = UDim2.new(1, 0, 1, 0)
+		bgImage.BackgroundTransparency = 1
+		bgImage.Image = getAssetOrEmpty(AssetSlots.BillboardBackgrounds[backgroundSlot])
+		bgImage.ImageTransparency = bgImage.Image == "" and 1 or 0
+		bgImage.ScaleType = Enum.ScaleType.Stretch
+		bgImage.Parent = root
+
+		local header = Instance.new("Frame")
+		header.Size = UDim2.new(1, -18, 0, 44)
+		header.Position = UDim2.new(0, 9, 0, 8)
+		header.BackgroundColor3 = Color3.fromRGB(35, 110, 34)
+		header.BorderSizePixel = 0
+		header.Parent = root
+		createCorner(header, 14)
+		createStroke(header, Color3.fromRGB(26, 66, 24), 3, 0)
+		createGradient(header, Color3.fromRGB(74, 141, 52), Color3.fromRGB(23, 80, 26), 90)
+
+		local headerText = Instance.new("TextLabel")
+		headerText.Size = UDim2.new(1, 0, 1, 0)
+		headerText.BackgroundTransparency = 1
+		headerText.Text = "◈  РУНЫ  ◈"
+		headerText.TextColor3 = Color3.fromRGB(245, 248, 255)
+		headerText.TextStrokeTransparency = 0.45
+		headerText.Font = Enum.Font.GothamBlack
+		headerText.TextScaled = true
+		headerText.Parent = header
+
+		local rowHolder = Instance.new("ScrollingFrame")
+		rowHolder.Size = UDim2.new(1, -14, 1, -66)
+		rowHolder.Position = UDim2.new(0, 7, 0, 56)
+		rowHolder.BackgroundTransparency = 1
+		rowHolder.BorderSizePixel = 0
+		rowHolder.ScrollBarThickness = 6
+		rowHolder.ScrollBarImageColor3 = Color3.fromRGB(196, 255, 124)
+		rowHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
+		rowHolder.Parent = root
+
+		local rowList = Instance.new("UIListLayout")
+		rowList.Padding = UDim.new(0, 5)
+		rowList.Parent = rowHolder
+		rowList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		rowList.VerticalAlignment = Enum.VerticalAlignment.Top
+		rowList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			rowHolder.CanvasSize = UDim2.new(0, 0, 0, rowList.AbsoluteContentSize.Y + 6)
+		end)
+
+		for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
+			local visual = RUNE_VISUALS[runeId]
+			local row = Instance.new("Frame")
+			row.Size = UDim2.new(1, 0, 0, 66)
+			row.BackgroundColor3 = visual.rowColor
+			row.BorderSizePixel = 0
+			row.Parent = rowHolder
+			createCorner(row, 12)
+			createStroke(row, visual.accent, 2, 0.2)
+
+			local iconBadge = Instance.new("Frame")
+			iconBadge.Size = UDim2.new(0, 38, 0, 38)
+			iconBadge.Position = UDim2.new(0, 6, 0.5, -19)
+			iconBadge.BackgroundColor3 = Color3.fromRGB(20, 24, 30)
+			iconBadge.BorderSizePixel = 0
+			iconBadge.Parent = row
+			createCorner(iconBadge, 999)
+			createStroke(iconBadge, visual.accent, 2, 0.05)
+
+			local iconLabel = Instance.new("ImageLabel")
+			iconLabel.Size = UDim2.new(1, -6, 1, -6)
+			iconLabel.Position = UDim2.new(0, 3, 0, 3)
+			iconLabel.BackgroundTransparency = 1
+			iconLabel.Image = getAssetOrEmpty(AssetSlots.RuneIcons[runeId])
+			iconLabel.ScaleType = Enum.ScaleType.Fit
+			iconLabel.Parent = iconBadge
+
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Size = UDim2.new(0.58, -6, 0, 24)
+			nameLabel.Position = UDim2.new(0, 50, 0, 2)
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+			nameLabel.Text = visual.name
+			nameLabel.TextColor3 = visual.accent
+			nameLabel.Font = Enum.Font.GothamBlack
+			nameLabel.TextScaled = true
+			nameLabel.Parent = row
+
+			local infoPanel = Instance.new("Frame")
+			infoPanel.Size = UDim2.new(0.62, -6, 0, 32)
+			infoPanel.Position = UDim2.new(0.36, 0, 0, 32)
+			infoPanel.BackgroundColor3 = Color3.fromRGB(13, 20, 28)
+			infoPanel.BackgroundTransparency = 0.3
+			infoPanel.BorderSizePixel = 0
+			infoPanel.Parent = row
+			createCorner(infoPanel, 8)
+			createStroke(infoPanel, visual.accent, 1.2, 0.35)
+
+			local countLabel = Instance.new("TextLabel")
+			countLabel.Name = "Count"
+			countLabel.Size = UDim2.new(0.55, -4, 1, 0)
+			countLabel.Position = UDim2.new(0, 6, 0, 0)
+			countLabel.BackgroundTransparency = 1
+			countLabel.TextXAlignment = Enum.TextXAlignment.Left
+			countLabel.TextYAlignment = Enum.TextYAlignment.Center
+			countLabel.Text = "КОЛ-ВО\n0"
+			countLabel.TextColor3 = Color3.fromRGB(248, 251, 255)
+			countLabel.Font = Enum.Font.GothamBold
+			countLabel.TextSize = 11
+			countLabel.TextWrapped = true
+			countLabel.Parent = infoPanel
+
+			local chanceLabel = Instance.new("TextLabel")
+			chanceLabel.Name = "Chance"
+			chanceLabel.Size = UDim2.new(0.45, -6, 1, 0)
+			chanceLabel.Position = UDim2.new(0.55, 0, 0, 0)
+			chanceLabel.BackgroundTransparency = 1
+			chanceLabel.TextXAlignment = Enum.TextXAlignment.Right
+			chanceLabel.TextYAlignment = Enum.TextYAlignment.Center
+			chanceLabel.Text = "ШАНС\n" .. visual.chance
+			chanceLabel.TextColor3 = visual.accent
+			chanceLabel.Font = Enum.Font.GothamBold
+			chanceLabel.TextSize = 11
+			chanceLabel.TextWrapped = true
+			chanceLabel.Parent = infoPanel
+
+			local split = Instance.new("Frame")
+			split.Size = UDim2.new(0, 1, 1, -6)
+			split.Position = UDim2.new(0.55, -1, 0, 3)
+			split.BackgroundColor3 = Color3.fromRGB(170, 186, 212)
+			split.BackgroundTransparency = 0.5
+			split.BorderSizePixel = 0
+			split.Parent = infoPanel
+
+			runeUi.summaryRows[runeId] = countLabel
+		end
+
+		return gui
+	end
+
+	local function createRuneSessionScreen()
+		local panel = Instance.new("Frame")
+		panel.Name = "RuneSessionPanel"
+		panel.Size = UDim2.new(0, 320, 0, 300)
+		panel.AnchorPoint = Vector2.new(1, 1)
+		panel.Position = UDim2.new(1, -14, 1, -14)
+		panel.BackgroundColor3 = Color3.fromRGB(27, 94, 21)
+		panel.BorderSizePixel = 0
+		panel.Visible = false
+		panel.Parent = screenGui
+		createCorner(panel, 20)
+		createStroke(panel, Color3.fromRGB(165, 255, 60), 3, 0)
+		createGradient(panel, Color3.fromRGB(77, 156, 33), Color3.fromRGB(19, 72, 18), 90)
+
 		local bgImage = Instance.new("ImageLabel")
 		bgImage.Size = UDim2.new(1, 0, 1, 0)
 		bgImage.BackgroundTransparency = 1
-		bgImage.Image = getAssetOrEmpty(AssetSlots.BillboardBackgrounds.RuneMain)
+		bgImage.Image = getAssetOrEmpty(AssetSlots.UiBackgrounds.RuneSession)
+		bgImage.ImageTransparency = bgImage.Image == "" and 1 or 0
 		bgImage.ScaleType = Enum.ScaleType.Stretch
-		bgImage.Parent = bg
-		local txt = Instance.new("TextLabel")
-		txt.Name = "Text"
-		txt.Size = UDim2.new(1, -12, 1, -12)
-		txt.Position = UDim2.new(0, 6, 0, 6)
-		txt.BackgroundTransparency = 1
-		txt.TextWrapped = true
-		txt.TextYAlignment = Enum.TextYAlignment.Top
-		txt.TextScaled = true
-		txt.Font = Enum.Font.GothamBold
-		txt.TextColor3 = Color3.fromRGB(236, 243, 255)
-		txt.Parent = bg
+		bgImage.Parent = panel
+
+		local header = Instance.new("Frame")
+		header.Size = UDim2.new(1, -18, 0, 42)
+		header.Position = UDim2.new(0, 9, 0, 8)
+		header.BackgroundColor3 = Color3.fromRGB(35, 110, 34)
+		header.BorderSizePixel = 0
+		header.Parent = panel
+		createCorner(header, 12)
+		createStroke(header, Color3.fromRGB(26, 66, 24), 2, 0)
+		local headerText = Instance.new("TextLabel")
+		headerText.Size = UDim2.new(1, 0, 1, 0)
+		headerText.BackgroundTransparency = 1
+		headerText.Text = "◈  РУНЫ  ◈"
+		headerText.TextColor3 = Color3.fromRGB(245, 248, 255)
+		headerText.Font = Enum.Font.GothamBlack
+		headerText.TextScaled = true
+		headerText.Parent = header
+
+		local listHolder = Instance.new("ScrollingFrame")
+		listHolder.Size = UDim2.new(1, -16, 1, -62)
+		listHolder.Position = UDim2.new(0, 8, 0, 54)
+		listHolder.BackgroundTransparency = 1
+		listHolder.BorderSizePixel = 0
+		listHolder.ScrollBarThickness = 8
+		listHolder.ScrollBarImageColor3 = Color3.fromRGB(196, 255, 124)
+		listHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
+		listHolder.Parent = panel
+
+		local list = Instance.new("UIListLayout")
+		list.Padding = UDim.new(0, 5)
+		list.Parent = listHolder
+		list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		list.VerticalAlignment = Enum.VerticalAlignment.Top
+		list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			listHolder.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 4)
+		end)
+
+		for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
+			local visual = RUNE_VISUALS[runeId]
+			local row = Instance.new("Frame")
+			row.Size = UDim2.new(1, 0, 0, 44)
+			row.BackgroundColor3 = visual.rowColor
+			row.BorderSizePixel = 0
+			row.Parent = listHolder
+			createCorner(row, 10)
+			createStroke(row, visual.accent, 2, 0.25)
+
+			local icon = Instance.new("ImageLabel")
+			icon.Size = UDim2.new(0, 30, 0, 30)
+			icon.Position = UDim2.new(0, 8, 0.5, -15)
+			icon.BackgroundTransparency = 1
+			icon.Image = getAssetOrEmpty(AssetSlots.RuneIcons[runeId])
+			icon.ScaleType = Enum.ScaleType.Fit
+			icon.Parent = row
+
+			local name = Instance.new("TextLabel")
+			name.Size = UDim2.new(0.5, 0, 1, 0)
+			name.Position = UDim2.new(0, 46, 0, 0)
+			name.BackgroundTransparency = 1
+			name.TextXAlignment = Enum.TextXAlignment.Left
+			name.Text = visual.name
+			name.TextColor3 = visual.accent
+			name.Font = Enum.Font.GothamBlack
+			name.TextScaled = true
+			name.Parent = row
+
+			local gain = Instance.new("TextLabel")
+			gain.Name = "Gain"
+			gain.Size = UDim2.new(0.32, 0, 1, 0)
+			gain.Position = UDim2.new(0.66, 0, 0, 0)
+			gain.BackgroundTransparency = 1
+			gain.TextXAlignment = Enum.TextXAlignment.Right
+			gain.Text = "+0"
+			gain.TextColor3 = visual.accent
+			gain.Font = Enum.Font.GothamBlack
+			gain.TextScaled = true
+			gain.Parent = row
+			runeUi.sessionRows[runeId] = gain
+		end
+
+		runeUi.sessionPanel = panel
 	end
+
+	if runeRollBlock then
+		runeUi.worldBillboard = createRuneBillboard(runeRollBlock, "RuneWorldMainDisplay", UDim2.new(0, 320, 0, 410), Vector3.new(0, 5.2, 0), "RuneMain")
+	end
+	createRuneSessionScreen()
 end
 
 createRuneOverlays()
 
 local function updateRuneSessionGui()
-	if not runeUi.sessionGui then return end
-	local text = runeUi.sessionGui:FindFirstChild("Text")
-	if text then
-		text.Text = "СЕССИЯ РУН\n"
-			.. "Обычная: " .. tostring(runeSessionCounts.Common or 0) .. "\n"
-			.. "Необычная: " .. tostring(runeSessionCounts.Uncommon or 0) .. "\n"
-			.. "Редкая: " .. tostring(runeSessionCounts.Rare or 0) .. "\n"
-			.. "Эпическая: " .. tostring(runeSessionCounts.Epic or 0) .. "\n"
-			.. "Легендарная: " .. tostring(runeSessionCounts.Legendary or 0)
+	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
+		local label = runeUi.sessionRows and runeUi.sessionRows[runeId]
+		if label then
+			label.Text = "+" .. tostring(runeSessionCounts[runeId] or 0)
+		end
 	end
 end
 
 local function updateRuneSummaryGui()
-	if not runeUi.summaryGui then return end
 	local state = parseRuneState()
 	local counts = state.counts or {}
-	local function stacks(v) return math.min(10, tonumber(v) or 0) end
-	local text = runeUi.summaryGui:FindFirstChild("Text")
-	if text then
-		local function total(base, value)
-			return string.format("+%.2fx", stacks(value) * base)
+	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
+		local label = runeUi.summaryRows and runeUi.summaryRows[runeId]
+		if label then
+			local count = tonumber(counts[runeId]) or 0
+			label.Text = "КОЛ-ВО\n" .. tostring(count)
 		end
-		text.Text = "СВОДКА РУН\n"
-			.. "Обычная: +0.01x за 1 | всего " .. tostring(counts.Common or 0) .. " | эф. " .. tostring(stacks(counts.Common)) .. " | суммарно " .. total(0.01, counts.Common) .. " монет\n"
-			.. "Необычная: +0.10x за 1 | всего " .. tostring(counts.Uncommon or 0) .. " | эф. " .. tostring(stacks(counts.Uncommon)) .. " | суммарно " .. total(0.10, counts.Uncommon) .. " монет\n"
-			.. "Редкая: +0.25x за 1 | всего " .. tostring(counts.Rare or 0) .. " | эф. " .. tostring(stacks(counts.Rare)) .. " | суммарно " .. total(0.25, counts.Rare) .. " монет\n"
-			.. "Эпическая: +0.01x за 1 | всего " .. tostring(counts.Epic or 0) .. " | эф. " .. tostring(stacks(counts.Epic)) .. " | суммарно " .. total(0.01, counts.Epic) .. " дерева\n"
-			.. "Легендарная: +0.01x за 1 | всего " .. tostring(counts.Legendary or 0) .. " | эф. " .. tostring(stacks(counts.Legendary)) .. " | суммарно " .. total(0.01, counts.Legendary) .. " бумаги"
 	end
 end
 
 local function updateRuneWorldDisplay()
-	if not runeUi.worldBillboard then return end
-	local txt = runeUi.worldBillboard:FindFirstChildOfClass("Frame") and runeUi.worldBillboard:FindFirstChildOfClass("Frame"):FindFirstChild("Text")
-	if not txt then return end
-	local state = parseRuneState()
-	local c = state.counts or {}
-	txt.Text = "ТАБЛИЦА РУН\n"
-		.. "Обычная (" .. tostring(c.Common or 0) .. ")\n"
-		.. "Необычная (" .. tostring(c.Uncommon or 0) .. ")\n"
-		.. "Редкая (" .. tostring(c.Rare or 0) .. ")\n"
-		.. "Эпическая (" .. tostring(c.Epic or 0) .. ")\n"
-		.. "Легендарная (" .. tostring(c.Legendary or 0) .. ")\n"
-		.. "\nLuck: " .. tostring(runeLuckLevel.Value) .. "  Speed: " .. tostring(runeSpeedLevel.Value) .. "  Bulk: " .. tostring(runeBulkLevel.Value)
-	if runeUi.worldStatsBillboard then
-		local st = runeUi.worldStatsBillboard:FindFirstChildOfClass("Frame") and runeUi.worldStatsBillboard:FindFirstChildOfClass("Frame"):FindFirstChild("Text")
-		if st then
-			local effectiveSpeed = runeSpeedLevel.Value + runeSpeedXpLevel.Value
-			local interval = 1 / (1 + (effectiveSpeed * 0.5))
-			st.Text = "СТАТЫ РУН\nRune Luck: x" .. tostring(runeLuckLevel.Value + runeLuckXpLevel.Value)
-				.. "\nRune Speed: 1 rune / " .. string.format("%.2fs", math.max(0.2, interval))
-				.. "\nRune Bulk: +" .. tostring(runeBulkLevel.Value + runeBulkXpLevel.Value)
-		end
-	end
+	updateRuneSummaryGui()
+	updateRuneSessionGui()
 end
 
 local function startRuneRolling()
 	runeRollingActive = true
 	runeSessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0}
-	if runeUi.sessionGui then runeUi.sessionGui.Visible = true end
-	if runeUi.summaryGui then runeUi.summaryGui.Visible = true end
+	if runeUi.sessionPanel then
+		runeUi.sessionPanel.Visible = true
+	end
 	updateRuneSessionGui()
 	updateRuneSummaryGui()
 end
 
 local function stopRuneRolling()
 	runeRollingActive = false
-	if runeUi.sessionGui then runeUi.sessionGui.Visible = false end
-	if runeUi.summaryGui then runeUi.summaryGui.Visible = false end
+	if runeUi.sessionPanel then
+		runeUi.sessionPanel.Visible = false
+	end
 end
 
 local function parsePassiveState()
@@ -2131,6 +2511,60 @@ local function showToast(text)
 	end)
 end
 
+local activeAdminEvents = {}
+local adminEventTitles = {
+	RuneLuckEvent = "Rune Luck Event",
+	RuneBulkEvent = "Rune Bulk Event",
+	RuneSpeedEvent = "Rune Speed Event",
+}
+local adminEventDescs = {
+	RuneLuckEvent = "Даёт x2 Rune Luck",
+	RuneBulkEvent = "Даёт +5 Rune Bulk",
+	RuneSpeedEvent = "Даёт x1.5 Rune Speed",
+}
+
+local function renderAdminEvents()
+	for _, child in ipairs(adminEventGui:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+	for eventId, remain in pairs(activeAdminEvents) do
+		if (tonumber(remain) or 0) > 0 then
+			local row = Instance.new("Frame")
+			row.Size = UDim2.new(1, 0, 0, 38)
+			row.BackgroundColor3 = Color3.fromRGB(42, 68, 108)
+			row.BorderSizePixel = 0
+			row.Parent = adminEventGui
+			createCorner(row, 10)
+			local icon = Instance.new("ImageLabel")
+			icon.Size = UDim2.new(0, 30, 0, 30)
+			icon.Position = UDim2.new(0, 4, 0.5, -15)
+			icon.BackgroundTransparency = 1
+			icon.Image = getAssetOrEmpty(AssetSlots.AdminEventIcons[eventId])
+			icon.Parent = row
+			local text = Instance.new("TextLabel")
+			text.Size = UDim2.new(1, -40, 1, 0)
+			text.Position = UDim2.new(0, 38, 0, 0)
+			text.BackgroundTransparency = 1
+			text.TextXAlignment = Enum.TextXAlignment.Left
+			text.Text = (adminEventTitles[eventId] or eventId) .. "  " .. tostring(remain) .. "s"
+			text.TextColor3 = Color3.fromRGB(236, 245, 255)
+			text.Font = Enum.Font.GothamBold
+			text.TextScaled = true
+			text.Parent = row
+			row.MouseEnter:Connect(function()
+				adminEventTooltip.Visible = true
+				adminEventTooltip.Position = UDim2.new(0, 300, 1, -120)
+				adminEventTooltip.Text = (adminEventTitles[eventId] or eventId) .. "\n" .. (adminEventDescs[eventId] or "") .. "\nОсталось: " .. tostring(remain) .. "с"
+			end)
+			row.MouseLeave:Connect(function()
+				adminEventTooltip.Visible = false
+			end)
+		end
+	end
+end
+
 local function showPickup(iconKey, amount)
 	local holder = Instance.new("Frame")
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -2173,11 +2607,15 @@ local function setButtonVisual(button, text, canBuy, atMax, activeColor, disable
 	if not button then
 		return
 	end
+	button.Active = true
+	button.Selectable = true
 	if locked then
 		button.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
 		button.TextColor3 = Color3.fromRGB(240, 244, 255)
 		button.Text = "LOCKED"
 		button.AutoButtonColor = false
+		button.Active = false
+		button.Selectable = false
 		return
 	end
 
@@ -2186,6 +2624,8 @@ local function setButtonVisual(button, text, canBuy, atMax, activeColor, disable
 		button.TextColor3 = Color3.fromRGB(255, 255, 255)
 		button.Text = "MAX"
 		button.AutoButtonColor = false
+		button.Active = false
+		button.Selectable = false
 		return
 	end
 
@@ -2209,7 +2649,7 @@ local function spawnCoin(layer, progress)
 	coin.AnchorPoint = Vector2.new(0.5, 0.5)
 	coin.Position = UDim2.new(math.random(), 0, -0.2 - math.random() * 0.25, 0)
 	coin.BackgroundTransparency = 1
-	coin.Image = getAssetOrEmpty(ICON_ASSET_IDS.Coin)
+	coin.Image = getAssetOrEmpty(ICON_ASSET_IDS.CurrencyCoin)
 	coin.ImageTransparency = 0.08 + math.random() * 0.28
 	coin.Rotation = math.random(-30, 30)
 	coin.ZIndex = 95 + math.random(0, 8)
@@ -2368,7 +2808,7 @@ end
 local function playRovAnimation(passiveDef)
 	local name = passiveDef and passiveDef.name or "Новый пассив"
 	local passiveId = passiveDef and passiveDef.id
-	local icon = getAssetOrEmpty(AssetSlots.PassiveIcons[passiveId] or AssetSlots.PassiveIcons.CoinBallA or ICON_ASSET_IDS.PassiveCard)
+	local icon = getAssetOrEmpty(AssetSlots.PassiveIcons[passiveId] or ICON_ASSET_IDS.PassiveCardDefault)
 	local rarityColor = getRarityColor(passiveDef and passiveDef.rarity or "Common")
 	startRollAnimation(name, icon, rarityColor)
 end
@@ -2430,6 +2870,12 @@ local function updateWallVisual()
 end
 
 local function updateBoards()
+	local secondUnlockedVisual = secondAreaUnlocked.Value or rebirthCount.Value >= 2
+	local thirdUnlockedVisual = thirdUpgradeUnlocked.Value or rebirthCount.Value >= 3
+	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
+	local fifthUnlockedVisual = fifthSystemsUnlocked.Value or rebirthCount.Value >= 5
+	local sixthUnlockedVisual = sixthSystemsUnlocked.Value or rebirthCount.Value >= 6
+
 	coinValueLabel.Text = formatNumber(coins.Value)
 	coinRewardLabel.Text = formatNumber(getCoinReward())
 	xpValueLabel.Text = formatNumber(xpValue.Value)
@@ -2448,7 +2894,7 @@ local function updateBoards()
 		coinWoodBoostActive.Value,
 		10,
 		coins.Value,
-		rebirthCount.Value >= 3 and nil or "Откроется на 3-м"
+		thirdUnlockedVisual and nil or "Откроется на 3-м"
 	)
 
 	rebirthLevelText.Text = "Rebirth " .. tostring(rebirthCount.Value) .. "/" .. tostring(MAX_REBIRTH_COUNT)
@@ -2470,7 +2916,7 @@ local function updateBoards()
 		rebirthNextText.Text = "Все перерождения куплены"
 	end
 
-	rebirthUnlockText.Text = secondAreaUnlocked.Value and "Новая зона: открыта" or "Новая зона: закрыта"
+	rebirthUnlockText.Text = secondUnlockedVisual and "Новая зона: открыта" or "Новая зона: закрыта"
 
 	local rebirthAtMax = rebirthNextCost.Value <= 0
 	local currencyLabel = rebirthNextCurrency.Value ~= "None" and rebirthNextCurrency.Value or ""
@@ -2497,7 +2943,7 @@ local function updateBoards()
 	treeRewardText.Text = formatNumber(getWoodReward())
 	treeMultiplierText.Text = "x" .. formatNumber(1 + woodMultiplierLevel.Value + (coinWoodBoostLevel.Value * 0.25))
 	treeCooldownText.Text = formatNumber(getWoodCooldown()) .. "s"
-	treeUnlockStatusText.Text = secondAreaUnlocked.Value and "Открыто" or "Закрыто"
+	treeUnlockStatusText.Text = secondUnlockedVisual and "Открыто" or "Закрыто"
 
 	updateCard(treeGainCard, woodValueLevel.Value, woodValueCost.Value, woodValueActive.Value, math.huge, woodCurrency.Value)
 	updateCard(treeMultiCard, woodMultiplierLevel.Value, woodMultiplierCost.Value, woodMultiplierActive.Value, math.huge, woodCurrency.Value)
@@ -2509,7 +2955,7 @@ local function updateBoards()
 		woodCoinBoostActive.Value,
 		20,
 		woodCurrency.Value,
-		rebirthCount.Value >= 3 and nil or "Откроется на 3-м"
+		thirdUnlockedVisual and nil or "Откроется на 3-м"
 	)
 
 	local goalFactor, goalsReached, nextTarget = computeGoalWoodFactor(coins.Value)
@@ -2535,17 +2981,17 @@ local function updateBoards()
 		updateCard(paperUpgradeCards.multi, paperMultiplierLevel.Value, paperMultiplierCost.Value, paperMultiplierActive.Value, math.huge, paperValue.Value)
 		updateCard(paperUpgradeCards.speed, paperSpeedLevel.Value, paperSpeedCost.Value, paperSpeedActive.Value, 10, paperValue.Value)
 		if paperUpgradeLockedOverlay then
-			paperUpgradeLockedOverlay.Visible = not fourthSystemsUnlocked.Value
+			paperUpgradeLockedOverlay.Visible = not fourthUnlockedVisual
 		end
 	end
 
-	treeInfoLockedOverlay.Visible = not secondAreaUnlocked.Value
-	treeUpgradeLockedOverlay.Visible = not secondAreaUnlocked.Value
-	boostLockedOverlay.Visible = not fourthSystemsUnlocked.Value
-	factoryLockedOverlay.Visible = not fourthSystemsUnlocked.Value
+	treeInfoLockedOverlay.Visible = not secondUnlockedVisual
+	treeUpgradeLockedOverlay.Visible = not secondUnlockedVisual
+	boostLockedOverlay.Visible = not fourthUnlockedVisual
+	factoryLockedOverlay.Visible = not fourthUnlockedVisual
 
 	if passiveUi.hintGui then
-		passiveUi.hintGui.Enabled = fifthSystemsUnlocked.Value
+		passiveUi.hintGui.Enabled = fifthUnlockedVisual
 	end
 		if passiveUi.inventoryPanel then
 			local state = parsePassiveState()
@@ -2575,7 +3021,7 @@ local function updateBoards()
 					icon.Size = UDim2.new(0, 72, 0, 72)
 					icon.Position = UDim2.new(0, 8, 0, 8)
 					icon.BackgroundTransparency = 1
-					icon.Image = getAssetOrEmpty(AssetSlots.PassiveCardImages[entry.passiveId] or ICON_ASSET_IDS.PassiveCard)
+					icon.Image = getAssetOrEmpty(AssetSlots.PassiveCardImages[entry.passiveId] or ICON_ASSET_IDS.PassiveCardDefault)
 					icon.Parent = b
 					local title = Instance.new("TextLabel")
 					title.Size = UDim2.new(1, -90, 0, 28)
@@ -2620,42 +3066,9 @@ local function updateBoards()
 					end)
 					if isEquipped then
 						equippedName = def.name
-		end
-
-		runeUi.worldStatsBillboard = Instance.new("BillboardGui")
-		runeUi.worldStatsBillboard.Name = "RuneWorldStats"
-		runeUi.worldStatsBillboard.Adornee = runeRollBlock
-		runeUi.worldStatsBillboard.Size = UDim2.new(0, 220, 0, 110)
-		runeUi.worldStatsBillboard.StudsOffset = Vector3.new(3.8, 4.8, 0)
-		runeUi.worldStatsBillboard.AlwaysOnTop = true
-		runeUi.worldStatsBillboard.MaxDistance = 28
-		runeUi.worldStatsBillboard.Parent = screenGui
-		local sbg = Instance.new("Frame")
-		sbg.Size = UDim2.new(1, 0, 1, 0)
-		sbg.BackgroundColor3 = Color3.fromRGB(42, 55, 90)
-		sbg.BackgroundTransparency = 0.1
-		sbg.BorderSizePixel = 0
-		sbg.Parent = runeUi.worldStatsBillboard
-		createCorner(sbg, 10)
-		local sbgImage = Instance.new("ImageLabel")
-		sbgImage.Size = UDim2.new(1, 0, 1, 0)
-		sbgImage.BackgroundTransparency = 1
-		sbgImage.Image = getAssetOrEmpty(AssetSlots.BillboardBackgrounds.RuneSession)
-		sbgImage.ScaleType = Enum.ScaleType.Stretch
-		sbgImage.Parent = sbg
-		local st = Instance.new("TextLabel")
-		st.Name = "Text"
-		st.Size = UDim2.new(1, -8, 1, -8)
-		st.Position = UDim2.new(0, 4, 0, 4)
-		st.BackgroundTransparency = 1
-		st.TextScaled = true
-		st.TextWrapped = true
-		st.TextYAlignment = Enum.TextYAlignment.Top
-		st.Font = Enum.Font.GothamBold
-		st.TextColor3 = Color3.fromRGB(236, 243, 255)
-		st.Parent = sbg
-	end
-end
+					end
+				end
+			end
 			local selectedStillExists = false
 			for _, entry in ipairs(state.inventory) do
 				if entry.uid == passiveUi.selectedUid then
@@ -2670,18 +3083,43 @@ end
 			end
 			passiveUi.emptyState.Visible = #state.inventory == 0
 			passiveUi.equippedText.Text = "Экипировано: " .. equippedName .. " | Слоты: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
-		if passiveUi.rollButton then
-			setButtonVisual(passiveUi.rollButton, "ROV / ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
-		end
-		if passiveUi.rollButtonInventory then
-			setButtonVisual(passiveUi.rollButtonInventory, "ROV / ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
+			if passiveUi.rollButton then
+					setButtonVisual(passiveUi.rollButton, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
+				end
+				if passiveUi.rollButtonInventory then
+					setButtonVisual(passiveUi.rollButtonInventory, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
+				end
+			end
+
+	if next(runeIndexBoardRows) ~= nil then
+		local rs = parseRuneState()
+		local c = rs.counts or {}
+		local bonuses = {
+			Common = {per = "+0.01x монет", base = 0.01, target = "монет"},
+			Uncommon = {per = "+0.10x монет", base = 0.10, target = "монет"},
+			Rare = {per = "+0.25x монет", base = 0.25, target = "монет"},
+			Epic = {per = "+0.01x дерева", base = 0.01, target = "дерева"},
+			Legendary = {per = "+0.01x бумаги", base = 0.01, target = "бумаги"},
+		}
+		for runeId, label in pairs(runeIndexBoardRows) do
+			local count = tonumber(c[runeId]) or 0
+			local eff = math.min(10, count)
+			local info = bonuses[runeId] or bonuses.Common
+			local total = eff * info.base
+			label.Text = string.format("%s | Кол-во: %d\nЗа 1: %s | Суммарно: +%.2fx %s | Эфф: %d", tostring(runeId), count, info.per, total, info.target, eff)
 		end
 	end
 
 	if runeUi.panel then
-		local runeUnlocked = sixthSystemsUnlocked.Value
+		local runeUnlocked = sixthUnlockedVisual
 		if runeUi.panel.Visible and not runeUnlocked then
 			runeUi.panel.Visible = false
+		end
+		if runeUi.worldBillboard then
+			runeUi.worldBillboard.Enabled = runeUnlocked
+		end
+		if runeUi.sessionPanel then
+			runeUi.sessionPanel.Visible = runeUnlocked and runeRollingActive
 		end
 		local rs = parseRuneState()
 		local c = rs.counts or {}
@@ -2703,13 +3141,13 @@ end
 	end
 
 	if runeUpgradeCards then
-		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
-		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
-		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
 	end
 
 	if xpUpgradeCards then
-		local xpUnlocked = secondAreaUnlocked.Value
+		local xpUnlocked = secondUnlockedVisual
 		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
 		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
 		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
@@ -2725,7 +3163,7 @@ end
 		xpProgressUi.costText.Text = xpBoostNextCost.Value <= 0 and "MAX" or tostring(math.floor(xpBoostNextCost.Value + 0.5))
 		local progress = xpBoostNextCost.Value > 0 and math.clamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
 		TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
-		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondAreaUnlocked.Value and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondAreaUnlocked.Value)
+		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
 	end
 
 	updateWallVisual()
@@ -2773,6 +3211,28 @@ for _, p in ipairs(passiveEffectParts) do
 	end
 end
 
+local function triggerRuneBurst()
+	if not runeRollBlock or not runeRollBlock:IsA("BasePart") then
+		return
+	end
+	local burst = Instance.new("ParticleEmitter")
+	burst.Texture = getAssetOrEmpty(AssetSlots.RuneIcons.Common)
+	burst.Color = ColorSequence.new(Color3.fromRGB(122, 255, 116), Color3.fromRGB(66, 184, 82))
+	burst.Speed = NumberRange.new(4, 7)
+	burst.Lifetime = NumberRange.new(0.2, 0.35)
+	burst.Rate = 0
+	burst.SpreadAngle = Vector2.new(360, 360)
+	burst.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.35),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	burst.Parent = runeRollBlock
+	burst:Emit(14)
+	task.delay(0.4, function()
+		burst:Destroy()
+	end)
+end
+
 selectCoinsButton.MouseButton1Click:Connect(function()
 	selectedAdminCurrency = "Coins"
 	refreshAdminCurrencyButtons()
@@ -2785,6 +3245,10 @@ end)
 
 selectPaperButton.MouseButton1Click:Connect(function()
 	selectedAdminCurrency = "Paper"
+	refreshAdminCurrencyButtons()
+end)
+selectXPButton.MouseButton1Click:Connect(function()
+	selectedAdminCurrency = "XP"
 	refreshAdminCurrencyButtons()
 end)
 
@@ -3006,6 +3470,28 @@ resetButton.MouseButton1Click:Connect(function()
 	adminActionEvent:FireServer("ResetSelf")
 end)
 
+givePassiveButton.MouseButton1Click:Connect(function()
+	local passiveId = tostring(adminPassiveBox.Text or "")
+	if passiveId == "" then
+		showToast("Укажи passive id")
+		return
+	end
+	adminActionEvent:FireServer("GivePassive", passiveId, 0)
+end)
+
+adminRuneBoostButton.MouseButton1Click:Connect(function()
+	adminActionEvent:FireServer("AdminRuneBoost", "", 0)
+end)
+
+startAllEventsButton.MouseButton1Click:Connect(function()
+	adminActionEvent:FireServer("StartServerEvent", "All", 0)
+end)
+
+toggleAdminButton.MouseButton1Click:Connect(function()
+	adminFrame.Visible = not adminFrame.Visible
+	toggleAdminButton.Text = adminFrame.Visible and "Admin Hide" or "Admin Show"
+end)
+
 notifyEvent.OnClientEvent:Connect(function(payload)
 	if typeof(payload) ~= "table" then
 		showToast(tostring(payload))
@@ -3047,6 +3533,13 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 		updateRuneSessionGui()
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
+		triggerRuneBurst()
+	elseif payload.kind == "admin_event_state" then
+		activeAdminEvents = {}
+		for eventId, remain in pairs(payload.events or {}) do
+			activeAdminEvents[eventId] = tonumber(remain) or 0
+		end
+		renderAdminEvents()
 	else
 		showToast(payload.text or "Готово")
 	end
@@ -3140,8 +3633,35 @@ if passiveUi.hintEmoji then
 			passiveUi.hintEmoji.Text = "😊"
 		end
 		passiveUi.hintEmoji.Rotation = math.sin(t * 0.8) * 6
+		if runeRollBlock and runeRollBlock:IsA("BasePart") then
+			local pulse = (math.sin(t * 1.6) + 1) * 0.5
+			local green = math.floor(120 + pulse * 90)
+			runeRollBlock.Color = Color3.fromRGB(40 + math.floor(pulse * 24), green, 52 + math.floor(pulse * 24))
+			local light = runeRollBlock:FindFirstChild("PassiveFxLight")
+			if light and light:IsA("PointLight") then
+				light.Brightness = 1.5 + pulse * 1.2
+				light.Color = Color3.fromRGB(122, 255, 138)
+			end
+		end
 	end)
 end
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		local changed = false
+		for eventId, remain in pairs(activeAdminEvents) do
+			local nextRemain = math.max(0, tonumber(remain) - 1)
+			if nextRemain ~= remain then
+				activeAdminEvents[eventId] = nextRemain
+				changed = true
+			end
+		end
+		if changed then
+			renderAdminEvents()
+		end
+	end
+end)
 
 if #passiveEffectParts > 0 then
 	RunService.RenderStepped:Connect(function()
