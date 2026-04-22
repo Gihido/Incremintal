@@ -131,6 +131,42 @@ local ICON_ASSET_IDS = {
 	Rune = "rbxassetid://6031079152",
 }
 
+local AssetSlots = {
+	CurrencyIcons = {
+		Coin = ICON_ASSET_IDS.Coin,
+		Tree = ICON_ASSET_IDS.Tree,
+		Paper = ICON_ASSET_IDS.Paper,
+		Fuel = ICON_ASSET_IDS.Fuel,
+		Rebirth = ICON_ASSET_IDS.Rebirth,
+	},
+	UpgradeIcons = {
+		CoinSpawnSpeed = ICON_ASSET_IDS.Upgrade,
+		RuneLuck = ICON_ASSET_IDS.Upgrade,
+		RuneSpeed = ICON_ASSET_IDS.Upgrade,
+		RuneBulk = ICON_ASSET_IDS.Upgrade,
+	},
+	RuneIcons = {
+		Common = ICON_ASSET_IDS.Rune,
+		Uncommon = ICON_ASSET_IDS.Rune,
+		Rare = ICON_ASSET_IDS.Rune,
+		Epic = ICON_ASSET_IDS.Rune,
+		Legendary = ICON_ASSET_IDS.Rune,
+	},
+	NotificationIcons = {
+		Coin = ICON_ASSET_IDS.Coin,
+		Tree = ICON_ASSET_IDS.Tree,
+		Paper = ICON_ASSET_IDS.Paper,
+		Fuel = ICON_ASSET_IDS.Fuel,
+	},
+	PassiveIcons = {},
+	PassiveCardImages = {},
+	IndexCardImages = {},
+	WorldPanelIcons = {
+		RuneRollBlock = ICON_ASSET_IDS.Rune,
+		RuneIndexBlock = ICON_ASSET_IDS.Rune,
+	},
+}
+
 local PASSIVE_DEFS = {
 	CoinBallA = {name = "Золотой поток", rarity = "Common", currencyType = "Coins", desc = "Стабильный бонус монет.", effect = "+50% монет", iconKey = "Coin", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
 	CoinBallB = {name = "Монетный дождь", rarity = "Common", currencyType = "Coins", desc = "Сильный денежный поток.", effect = "+100% монет", iconKey = "Coin", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
@@ -143,6 +179,12 @@ local PASSIVE_DEFS = {
 	SwiftLeaf = {name = "Ветер мастерства", rarity = "Epic", currencyType = "Coins", desc = "Ускоряет циклы и дроп.", effect = "+20% монет/дерева, +35% скорость", iconKey = "Coin", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
 	MythicCore = {name = "Мифическое ядро", rarity = "Mythic", currencyType = "Paper", desc = "Универсальный мифический буст.", effect = "+100% ко всему", iconKey = "Rebirth", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
 }
+
+for passiveId, def in pairs(PASSIVE_DEFS) do
+	AssetSlots.PassiveIcons[passiveId] = ICON_ASSET_IDS[def.iconKey or "PassiveCard"] or ICON_ASSET_IDS.PassiveCard
+	AssetSlots.PassiveCardImages[passiveId] = AssetSlots.PassiveIcons[passiveId]
+	AssetSlots.IndexCardImages[passiveId] = AssetSlots.PassiveIcons[passiveId]
+end
 
 local selectedAdminCurrency = "Coins"
 local ROLL_ANIMATION_CONFIG = {
@@ -1590,6 +1632,30 @@ end
 
 local passiveUi = createPassiveUi()
 
+local function openPassiveIndexCard(passiveId)
+	if not passiveUi or not passiveUi.indexDetail then
+		return
+	end
+	local def = PASSIVE_DEFS[passiveId]
+	if not def then
+		return
+	end
+	local detailText = passiveUi.indexDetail:FindFirstChild("Text")
+	if detailText and detailText:IsA("TextLabel") then
+		detailText.Text = def.name .. "\nРедкость: " .. tostring(def.rarity)
+			.. "\nТип: " .. tostring(def.currencyType or "Coins")
+			.. "\nЭффект: " .. tostring(def.effect or "—")
+			.. "\n\n" .. tostring(def.desc or "")
+	end
+	passiveUi.indexDetail.Visible = true
+end
+
+for button, passiveId in pairs(passiveUi.indexButtons or {}) do
+	button.MouseButton1Click:Connect(function()
+		openPassiveIndexCard(passiveId)
+	end)
+end
+
 local runeUi = {
 	panel = nil,
 	openBtn = nil,
@@ -1667,6 +1733,143 @@ local function createRuneUi()
 end
 
 createRuneUi()
+
+local runeSessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0}
+local runeRollingActive = false
+
+local function createRuneOverlays()
+	runeUi.summaryGui = Instance.new("Frame")
+	runeUi.summaryGui.Size = UDim2.new(0, 360, 0, 190)
+	runeUi.summaryGui.AnchorPoint = Vector2.new(1, 1)
+	runeUi.summaryGui.Position = UDim2.new(1, -16, 1, -190)
+	runeUi.summaryGui.BackgroundColor3 = Color3.fromRGB(48, 64, 108)
+	runeUi.summaryGui.BorderSizePixel = 0
+	runeUi.summaryGui.Visible = false
+	runeUi.summaryGui.Parent = screenGui
+	createCorner(runeUi.summaryGui, 12)
+	local t1 = Instance.new("TextLabel")
+	t1.Name = "Text"
+	t1.Size = UDim2.new(1, -12, 1, -12)
+	t1.Position = UDim2.new(0, 6, 0, 6)
+	t1.BackgroundTransparency = 1
+	t1.TextWrapped = true
+	t1.TextYAlignment = Enum.TextYAlignment.Top
+	t1.TextScaled = true
+	t1.Font = Enum.Font.GothamBold
+	t1.TextColor3 = Color3.fromRGB(236, 243, 255)
+	t1.Parent = runeUi.summaryGui
+
+	runeUi.sessionGui = Instance.new("Frame")
+	runeUi.sessionGui.Size = UDim2.new(0, 360, 0, 150)
+	runeUi.sessionGui.AnchorPoint = Vector2.new(1, 1)
+	runeUi.sessionGui.Position = UDim2.new(1, -16, 1, -24)
+	runeUi.sessionGui.BackgroundColor3 = Color3.fromRGB(56, 74, 122)
+	runeUi.sessionGui.BorderSizePixel = 0
+	runeUi.sessionGui.Visible = false
+	runeUi.sessionGui.Parent = screenGui
+	createCorner(runeUi.sessionGui, 12)
+	local t2 = Instance.new("TextLabel")
+	t2.Name = "Text"
+	t2.Size = UDim2.new(1, -12, 1, -12)
+	t2.Position = UDim2.new(0, 6, 0, 6)
+	t2.BackgroundTransparency = 1
+	t2.TextWrapped = true
+	t2.TextYAlignment = Enum.TextYAlignment.Top
+	t2.TextScaled = true
+	t2.Font = Enum.Font.GothamBold
+	t2.TextColor3 = Color3.fromRGB(236, 243, 255)
+	t2.Parent = runeUi.sessionGui
+
+	if runeRollBlock then
+		runeUi.worldBillboard = Instance.new("BillboardGui")
+		runeUi.worldBillboard.Name = "RuneWorldDisplay"
+		runeUi.worldBillboard.Adornee = runeRollBlock
+		runeUi.worldBillboard.Size = UDim2.new(0, 420, 0, 220)
+		runeUi.worldBillboard.StudsOffset = Vector3.new(0, 5.5, 0)
+		runeUi.worldBillboard.AlwaysOnTop = true
+		runeUi.worldBillboard.MaxDistance = 90
+		runeUi.worldBillboard.Parent = screenGui
+		local bg = Instance.new("Frame")
+		bg.Size = UDim2.new(1, 0, 1, 0)
+		bg.BackgroundColor3 = Color3.fromRGB(34, 47, 80)
+		bg.BackgroundTransparency = 0.12
+		bg.BorderSizePixel = 0
+		bg.Parent = runeUi.worldBillboard
+		createCorner(bg, 12)
+		local txt = Instance.new("TextLabel")
+		txt.Name = "Text"
+		txt.Size = UDim2.new(1, -12, 1, -12)
+		txt.Position = UDim2.new(0, 6, 0, 6)
+		txt.BackgroundTransparency = 1
+		txt.TextWrapped = true
+		txt.TextYAlignment = Enum.TextYAlignment.Top
+		txt.TextScaled = true
+		txt.Font = Enum.Font.GothamBold
+		txt.TextColor3 = Color3.fromRGB(236, 243, 255)
+		txt.Parent = bg
+	end
+end
+
+createRuneOverlays()
+
+local function updateRuneSessionGui()
+	if not runeUi.sessionGui then return end
+	local text = runeUi.sessionGui:FindFirstChild("Text")
+	if text then
+		text.Text = "СЕССИЯ РУН\n"
+			.. "Обычная: " .. tostring(runeSessionCounts.Common or 0) .. "\n"
+			.. "Необычная: " .. tostring(runeSessionCounts.Uncommon or 0) .. "\n"
+			.. "Редкая: " .. tostring(runeSessionCounts.Rare or 0) .. "\n"
+			.. "Эпическая: " .. tostring(runeSessionCounts.Epic or 0) .. "\n"
+			.. "Легендарная: " .. tostring(runeSessionCounts.Legendary or 0)
+	end
+end
+
+local function updateRuneSummaryGui()
+	if not runeUi.summaryGui then return end
+	local state = parseRuneState()
+	local counts = state.counts or {}
+	local function stacks(v) return math.min(10, tonumber(v) or 0) end
+	local text = runeUi.summaryGui:FindFirstChild("Text")
+	if text then
+		text.Text = "СВОДКА РУН\n"
+			.. "Обычная: +" .. tostring(stacks(counts.Common) * 0.01) .. "x монет\n"
+			.. "Необычная: +" .. tostring(stacks(counts.Uncommon) * 0.10) .. "x монет\n"
+			.. "Редкая: +" .. tostring(stacks(counts.Rare) * 0.25) .. "x монет\n"
+			.. "Эпическая: +" .. tostring(stacks(counts.Epic) * 0.01) .. "x дерева\n"
+			.. "Легендарная: +" .. tostring(stacks(counts.Legendary) * 0.01) .. "x бумаги"
+	end
+end
+
+local function updateRuneWorldDisplay()
+	if not runeUi.worldBillboard then return end
+	local txt = runeUi.worldBillboard:FindFirstChildOfClass("Frame") and runeUi.worldBillboard:FindFirstChildOfClass("Frame"):FindFirstChild("Text")
+	if not txt then return end
+	local state = parseRuneState()
+	local c = state.counts or {}
+	txt.Text = "ТАБЛИЦА РУН\n"
+		.. "Обычная (" .. tostring(c.Common or 0) .. ")\n"
+		.. "Необычная (" .. tostring(c.Uncommon or 0) .. ")\n"
+		.. "Редкая (" .. tostring(c.Rare or 0) .. ")\n"
+		.. "Эпическая (" .. tostring(c.Epic or 0) .. ")\n"
+		.. "Легендарная (" .. tostring(c.Legendary or 0) .. ")\n"
+		.. "\nLuck: " .. tostring(runeLuckLevel.Value) .. "  Speed: " .. tostring(runeSpeedLevel.Value) .. "  Bulk: " .. tostring(runeBulkLevel.Value)
+end
+
+local function startRuneRolling()
+	runeRollingActive = true
+	runeSessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0}
+	if runeUi.sessionGui then runeUi.sessionGui.Visible = true end
+	if runeUi.summaryGui then runeUi.summaryGui.Visible = true end
+	updateRuneSessionGui()
+	updateRuneSummaryGui()
+end
+
+local function stopRuneRolling()
+	runeRollingActive = false
+	if runeUi.sessionGui then runeUi.sessionGui.Visible = false end
+	if runeUi.summaryGui then runeUi.summaryGui.Visible = false end
+end
 
 local function parsePassiveState()
 	local ok, decoded = pcall(function()
@@ -1813,7 +2016,8 @@ local function showPickup(iconKey, amount)
 	icon.Position = UDim2.new(0, 0, 0.5, -24)
 	icon.BackgroundTransparency = 1
 	icon.ScaleType = Enum.ScaleType.Fit
-	icon.Image = getAssetOrEmpty(ICON_ASSET_IDS[iconKey]) ~= "" and getAssetOrEmpty(ICON_ASSET_IDS[iconKey]) or getAssetOrEmpty(ICON_ASSET_IDS.Coin)
+	local notifyIcon = AssetSlots.NotificationIcons[iconKey] or AssetSlots.NotificationIcons.Coin
+	icon.Image = getAssetOrEmpty(notifyIcon)
 	icon.Parent = holder
 
 	local text = Instance.new("TextLabel")
@@ -2331,6 +2535,8 @@ local function updateBoards()
 		runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)"
 		runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)"
 		runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)"
+		updateRuneSummaryGui()
+		updateRuneWorldDisplay()
 	end
 
 	updateWallVisual()
@@ -2573,6 +2779,23 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 	elseif payload.kind == "rune_roll_result" then
 		local rolled = payload.rolled or {}
 		showToast("Открыто рун: " .. tostring(#rolled))
+	elseif payload.kind == "rune_roll_state" then
+		if payload.active then
+			startRuneRolling()
+		else
+			stopRuneRolling()
+		end
+	elseif payload.kind == "rune_roll_tick" then
+		local session = payload.session or {}
+		for runeId, amount in pairs(session) do
+			runeSessionCounts[runeId] = tonumber(amount) or 0
+		end
+		if not runeRollingActive then
+			startRuneRolling()
+		end
+		updateRuneSessionGui()
+		updateRuneSummaryGui()
+		updateRuneWorldDisplay()
 	else
 		showToast(payload.text or "Готово")
 	end
