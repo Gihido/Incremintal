@@ -617,6 +617,9 @@ local function updateUpgradeActiveFlags(folder, configTable)
 	end
 
 	for _, config in pairs(configTable) do
+		if type(config.levelName) ~= "string" or type(config.activeName) ~= "string" then
+			continue
+		end
 		local levelObject = folder:FindFirstChild(config.levelName)
 		local activeObject = folder:FindFirstChild(config.activeName)
 		if levelObject and activeObject then

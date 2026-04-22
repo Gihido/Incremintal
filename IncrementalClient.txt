@@ -1960,18 +1960,24 @@ local function createRuneOverlays()
 		headerText.TextScaled = true
 		headerText.Parent = header
 
+		local rowHolder = Instance.new("ScrollingFrame")
+		rowHolder.Size = UDim2.new(1, -14, 1, -66)
+		rowHolder.Position = UDim2.new(0, 7, 0, 56)
+		rowHolder.BackgroundTransparency = 1
+		rowHolder.BorderSizePixel = 0
+		rowHolder.ScrollBarThickness = 6
+		rowHolder.ScrollBarImageColor3 = Color3.fromRGB(196, 255, 124)
+		rowHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
+		rowHolder.Parent = root
+
 		local rowList = Instance.new("UIListLayout")
 		rowList.Padding = UDim.new(0, 5)
-		rowList.Parent = root
+		rowList.Parent = rowHolder
 		rowList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		rowList.VerticalAlignment = Enum.VerticalAlignment.Top
-
-		local rowPadding = Instance.new("UIPadding")
-		rowPadding.PaddingTop = UDim.new(0, 58)
-		rowPadding.PaddingLeft = UDim.new(0, 7)
-		rowPadding.PaddingRight = UDim.new(0, 7)
-		rowPadding.PaddingBottom = UDim.new(0, 8)
-		rowPadding.Parent = root
+		rowList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			rowHolder.CanvasSize = UDim2.new(0, 0, 0, rowList.AbsoluteContentSize.Y + 6)
+		end)
 
 		for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
 			local visual = RUNE_VISUALS[runeId]
@@ -1979,7 +1985,7 @@ local function createRuneOverlays()
 			row.Size = UDim2.new(1, 0, 0, 66)
 			row.BackgroundColor3 = visual.rowColor
 			row.BorderSizePixel = 0
-			row.Parent = root
+			row.Parent = rowHolder
 			createCorner(row, 12)
 			createStroke(row, visual.accent, 2, 0.2)
 
@@ -2012,7 +2018,7 @@ local function createRuneOverlays()
 			nameLabel.Parent = row
 
 			local infoPanel = Instance.new("Frame")
-			infoPanel.Size = UDim2.new(0.62, -6, 0, 30)
+			infoPanel.Size = UDim2.new(0.62, -6, 0, 32)
 			infoPanel.Position = UDim2.new(0.36, 0, 0, 32)
 			infoPanel.BackgroundColor3 = Color3.fromRGB(13, 20, 28)
 			infoPanel.BackgroundTransparency = 0.3
@@ -2027,10 +2033,12 @@ local function createRuneOverlays()
 			countLabel.Position = UDim2.new(0, 6, 0, 0)
 			countLabel.BackgroundTransparency = 1
 			countLabel.TextXAlignment = Enum.TextXAlignment.Left
-			countLabel.Text = "КОЛ-ВО 0"
+			countLabel.TextYAlignment = Enum.TextYAlignment.Center
+			countLabel.Text = "КОЛ-ВО\n0"
 			countLabel.TextColor3 = Color3.fromRGB(248, 251, 255)
 			countLabel.Font = Enum.Font.GothamBold
-			countLabel.TextScaled = true
+			countLabel.TextSize = 11
+			countLabel.TextWrapped = true
 			countLabel.Parent = infoPanel
 
 			local chanceLabel = Instance.new("TextLabel")
@@ -2039,11 +2047,21 @@ local function createRuneOverlays()
 			chanceLabel.Position = UDim2.new(0.55, 0, 0, 0)
 			chanceLabel.BackgroundTransparency = 1
 			chanceLabel.TextXAlignment = Enum.TextXAlignment.Right
-			chanceLabel.Text = "ШАНС " .. visual.chance
+			chanceLabel.TextYAlignment = Enum.TextYAlignment.Center
+			chanceLabel.Text = "ШАНС\n" .. visual.chance
 			chanceLabel.TextColor3 = visual.accent
 			chanceLabel.Font = Enum.Font.GothamBold
-			chanceLabel.TextScaled = true
+			chanceLabel.TextSize = 11
+			chanceLabel.TextWrapped = true
 			chanceLabel.Parent = infoPanel
+
+			local split = Instance.new("Frame")
+			split.Size = UDim2.new(0, 1, 1, -6)
+			split.Position = UDim2.new(0.55, -1, 0, 3)
+			split.BackgroundColor3 = Color3.fromRGB(170, 186, 212)
+			split.BackgroundTransparency = 0.5
+			split.BorderSizePixel = 0
+			split.Parent = infoPanel
 
 			runeUi.summaryRows[runeId] = countLabel
 		end
@@ -2066,7 +2084,6 @@ local function createRuneOverlays()
 		createGradient(panel, Color3.fromRGB(77, 156, 33), Color3.fromRGB(19, 72, 18), 90)
 
 		local bgImage = Instance.new("ImageLabel")
-		bgImage.Name = "TemplateBackground"
 		bgImage.Size = UDim2.new(1, 0, 1, 0)
 		bgImage.BackgroundTransparency = 1
 		bgImage.Image = getAssetOrEmpty(AssetSlots.UiBackgrounds.RuneSession)
@@ -2180,7 +2197,7 @@ local function updateRuneSummaryGui()
 		local label = runeUi.summaryRows and runeUi.summaryRows[runeId]
 		if label then
 			local count = tonumber(counts[runeId]) or 0
-			label.Text = "КОЛ-ВО " .. tostring(count)
+			label.Text = "КОЛ-ВО\n" .. tostring(count)
 		end
 	end
 end
@@ -2690,7 +2707,7 @@ local function updateBoards()
 		rebirthNextText.Text = "Все перерождения куплены"
 	end
 
-	rebirthUnlockText.Text = secondAreaUnlocked.Value and "Новая зона: открыта" or "Новая зона: закрыта"
+	rebirthUnlockText.Text = secondUnlockedVisual and "Новая зона: открыта" or "Новая зона: закрыта"
 
 	local rebirthAtMax = rebirthNextCost.Value <= 0
 	local currencyLabel = rebirthNextCurrency.Value ~= "None" and rebirthNextCurrency.Value or ""
