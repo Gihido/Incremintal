@@ -72,11 +72,21 @@ rebirthSpawnSpeedBonus = rebirthFolder:WaitForChild("SpawnSpeedBonus")
 rebirthWoodMultiplierBonus = rebirthFolder:WaitForChild("WoodMultiplierBonus")
 secondAreaUnlocked = rebirthFolder:WaitForChild("SecondAreaUnlocked")
 thirdUpgradeUnlocked = rebirthFolder:WaitForChild("ThirdUpgradeUnlocked")
-fourthSystemsUnlocked = rebirthFolder:WaitForChild("FourthSystemsUnlocked")
-fifthSystemsUnlocked = rebirthFolder:WaitForChild("FifthSystemsUnlocked")
+	fourthSystemsUnlocked = rebirthFolder:WaitForChild("FourthSystemsUnlocked")
+	fifthSystemsUnlocked = rebirthFolder:WaitForChild("FifthSystemsUnlocked")
+	sixthSystemsUnlocked = rebirthFolder:WaitForChild("SixthSystemsUnlocked")
 
-passiveFolder = data:WaitForChild("Passives")
-passiveStateJson = passiveFolder:WaitForChild("StateJson")
+	passiveFolder = data:WaitForChild("Passives")
+	passiveStateJson = passiveFolder:WaitForChild("StateJson")
+	runeFolder = data:WaitForChild("Runes")
+	runeStateJson = runeFolder:WaitForChild("StateJson")
+	runeUpgrades = runeFolder:WaitForChild("Upgrades")
+	runeLuckLevel = runeUpgrades:WaitForChild("RuneLuckLevel")
+	runeSpeedLevel = runeUpgrades:WaitForChild("RuneSpeedLevel")
+	runeBulkLevel = runeUpgrades:WaitForChild("RuneBulkLevel")
+	runeLuckCost = runeUpgrades:WaitForChild("RuneLuckCost")
+	runeSpeedCost = runeUpgrades:WaitForChild("RuneSpeedCost")
+	runeBulkCost = runeUpgrades:WaitForChild("RuneBulkCost")
 
 remotesFolder = ReplicatedStorage:WaitForChild("IncrementalRemotes")
 purchaseUpgradeEvent = remotesFolder:WaitForChild("PurchaseUpgrade")
@@ -84,8 +94,9 @@ purchaseRebirthEvent = remotesFolder:WaitForChild("PurchaseRebirth")
 adminActionEvent = remotesFolder:WaitForChild("AdminAction")
 notifyEvent = remotesFolder:WaitForChild("Notify")
 woodClickEvent = remotesFolder:WaitForChild("WoodClick")
-factoryActionEvent = remotesFolder:WaitForChild("FactoryAction")
-passiveActionEvent = remotesFolder:WaitForChild("PassiveAction")
+	factoryActionEvent = remotesFolder:WaitForChild("FactoryAction")
+	passiveActionEvent = remotesFolder:WaitForChild("PassiveAction")
+	runeActionEvent = remotesFolder:WaitForChild("RuneAction")
 
 doskaPart = workspace:WaitForChild("DoskaPart")
 upgradeDoska = workspace:WaitForChild("UpgradeDoska")
@@ -96,97 +107,118 @@ treeDoska = workspace:WaitForChild("TreeDoska")
 treeUpgradeDoska = workspace:WaitForChild("TreeUpgradeDoska")
 boostDoska = workspace:WaitForChild("BoostDoska")
 paperFactoryDoska = workspace:WaitForChild("PaperFactoryDoska")
-paperUpgradeDoska = workspace:FindFirstChild("PaperUpgradeDoska")
-passiveRollBlock = workspace:FindFirstChild("PassiveRollBlock")
-passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
+	paperUpgradeDoska = workspace:FindFirstChild("PaperUpgradeDoska")
+	passiveRollBlock = workspace:FindFirstChild("PassiveRollBlock")
+		passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
+		runeRollBlock = workspace:FindFirstChild("RuneRollBlock")
+		runeIndexBlock = workspace:FindFirstChild("RuneIndexBlock")
+		runeUpgradeBlock = workspace:FindFirstChild("RuneUpgradeBlock")
+		runeUpgradeDoska = workspace:FindFirstChild("RuneUpgradeDoska")
 
 local ADMIN_NAME = "Doter24_7"
 local MAX_COIN_SPAWN_SPEED_LEVEL = 3
-local MAX_REBIRTH_COUNT = 5
+local MAX_REBIRTH_COUNT = 6
 local PASSIVE_ROLL_COST = 50
 local PASSIVE_INVENTORY_CAPACITY = 10
 local isRovRolling = false
 
 local ICON_ASSET_IDS = {
-	Coin = "rbxassetid://PASTE_COIN_ICON_ID",
-	Rebirth = "rbxassetid://PASTE_REBIRTH_ICON_ID",
-	Tree = "rbxassetid://PASTE_TREE_ICON_ID",
-	Paper = "rbxassetid://PASTE_PAPER_ICON_ID",
+	Coin = "rbxassetid://6031094678",
+	Rebirth = "rbxassetid://6035067843",
+	Tree = "rbxassetid://6031068423",
+	Paper = "rbxassetid://6031075931",
+	Fuel = "rbxassetid://6031280882",
+	Upgrade = "rbxassetid://6031260785",
+	PassiveCard = "rbxassetid://6031229361",
+	Rune = "rbxassetid://6031079152",
+}
+
+local AssetSlots = {
+	CurrencyIcons = {
+		Coin = ICON_ASSET_IDS.Coin,
+		Tree = ICON_ASSET_IDS.Tree,
+		Paper = ICON_ASSET_IDS.Paper,
+		Fuel = ICON_ASSET_IDS.Fuel,
+		Rebirth = ICON_ASSET_IDS.Rebirth,
+	},
+	UpgradeIcons = {
+		CoinGain = ICON_ASSET_IDS.Upgrade,
+		CoinMultiplier = ICON_ASSET_IDS.Upgrade,
+		CoinSpawnSpeed = ICON_ASSET_IDS.Upgrade,
+		CoinWoodBoost = ICON_ASSET_IDS.Upgrade,
+		TreeGain = ICON_ASSET_IDS.Upgrade,
+		TreeMultiplier = ICON_ASSET_IDS.Upgrade,
+		TreeSpeed = ICON_ASSET_IDS.Upgrade,
+		TreeCoinBoost = ICON_ASSET_IDS.Upgrade,
+		PaperGain = ICON_ASSET_IDS.Upgrade,
+		PaperMultiplier = ICON_ASSET_IDS.Upgrade,
+		PaperSpeed = ICON_ASSET_IDS.Upgrade,
+		RuneLuck = ICON_ASSET_IDS.Upgrade,
+		RuneSpeed = ICON_ASSET_IDS.Upgrade,
+		RuneBulk = ICON_ASSET_IDS.Upgrade,
+		PassiveRoll = ICON_ASSET_IDS.PassiveCard,
+		RebirthUpgrade = ICON_ASSET_IDS.Rebirth,
+	},
+	RuneIcons = {
+		Common = ICON_ASSET_IDS.Rune,
+		Uncommon = ICON_ASSET_IDS.Rune,
+		Rare = ICON_ASSET_IDS.Rune,
+		Epic = ICON_ASSET_IDS.Rune,
+		Legendary = ICON_ASSET_IDS.Rune,
+	},
+	NotificationIcons = {
+		Coin = ICON_ASSET_IDS.Coin,
+		Tree = ICON_ASSET_IDS.Tree,
+		Paper = ICON_ASSET_IDS.Paper,
+		Fuel = ICON_ASSET_IDS.Fuel,
+	},
+	PassiveIcons = {},
+	PassiveCardImages = {},
+	IndexCardImages = {},
+	WorldPanelIcons = {
+		RuneRollBlock = ICON_ASSET_IDS.Rune,
+		RuneIndexBlock = ICON_ASSET_IDS.Rune,
+	},
+	BoardIcons = {
+		RuneUpgradeBoard = ICON_ASSET_IDS.Upgrade,
+		XPUpgradeBoard = ICON_ASSET_IDS.Upgrade,
+		XPProgressBoard = ICON_ASSET_IDS.Upgrade,
+	},
+	BillboardBackgrounds = {
+		RuneMain = "",
+		RuneSession = "",
+	},
 }
 
 local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "15%"},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "12%"},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2, globalMultiplier = 1, speedMultiplier = 1, chance = "7%"},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3, globalMultiplier = 1, speedMultiplier = 1, chance = "6%"},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "4%"},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
-	SwiftLeaf = {name = "Swift Leaf", rarity = "Epic", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
-	MythicCore = {name = "Mythic Core", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
+	CoinBallA = {name = "Золотой поток", rarity = "Common", currencyType = "Coins", desc = "Стабильный бонус монет.", effect = "+50% монет", iconKey = "Coin", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
+	CoinBallB = {name = "Монетный дождь", rarity = "Common", currencyType = "Coins", desc = "Сильный денежный поток.", effect = "+100% монет", iconKey = "Coin", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
+	WoodBallA = {name = "Лесной импульс", rarity = "Uncommon", currencyType = "Wood", desc = "Мощнее добыча древесины.", effect = "+50% дерева", iconKey = "Tree", coinMultiplier = 1, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "15%"},
+	DualBall = {name = "Дар дубравы", rarity = "Uncommon", currencyType = "Wood", desc = "Баланс монет и дерева.", effect = "+50% монет и дерева", iconKey = "Tree", coinMultiplier = 1.5, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "12%"},
+	RareSprout = {name = "Росток процветания", rarity = "Rare", currencyType = "Wood", desc = "Редкий лесной усилитель.", effect = "+100% дерева", iconKey = "Tree", coinMultiplier = 1, woodMultiplier = 2, globalMultiplier = 1, speedMultiplier = 1, chance = "7%"},
+	RareForest = {name = "Сердце чащи", rarity = "Rare", currencyType = "Wood", desc = "Экстремальный прирост древесины.", effect = "+200% дерева", iconKey = "Tree", coinMultiplier = 1, woodMultiplier = 3, globalMultiplier = 1, speedMultiplier = 1, chance = "6%"},
+	EpicBloom = {name = "Печатный шквал", rarity = "Epic", currencyType = "Paper", desc = "Эпическое усиление экономики.", effect = "+200% монет, +400% дерева", iconKey = "Paper", coinMultiplier = 3, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "4%"},
+	LegendSeed = {name = "Бумажный поток", rarity = "Legendary", currencyType = "Paper", desc = "Легендарная синергия ресурсов.", effect = "+400% монет и дерева", iconKey = "Paper", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
+	SwiftLeaf = {name = "Ветер мастерства", rarity = "Epic", currencyType = "Coins", desc = "Ускоряет циклы и дроп.", effect = "+20% монет/дерева, +35% скорость", iconKey = "Coin", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
+	MythicCore = {name = "Мифическое ядро", rarity = "Mythic", currencyType = "Paper", desc = "Универсальный мифический буст.", effect = "+100% ко всему", iconKey = "Rebirth", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
 }
 
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "15%"},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "12%"},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2, globalMultiplier = 1, speedMultiplier = 1, chance = "7%"},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3, globalMultiplier = 1, speedMultiplier = 1, chance = "6%"},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "4%"},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
-	SwiftLeaf = {name = "Swift Leaf", rarity = "Epic", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
-	MythicCore = {name = "Mythic Core", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
-}
-
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "25%"},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "15%"},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5, globalMultiplier = 1, speedMultiplier = 1, chance = "12%"},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2, globalMultiplier = 1, speedMultiplier = 1, chance = "7%"},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3, globalMultiplier = 1, speedMultiplier = 1, chance = "6%"},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "4%"},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5, globalMultiplier = 1, speedMultiplier = 1, chance = "1%"},
-	SwiftLeaf = {name = "Swift Leaf", rarity = "Epic", coinMultiplier = 1.2, woodMultiplier = 1.2, globalMultiplier = 1, speedMultiplier = 1.35, chance = "2%"},
-	MythicCore = {name = "Mythic Core", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "1%"},
-}
-
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5},
-}
-
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5},
-}
-
-local PASSIVE_DEFS = {
-	CoinBallA = {name = "Coin Ball A", rarity = "Common", coinMultiplier = 1.5, woodMultiplier = 1},
-	CoinBallB = {name = "Coin Ball B", rarity = "Common", coinMultiplier = 2, woodMultiplier = 1},
-	WoodBallA = {name = "Wood Ball A", rarity = "Uncommon", coinMultiplier = 1, woodMultiplier = 1.5},
-	DualBall = {name = "Dual Ball", rarity = "Uncommon", coinMultiplier = 1.5, woodMultiplier = 1.5},
-	RareSprout = {name = "Rare Sprout", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 2},
-	RareForest = {name = "Rare Forest", rarity = "Rare", coinMultiplier = 1, woodMultiplier = 3},
-	EpicBloom = {name = "Epic Bloom", rarity = "Epic", coinMultiplier = 3, woodMultiplier = 5},
-	LegendSeed = {name = "Legend Seed", rarity = "Legendary", coinMultiplier = 5, woodMultiplier = 5},
-}
+for passiveId, def in pairs(PASSIVE_DEFS) do
+	AssetSlots.PassiveIcons[passiveId] = ICON_ASSET_IDS[def.iconKey or "PassiveCard"] or ICON_ASSET_IDS.PassiveCard
+	AssetSlots.PassiveCardImages[passiveId] = AssetSlots.PassiveIcons[passiveId]
+	AssetSlots.IndexCardImages[passiveId] = AssetSlots.PassiveIcons[passiveId]
+end
 
 local selectedAdminCurrency = "Coins"
+local ROLL_ANIMATION_CONFIG = {
+	duration = 3,
+	totalCoins = 45,
+	rewardRevealTime = 0.9,
+	fadeOutTime = 0.4,
+	minCoinSize = 28,
+	maxCoinSize = 86,
+	coinSpawnInterval = 0.05,
+}
 
 local function roundToTenth(value)
 	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
@@ -782,10 +814,15 @@ local function createHorizontalScroller(parent, positionY, height)
 	scrolling.Position = UDim2.new(0, 0, 0, positionY)
 	scrolling.Size = UDim2.new(1, 0, 1, -positionY - height)
 	scrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scrolling.ScrollBarThickness = 10
-	scrolling.BackgroundTransparency = 1
+	scrolling.ScrollBarThickness = 12
+	scrolling.ScrollBarImageColor3 = Color3.fromRGB(170, 194, 255)
+	scrolling.BackgroundColor3 = Color3.fromRGB(15, 22, 38)
+	scrolling.BackgroundTransparency = 0.25
 	scrolling.BorderSizePixel = 0
 	scrolling.ScrollingDirection = Enum.ScrollingDirection.X
+	scrolling.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+	scrolling.ScrollingEnabled = true
+	scrolling.AutomaticCanvasSize = Enum.AutomaticSize.None
 	scrolling.HorizontalScrollBarInset = Enum.ScrollBarInset.Always
 	scrolling.VerticalScrollBarInset = Enum.ScrollBarInset.Always
 	scrolling.Parent = parent
@@ -1143,7 +1180,7 @@ local paperProductionText = createStatRow(factoryStats, "Производств�
 
 local productionBarBg = Instance.new("Frame")
 productionBarBg.Size = UDim2.new(1, 0, 0, 16)
-productionBarBg.Position = UDim2.new(0, 0, 0, 162)
+productionBarBg.Position = UDim2.new(0, 0, 0, 176)
 productionBarBg.BackgroundColor3 = Color3.fromRGB(53, 66, 98)
 productionBarBg.BorderSizePixel = 0
 productionBarBg.Parent = factoryBoard
@@ -1159,8 +1196,8 @@ createGradient(productionBarFill, Color3.fromRGB(164, 216, 255), Color3.fromRGB(
 
 local factoryButtonsFrame = Instance.new("Frame")
 factoryButtonsFrame.BackgroundTransparency = 1
-factoryButtonsFrame.Size = UDim2.new(1, 0, 0, 42)
-factoryButtonsFrame.Position = UDim2.new(0, 0, 1, -50)
+factoryButtonsFrame.Size = UDim2.new(1, 0, 0, 36)
+factoryButtonsFrame.Position = UDim2.new(0, 0, 1, -38)
 factoryButtonsFrame.Parent = factoryBoard
 
 local addFuelButton = Instance.new("TextButton")
@@ -1214,134 +1251,43 @@ end
 
 local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
 
-local function createPaperUpgradeUi()
-	if not paperUpgradeDoska then
-		return nil, nil
-	end
-
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
+local runeUpgradeCards = nil
+if runeUpgradeDoska then
+	local _, runeUpgradeBoard = createWorldBoard("RuneUpgradeBoardSurfaceGui", runeUpgradeDoska, Enum.NormalId.Front, 78)
+	createHeader(runeUpgradeBoard, "RUNE UPGRADES", "Luck / Speed / Bulk")
+	local runeScroll = createHorizontalScroller(runeUpgradeBoard, 66, 12)
+	local runeLuckCard = createUpgradeCard(runeScroll, "RuneLuck", "Улучшает удачу рун.", "Luck", AssetSlots.UpgradeIcons.RuneLuck, "L", {
+		card1 = Color3.fromRGB(151, 227, 184), card2 = Color3.fromRGB(95, 177, 130), inner1 = Color3.fromRGB(192, 255, 222), inner2 = Color3.fromRGB(128, 212, 167), icon1 = Color3.fromRGB(229, 255, 237), icon2 = Color3.fromRGB(166, 238, 198),
 	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
+	local runeSpeedCard = createUpgradeCard(runeScroll, "RuneSpeed", "Ускоряет ролл рун.", "Speed", AssetSlots.UpgradeIcons.RuneSpeed, "S", {
+		card1 = Color3.fromRGB(135, 188, 255), card2 = Color3.fromRGB(91, 137, 217), inner1 = Color3.fromRGB(181, 221, 255), inner2 = Color3.fromRGB(119, 164, 235), icon1 = Color3.fromRGB(220, 241, 255), icon2 = Color3.fromRGB(153, 201, 255),
 	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
+	local runeBulkCard = createUpgradeCard(runeScroll, "RuneBulk", "Больше независимых роллов.", "Bulk", AssetSlots.UpgradeIcons.RuneBulk, "B", {
+		card1 = Color3.fromRGB(214, 163, 255), card2 = Color3.fromRGB(152, 103, 210), inner1 = Color3.fromRGB(235, 203, 255), inner2 = Color3.fromRGB(185, 138, 235), icon1 = Color3.fromRGB(255, 220, 255), icon2 = Color3.fromRGB(223, 173, 255),
 	})
-
-	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
-	return cards, lockedOverlay
-end
-
-local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
-
-local function createPaperUpgradeUi()
-	if not paperUpgradeDoska then
-		return nil, nil
-	end
-
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
-	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
-	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
-	})
-
-	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
-	return cards, lockedOverlay
-end
-
-local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
-
-local function createPaperUpgradeUi()
-	if not paperUpgradeDoska then
-		return nil, nil
-	end
-
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
-	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
-	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
-	})
-
-	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
-	return cards, lockedOverlay
-end
-
-local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
-
-local function createPaperUpgradeUi()
-	if not paperUpgradeDoska then
-		return nil, nil
-	end
-
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
-	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
-	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
-	})
-
-	local cards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	local lockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
-	return cards, lockedOverlay
-end
-
-local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
-
-local paperUpgradeCards = nil
-local paperUpgradeLockedOverlay = nil
-if paperUpgradeDoska then
-	local _, paperUpgradeBoard = createWorldBoard("PaperUpgradeBoardSurfaceGui", paperUpgradeDoska, Enum.NormalId.Front, 78)
-	createHeader(paperUpgradeBoard, "PAPER UPGRADES", "Буст производства бумаги")
-	local paperScroll = createHorizontalScroller(paperUpgradeBoard, 66, 12)
-
-	local paperGainCard = createUpgradeCard(paperScroll, "PaperGain", "+1 бумаги за цикл.", "+1", ICON_ASSET_IDS.Paper, "P", {
-		card1 = Color3.fromRGB(115, 172, 232), card2 = Color3.fromRGB(84, 121, 189), inner1 = Color3.fromRGB(152, 203, 255), inner2 = Color3.fromRGB(107, 151, 221), icon1 = Color3.fromRGB(228, 239, 255), icon2 = Color3.fromRGB(190, 214, 255),
-	})
-	local paperMultiCard = createUpgradeCard(paperScroll, "PaperMulti", "+0.1x к производству.", "+0.1x", ICON_ASSET_IDS.Rebirth, "x", {
-		card1 = Color3.fromRGB(171, 140, 238), card2 = Color3.fromRGB(118, 92, 184), inner1 = Color3.fromRGB(212, 188, 255), inner2 = Color3.fromRGB(154, 126, 227), icon1 = Color3.fromRGB(255, 171, 223), icon2 = Color3.fromRGB(198, 136, 255),
-	})
-	local paperSpeedCard = createUpgradeCard(paperScroll, "PaperSpeed", "-0.5с цикла (до 10).", "-0.5s", ICON_ASSET_IDS.Coin, "S", {
-		card1 = Color3.fromRGB(114, 218, 186), card2 = Color3.fromRGB(77, 173, 141), inner1 = Color3.fromRGB(157, 240, 214), inner2 = Color3.fromRGB(104, 198, 168), icon1 = Color3.fromRGB(122, 226, 255), icon2 = Color3.fromRGB(108, 158, 255),
-	})
-	paperUpgradeCards = {gain = paperGainCard, multi = paperMultiCard, speed = paperSpeedCard}
-	paperUpgradeLockedOverlay = createLockedOverlay(paperUpgradeBoard, "Откроется на 4-м перерождении")
+	runeUpgradeCards = {luck = runeLuckCard, speed = runeSpeedCard, bulk = runeBulkCard}
 end
 
 local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
 local factoryLockedOverlay = createLockedOverlay(factoryBoard, "Откроется на 4-м перерождении")
+
+local function getRarityColor(rarity)
+	if rarity == "Mythic" then return Color3.fromRGB(255, 112, 184) end
+	if rarity == "Legendary" then return Color3.fromRGB(255, 197, 92) end
+	if rarity == "Epic" then return Color3.fromRGB(204, 133, 255) end
+	if rarity == "Rare" then return Color3.fromRGB(97, 171, 255) end
+	if rarity == "Uncommon" then return Color3.fromRGB(124, 210, 139) end
+	return Color3.fromRGB(198, 212, 238)
+end
+
+local function getCurrencyColor(currencyType)
+	if currencyType == "Wood" then return Color3.fromRGB(121, 194, 118) end
+	if currencyType == "Paper" then return Color3.fromRGB(214, 221, 255) end
+	return Color3.fromRGB(252, 206, 104)
+end
+
 local function createPassiveUi()
 	local ui = {
 		indexPanel = nil,
@@ -1368,7 +1314,7 @@ local function createPassiveUi()
 	ui.hintGui.Size = UDim2.new(0, 260, 0, 140)
 	ui.hintGui.StudsOffset = Vector3.new(0, 4.5, 0)
 	ui.hintGui.AlwaysOnTop = true
-	ui.hintGui.MaxDistance = 80
+	ui.hintGui.MaxDistance = 28
 	ui.hintGui.Parent = screenGui
 
 	local circle = Instance.new("Frame")
@@ -1449,20 +1395,44 @@ local function createPassiveUi()
 	indexList.BackgroundTransparency = 1
 	indexList.Parent = ui.indexPanel
 	local grid = Instance.new("UIGridLayout")
-	grid.CellSize = UDim2.new(0, 102, 0, 58)
-	grid.CellPadding = UDim2.new(0, 8, 0, 8)
+	grid.CellSize = UDim2.new(0, 108, 0, 104)
+	grid.CellPadding = UDim2.new(0, 8, 0, 10)
 	grid.Parent = indexList
 
 	for passiveId, passiveDef in pairs(PASSIVE_DEFS) do
 		local b = Instance.new("TextButton")
-		b.Text = passiveDef.name
-		b.BackgroundColor3 = Color3.fromRGB(98, 120, 173)
-		b.TextColor3 = Color3.fromRGB(245, 250, 255)
-		b.TextScaled = true
-		b.Font = Enum.Font.GothamBold
+		b.Text = ""
+		b.Size = UDim2.new(0, 108, 0, 104)
+		b.BackgroundColor3 = Color3.fromRGB(88, 110, 166)
 		b.BorderSizePixel = 0
 		b.Parent = indexList
-		createCorner(b, 10)
+		createCorner(b, 12)
+		createStroke(b, getRarityColor(passiveDef.rarity), 2, 0.15)
+		local cardIcon = Instance.new("ImageLabel")
+		cardIcon.Size = UDim2.new(0, 54, 0, 54)
+		cardIcon.AnchorPoint = Vector2.new(0.5, 0)
+		cardIcon.Position = UDim2.new(0.5, 0, 0, 8)
+		cardIcon.BackgroundTransparency = 1
+		cardIcon.Image = getAssetOrEmpty(AssetSlots.IndexCardImages[passiveId] or ICON_ASSET_IDS.PassiveCard)
+		cardIcon.Parent = b
+		local shine = Instance.new("Frame")
+		shine.Size = UDim2.new(1, -8, 0, 18)
+		shine.Position = UDim2.new(0, 4, 0, 4)
+		shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		shine.BackgroundTransparency = 0.9
+		shine.BorderSizePixel = 0
+		shine.Parent = b
+		createCorner(shine, 8)
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -8, 0, 32)
+		label.Position = UDim2.new(0, 4, 1, -36)
+		label.BackgroundTransparency = 1
+		label.Text = passiveDef.name
+		label.TextColor3 = Color3.fromRGB(245, 250, 255)
+		label.TextScaled = true
+		label.Font = Enum.Font.GothamBold
+		label.Parent = b
+		addScaleHover(b)
 		ui.indexButtons[b] = passiveId
 	end
 
@@ -1535,8 +1505,11 @@ local function createPassiveUi()
 	ui.slotsList = Instance.new("ScrollingFrame")
 	ui.slotsList.Size = UDim2.new(0.48, -8, 1, -122)
 	ui.slotsList.Position = UDim2.new(0, 8, 0, 114)
-	ui.slotsList.BackgroundTransparency = 1
-	ui.slotsList.ScrollBarThickness = 8
+	ui.slotsList.BackgroundColor3 = Color3.fromRGB(23, 31, 52)
+	ui.slotsList.BackgroundTransparency = 0.2
+	ui.slotsList.ScrollBarThickness = 10
+	ui.slotsList.ScrollBarImageColor3 = Color3.fromRGB(158, 182, 240)
+	ui.slotsList.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
 	ui.slotsList.CanvasSize = UDim2.new(0, 0, 0, 0)
 	ui.slotsList.Parent = ui.inventoryPanel
 	local listLayout = Instance.new("UIListLayout")
@@ -1546,15 +1519,41 @@ local function createPassiveUi()
 		ui.slotsList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 8)
 	end)
 
+	ui.emptyState = Instance.new("Frame")
+	ui.emptyState.Size = UDim2.new(1, -8, 0, 190)
+	ui.emptyState.Position = UDim2.new(0, 4, 0, 4)
+	ui.emptyState.BackgroundColor3 = Color3.fromRGB(64, 84, 132)
+	ui.emptyState.BackgroundTransparency = 0.15
+	ui.emptyState.BorderSizePixel = 0
+	ui.emptyState.Parent = ui.slotsList
+	createCorner(ui.emptyState, 10)
+	local emptyIcon = Instance.new("TextLabel")
+	emptyIcon.Size = UDim2.new(1, 0, 0, 72)
+	emptyIcon.Position = UDim2.new(0, 0, 0, 6)
+	emptyIcon.BackgroundTransparency = 1
+	emptyIcon.Text = "🎴"
+	emptyIcon.TextScaled = true
+	emptyIcon.Parent = ui.emptyState
 	ui.emptyText = Instance.new("TextLabel")
-	ui.emptyText.Size = UDim2.new(1, -8, 0, 42)
-	ui.emptyText.Position = UDim2.new(0, 4, 0, 0)
+	ui.emptyText.Size = UDim2.new(1, -12, 0, 42)
+	ui.emptyText.Position = UDim2.new(0, 6, 0, 78)
 	ui.emptyText.BackgroundTransparency = 1
-	ui.emptyText.Text = "Пассивов нет"
+	ui.emptyText.Text = "Ваш инвентарь пуст"
 	ui.emptyText.TextColor3 = Color3.fromRGB(230, 238, 255)
 	ui.emptyText.TextScaled = true
 	ui.emptyText.Font = Enum.Font.GothamBold
-	ui.emptyText.Parent = ui.slotsList
+	ui.emptyText.Parent = ui.emptyState
+	local emptyHint = Instance.new("TextLabel")
+	emptyHint.Size = UDim2.new(1, -14, 0, 62)
+	emptyHint.Position = UDim2.new(0, 7, 0, 122)
+	emptyHint.BackgroundTransparency = 1
+	emptyHint.TextWrapped = true
+	emptyHint.TextYAlignment = Enum.TextYAlignment.Top
+	emptyHint.Text = "Сделайте ролл пассива, чтобы получить первую карточку и бонусы."
+	emptyHint.TextColor3 = Color3.fromRGB(208, 221, 250)
+	emptyHint.TextScaled = true
+	emptyHint.Font = Enum.Font.Gotham
+	emptyHint.Parent = ui.emptyState
 
 	ui.managePanel = Instance.new("Frame")
 	ui.managePanel.Size = UDim2.new(0.52, -8, 1, -122)
@@ -1603,6 +1602,51 @@ local function createPassiveUi()
 	ui.deleteBtn.TextScaled = true
 	ui.deleteBtn.Parent = ui.managePanel
 	createCorner(ui.deleteBtn, 10)
+
+	ui.deleteConfirm = Instance.new("Frame")
+	ui.deleteConfirm.Size = UDim2.new(0, 320, 0, 170)
+	ui.deleteConfirm.AnchorPoint = Vector2.new(0.5, 0.5)
+	ui.deleteConfirm.Position = UDim2.new(0.5, 0, 0.5, 0)
+	ui.deleteConfirm.BackgroundColor3 = Color3.fromRGB(57, 70, 108)
+	ui.deleteConfirm.BorderSizePixel = 0
+	ui.deleteConfirm.Visible = false
+	ui.deleteConfirm.ZIndex = 250
+	ui.deleteConfirm.Parent = ui.inventoryPanel
+	createCorner(ui.deleteConfirm, 12)
+	createStroke(ui.deleteConfirm, Color3.fromRGB(255, 145, 145), 2, 0.1)
+	ui.deleteConfirmText = Instance.new("TextLabel")
+	ui.deleteConfirmText.Size = UDim2.new(1, -16, 0, 96)
+	ui.deleteConfirmText.Position = UDim2.new(0, 8, 0, 8)
+	ui.deleteConfirmText.BackgroundTransparency = 1
+	ui.deleteConfirmText.TextWrapped = true
+	ui.deleteConfirmText.TextScaled = true
+	ui.deleteConfirmText.Text = "Удалить выбранный пассив?\nДействие необратимо."
+	ui.deleteConfirmText.TextColor3 = Color3.fromRGB(240, 246, 255)
+	ui.deleteConfirmText.Font = Enum.Font.GothamBold
+	ui.deleteConfirmText.ZIndex = 251
+	ui.deleteConfirmText.Parent = ui.deleteConfirm
+	ui.deleteConfirmYes = Instance.new("TextButton")
+	ui.deleteConfirmYes.Size = UDim2.new(0.48, -8, 0, 38)
+	ui.deleteConfirmYes.Position = UDim2.new(0, 8, 1, -46)
+	ui.deleteConfirmYes.Text = "Удалить"
+	ui.deleteConfirmYes.TextScaled = true
+	ui.deleteConfirmYes.Font = Enum.Font.GothamBlack
+	ui.deleteConfirmYes.BackgroundColor3 = Color3.fromRGB(255, 116, 116)
+	ui.deleteConfirmYes.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ui.deleteConfirmYes.ZIndex = 251
+	ui.deleteConfirmYes.Parent = ui.deleteConfirm
+	createCorner(ui.deleteConfirmYes, 10)
+	ui.deleteConfirmNo = Instance.new("TextButton")
+	ui.deleteConfirmNo.Size = UDim2.new(0.48, -8, 0, 38)
+	ui.deleteConfirmNo.Position = UDim2.new(0.52, 0, 1, -46)
+	ui.deleteConfirmNo.Text = "Отмена"
+	ui.deleteConfirmNo.TextScaled = true
+	ui.deleteConfirmNo.Font = Enum.Font.GothamBlack
+	ui.deleteConfirmNo.BackgroundColor3 = Color3.fromRGB(120, 150, 221)
+	ui.deleteConfirmNo.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ui.deleteConfirmNo.ZIndex = 251
+	ui.deleteConfirmNo.Parent = ui.deleteConfirm
+	createCorner(ui.deleteConfirmNo, 10)
 	ui.selectedUid = ""
 
 	local backToIndex = Instance.new("TextButton")
@@ -1627,6 +1671,11 @@ local function createPassiveUi()
 	closeDetail.MouseButton1Click:Connect(function()
 		ui.indexDetail.Visible = false
 	end)
+	if ui.deleteConfirmNo then
+		ui.deleteConfirmNo.MouseButton1Click:Connect(function()
+			ui.deleteConfirm.Visible = false
+		end)
+	end
 	for button, passiveId in pairs(ui.indexButtons) do
 		button.MouseButton1Click:Connect(function()
 			local def = PASSIVE_DEFS[passiveId]
@@ -1646,6 +1695,305 @@ local function createPassiveUi()
 end
 
 local passiveUi = createPassiveUi()
+
+local function openPassiveIndexCard(passiveId)
+	if not passiveUi or not passiveUi.indexDetail then
+		return
+	end
+	local def = PASSIVE_DEFS[passiveId]
+	if not def then
+		return
+	end
+	local icon = passiveUi.indexDetail:FindFirstChild("CardIcon")
+	if not icon then
+		icon = Instance.new("ImageLabel")
+		icon.Name = "CardIcon"
+		icon.Size = UDim2.new(0, 84, 0, 84)
+		icon.AnchorPoint = Vector2.new(0.5, 0)
+		icon.Position = UDim2.new(0.5, 0, 0, 10)
+		icon.BackgroundTransparency = 1
+		icon.Parent = passiveUi.indexDetail
+	end
+	icon.Image = getAssetOrEmpty(AssetSlots.PassiveCardImages[passiveId] or ICON_ASSET_IDS.PassiveCard)
+	local detailText = passiveUi.indexDetail:FindFirstChild("Text")
+	if detailText and detailText:IsA("TextLabel") then
+		detailText.Position = UDim2.new(0, 8, 0, 100)
+		detailText.Size = UDim2.new(1, -16, 1, -148)
+		detailText.Text = def.name .. "\nРедкость: " .. tostring(def.rarity)
+			.. "\nТип: " .. tostring(def.currencyType or "Coins")
+			.. "\nЭффект: " .. tostring(def.effect or "—")
+			.. "\n\n" .. tostring(def.desc or "")
+	end
+	passiveUi.indexDetail.Visible = true
+end
+
+for button, passiveId in pairs(passiveUi.indexButtons or {}) do
+	button.MouseButton1Click:Connect(function()
+		openPassiveIndexCard(passiveId)
+	end)
+end
+
+local runeUi = {
+	panel = nil,
+	openBtn = nil,
+	indexText = nil,
+	luckBtn = nil,
+	speedBtn = nil,
+	bulkBtn = nil,
+}
+
+local function createRuneUi()
+	local ui = runeUi
+	ui.panel = Instance.new("Frame")
+	ui.panel.Size = UDim2.new(0, 460, 0, 370)
+	ui.panel.AnchorPoint = Vector2.new(0.5, 0.5)
+	ui.panel.Position = UDim2.new(0.5, 0, 0.54, 0)
+	ui.panel.Visible = false
+	ui.panel.BackgroundColor3 = Color3.fromRGB(62, 80, 132)
+	ui.panel.BorderSizePixel = 0
+	ui.panel.Parent = screenGui
+	createCorner(ui.panel, 18)
+	createGradient(ui.panel, Color3.fromRGB(112, 149, 232), Color3.fromRGB(67, 86, 142), 90)
+	createHeader(ui.panel, "RUNE INDEX", "Открытие рун после 6-го перерождения")
+
+	ui.openBtn = Instance.new("TextButton")
+	ui.openBtn.Size = UDim2.new(1, -16, 0, 40)
+	ui.openBtn.Position = UDim2.new(0, 8, 0, 70)
+	ui.openBtn.Text = "АВТО-РОЛЛ: ВСТАНЬ НА RUNE BLOCK"
+	ui.openBtn.BackgroundColor3 = Color3.fromRGB(121, 138, 176)
+	ui.openBtn.TextColor3 = Color3.fromRGB(230, 236, 248)
+	ui.openBtn.TextScaled = true
+	ui.openBtn.Font = Enum.Font.GothamBlack
+	ui.openBtn.AutoButtonColor = false
+	ui.openBtn.Active = false
+	ui.openBtn.Parent = ui.panel
+	createCorner(ui.openBtn, 12)
+	addScaleHover(ui.openBtn)
+
+	ui.indexText = Instance.new("TextLabel")
+	ui.indexText.Size = UDim2.new(1, -16, 0, 170)
+	ui.indexText.Position = UDim2.new(0, 8, 0, 116)
+	ui.indexText.BackgroundColor3 = Color3.fromRGB(33, 46, 80)
+	ui.indexText.BackgroundTransparency = 0.15
+	ui.indexText.TextColor3 = Color3.fromRGB(236, 243, 255)
+	ui.indexText.TextWrapped = true
+	ui.indexText.TextYAlignment = Enum.TextYAlignment.Top
+	ui.indexText.TextScaled = true
+	ui.indexText.Font = Enum.Font.GothamBold
+	ui.indexText.Text = "Руны еще не открыты."
+	ui.indexText.Parent = ui.panel
+	createCorner(ui.indexText, 10)
+
+	local upgradesFrame = Instance.new("Frame")
+	upgradesFrame.Size = UDim2.new(1, -16, 0, 74)
+	upgradesFrame.Position = UDim2.new(0, 8, 1, -82)
+	upgradesFrame.BackgroundTransparency = 1
+	upgradesFrame.Parent = ui.panel
+	local lay = Instance.new("UIListLayout")
+	lay.FillDirection = Enum.FillDirection.Horizontal
+	lay.Padding = UDim.new(0, 6)
+	lay.Parent = upgradesFrame
+
+	local function mkBtn(text)
+		local b = Instance.new("TextButton")
+		b.Size = UDim2.new(0.333, -4, 1, 0)
+		b.BackgroundColor3 = Color3.fromRGB(168, 188, 255)
+		b.TextColor3 = Color3.fromRGB(36, 47, 80)
+		b.Font = Enum.Font.GothamBlack
+		b.TextScaled = true
+		b.Text = text
+		b.Parent = upgradesFrame
+		createCorner(b, 10)
+		return b
+	end
+	ui.luckBtn = mkBtn("Rune Luck")
+	ui.speedBtn = mkBtn("Rune Speed")
+	ui.bulkBtn = mkBtn("Rune Bulk")
+end
+
+createRuneUi()
+
+local runeSessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0}
+local runeRollingActive = false
+local parseRuneState
+
+local function createRuneOverlays()
+	runeUi.summaryGui = Instance.new("Frame")
+	runeUi.summaryGui.Size = UDim2.new(0, 360, 0, 190)
+	runeUi.summaryGui.AnchorPoint = Vector2.new(1, 1)
+	runeUi.summaryGui.Position = UDim2.new(1, -16, 1, -190)
+	runeUi.summaryGui.BackgroundColor3 = Color3.fromRGB(48, 64, 108)
+	runeUi.summaryGui.BorderSizePixel = 0
+	runeUi.summaryGui.Visible = false
+	runeUi.summaryGui.Parent = screenGui
+	createCorner(runeUi.summaryGui, 12)
+	local t1 = Instance.new("TextLabel")
+	t1.Name = "Text"
+	t1.Size = UDim2.new(1, -12, 1, -12)
+	t1.Position = UDim2.new(0, 6, 0, 6)
+	t1.BackgroundTransparency = 1
+	t1.TextWrapped = true
+	t1.TextYAlignment = Enum.TextYAlignment.Top
+	t1.TextScaled = true
+	t1.Font = Enum.Font.GothamBold
+	t1.TextColor3 = Color3.fromRGB(236, 243, 255)
+	t1.Parent = runeUi.summaryGui
+
+	runeUi.sessionGui = Instance.new("Frame")
+	runeUi.sessionGui.Size = UDim2.new(0, 360, 0, 150)
+	runeUi.sessionGui.AnchorPoint = Vector2.new(1, 1)
+	runeUi.sessionGui.Position = UDim2.new(1, -16, 1, -24)
+	runeUi.sessionGui.BackgroundColor3 = Color3.fromRGB(56, 74, 122)
+	runeUi.sessionGui.BorderSizePixel = 0
+	runeUi.sessionGui.Visible = false
+	runeUi.sessionGui.Parent = screenGui
+	createCorner(runeUi.sessionGui, 12)
+	local t2 = Instance.new("TextLabel")
+	t2.Name = "Text"
+	t2.Size = UDim2.new(1, -12, 1, -12)
+	t2.Position = UDim2.new(0, 6, 0, 6)
+	t2.BackgroundTransparency = 1
+	t2.TextWrapped = true
+	t2.TextYAlignment = Enum.TextYAlignment.Top
+	t2.TextScaled = true
+	t2.Font = Enum.Font.GothamBold
+	t2.TextColor3 = Color3.fromRGB(236, 243, 255)
+	t2.Parent = runeUi.sessionGui
+
+	if runeRollBlock then
+		runeUi.worldBillboard = Instance.new("BillboardGui")
+		runeUi.worldBillboard.Name = "RuneWorldDisplay"
+		runeUi.worldBillboard.Adornee = runeRollBlock
+		runeUi.worldBillboard.Size = UDim2.new(0, 420, 0, 220)
+			runeUi.worldBillboard.StudsOffset = Vector3.new(0, 5.5, 0)
+			runeUi.worldBillboard.AlwaysOnTop = true
+			runeUi.worldBillboard.MaxDistance = 32
+		runeUi.worldBillboard.Parent = screenGui
+		local bg = Instance.new("Frame")
+		bg.Size = UDim2.new(1, 0, 1, 0)
+		bg.BackgroundColor3 = Color3.fromRGB(34, 47, 80)
+		bg.BackgroundTransparency = 0.12
+		bg.BorderSizePixel = 0
+		bg.Parent = runeUi.worldBillboard
+		createCorner(bg, 12)
+		local bgImage = Instance.new("ImageLabel")
+		bgImage.Size = UDim2.new(1, 0, 1, 0)
+		bgImage.BackgroundTransparency = 1
+		bgImage.Image = getAssetOrEmpty(AssetSlots.BillboardBackgrounds.RuneMain)
+		bgImage.ScaleType = Enum.ScaleType.Stretch
+		bgImage.Parent = bg
+		local txt = Instance.new("TextLabel")
+		txt.Name = "Text"
+		txt.Size = UDim2.new(1, -12, 1, -12)
+		txt.Position = UDim2.new(0, 6, 0, 6)
+		txt.BackgroundTransparency = 1
+		txt.TextWrapped = true
+		txt.TextYAlignment = Enum.TextYAlignment.Top
+		txt.TextScaled = true
+		txt.Font = Enum.Font.GothamBold
+		txt.TextColor3 = Color3.fromRGB(236, 243, 255)
+		txt.Parent = bg
+	end
+end
+
+createRuneOverlays()
+
+local function updateRuneSessionGui()
+	if not runeUi.sessionGui then return end
+	local text = runeUi.sessionGui:FindFirstChild("Text")
+	if text then
+		text.Text = "СЕССИЯ РУН\n"
+			.. "Обычная: " .. tostring(runeSessionCounts.Common or 0) .. "\n"
+			.. "Необычная: " .. tostring(runeSessionCounts.Uncommon or 0) .. "\n"
+			.. "Редкая: " .. tostring(runeSessionCounts.Rare or 0) .. "\n"
+			.. "Эпическая: " .. tostring(runeSessionCounts.Epic or 0) .. "\n"
+			.. "Легендарная: " .. tostring(runeSessionCounts.Legendary or 0)
+	end
+end
+
+local function updateRuneSummaryGui()
+	if not runeUi.summaryGui then return end
+	local state = parseRuneState()
+	local counts = state.counts or {}
+	local function stacks(v) return math.min(10, tonumber(v) or 0) end
+	local text = runeUi.summaryGui:FindFirstChild("Text")
+	if text then
+		text.Text = "СВОДКА РУН\n"
+			.. "Обычная: всего " .. tostring(counts.Common or 0) .. " | эф. " .. tostring(stacks(counts.Common)) .. " | +" .. tostring(stacks(counts.Common) * 0.01) .. "x монет\n"
+			.. "Необычная: всего " .. tostring(counts.Uncommon or 0) .. " | эф. " .. tostring(stacks(counts.Uncommon)) .. " | +" .. tostring(stacks(counts.Uncommon) * 0.10) .. "x монет\n"
+			.. "Редкая: всего " .. tostring(counts.Rare or 0) .. " | эф. " .. tostring(stacks(counts.Rare)) .. " | +" .. tostring(stacks(counts.Rare) * 0.25) .. "x монет\n"
+			.. "Эпическая: всего " .. tostring(counts.Epic or 0) .. " | эф. " .. tostring(stacks(counts.Epic)) .. " | +" .. tostring(stacks(counts.Epic) * 0.01) .. "x дерева\n"
+			.. "Легендарная: всего " .. tostring(counts.Legendary or 0) .. " | эф. " .. tostring(stacks(counts.Legendary)) .. " | +" .. tostring(stacks(counts.Legendary) * 0.01) .. "x бумаги"
+	end
+end
+
+local function updateRuneWorldDisplay()
+	if not runeUi.worldBillboard then return end
+	local txt = runeUi.worldBillboard:FindFirstChildOfClass("Frame") and runeUi.worldBillboard:FindFirstChildOfClass("Frame"):FindFirstChild("Text")
+	if not txt then return end
+	local state = parseRuneState()
+	local c = state.counts or {}
+	txt.Text = "ТАБЛИЦА РУН\n"
+		.. "Обычная (" .. tostring(c.Common or 0) .. ")\n"
+		.. "Необычная (" .. tostring(c.Uncommon or 0) .. ")\n"
+		.. "Редкая (" .. tostring(c.Rare or 0) .. ")\n"
+		.. "Эпическая (" .. tostring(c.Epic or 0) .. ")\n"
+		.. "Легендарная (" .. tostring(c.Legendary or 0) .. ")\n"
+		.. "\nLuck: " .. tostring(runeLuckLevel.Value) .. "  Speed: " .. tostring(runeSpeedLevel.Value) .. "  Bulk: " .. tostring(runeBulkLevel.Value)
+	if runeUi.worldStatsBillboard then
+		local st = runeUi.worldStatsBillboard:FindFirstChildOfClass("Frame") and runeUi.worldStatsBillboard:FindFirstChildOfClass("Frame"):FindFirstChild("Text")
+		if st then
+			st.Text = "СТАТЫ РУН\nRune Luck: " .. tostring(runeLuckLevel.Value * 10)
+				.. "\nRune Speed: " .. tostring(runeSpeedLevel.Value)
+				.. "\nRune Bulk: +" .. tostring(runeBulkLevel.Value)
+		end
+	end
+end
+
+local function startRuneRolling()
+	runeRollingActive = true
+	runeSessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0}
+	if runeUi.sessionGui then runeUi.sessionGui.Visible = true end
+	if runeUi.summaryGui then runeUi.summaryGui.Visible = true end
+	updateRuneSessionGui()
+	updateRuneSummaryGui()
+end
+
+local function stopRuneRolling()
+	runeRollingActive = false
+	if runeUi.sessionGui then runeUi.sessionGui.Visible = false end
+	if runeUi.summaryGui then runeUi.summaryGui.Visible = false end
+end
+
+local function parsePassiveState()
+	local ok, decoded = pcall(function()
+		return HttpService:JSONDecode(passiveStateJson.Value)
+	end)
+	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
+		return decoded
+	end
+	return {inventory = {}, equippedUid = ""}
+end
+
+parseRuneState = function()
+	local ok, decoded = pcall(function()
+		return HttpService:JSONDecode(runeStateJson.Value)
+	end)
+	if ok and type(decoded) == "table" and type(decoded.counts) == "table" then
+		return decoded
+	end
+	return {counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0}}
+end
+
+local function getEquippedPassiveDef()
+	local state = parsePassiveState()
+	for _, entry in ipairs(state.inventory) do
+		if entry.uid == state.equippedUid then
+			return PASSIVE_DEFS[entry.passiveId]
+		end
+	end
+	return nil
+end
 
 local function getCoinUpgradeMultiplier()
 	return 1 + (coinMultiplierLevel.Value * 0.1)
@@ -1762,7 +2110,8 @@ local function showPickup(iconKey, amount)
 	icon.Position = UDim2.new(0, 0, 0.5, -24)
 	icon.BackgroundTransparency = 1
 	icon.ScaleType = Enum.ScaleType.Fit
-	icon.Image = getAssetOrEmpty(ICON_ASSET_IDS[iconKey]) ~= "" and getAssetOrEmpty(ICON_ASSET_IDS[iconKey]) or getAssetOrEmpty(ICON_ASSET_IDS.Coin)
+	local notifyIcon = AssetSlots.NotificationIcons[iconKey] or AssetSlots.NotificationIcons.Coin
+	icon.Image = getAssetOrEmpty(notifyIcon)
 	icon.Parent = holder
 
 	local text = Instance.new("TextLabel")
@@ -1819,43 +2168,174 @@ local function setButtonVisual(button, text, canBuy, atMax, activeColor, disable
 	button.Text = text
 end
 
-local function playRovAnimation(resultText)
-	if not passiveUi.rollFxLayer then
-		return
+local function spawnCoin(layer, progress)
+	local coin = Instance.new("ImageLabel")
+	local size = math.random(ROLL_ANIMATION_CONFIG.minCoinSize, ROLL_ANIMATION_CONFIG.maxCoinSize)
+	coin.Size = UDim2.new(0, size, 0, size)
+	coin.AnchorPoint = Vector2.new(0.5, 0.5)
+	coin.Position = UDim2.new(math.random(), 0, -0.2 - math.random() * 0.25, 0)
+	coin.BackgroundTransparency = 1
+	coin.Image = getAssetOrEmpty(ICON_ASSET_IDS.Coin)
+	coin.ImageTransparency = 0.08 + math.random() * 0.28
+	coin.Rotation = math.random(-30, 30)
+	coin.ZIndex = 95 + math.random(0, 8)
+	coin.Parent = layer
+
+	local targetY = math.clamp(0.35 + progress * 0.72 + math.random() * 0.18, 0.35, 1.12)
+	local targetX = math.clamp(coin.Position.X.Scale + ((math.random() - 0.5) * 0.08), 0.02, 0.98)
+	local tween = TweenService:Create(coin, TweenInfo.new(1.7 + math.random() * 1.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		Position = UDim2.new(targetX, 0, targetY, 0),
+		Rotation = coin.Rotation + math.random(-160, 160),
+	})
+	tween:Play()
+
+	if math.random() > 0.55 then
+		task.spawn(function()
+			for _ = 1, 2 do
+				if not coin.Parent then break end
+				TweenService:Create(coin, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					Position = coin.Position + UDim2.new((math.random() - 0.5) * 0.03, 0, 0, 0),
+				}):Play()
+				task.wait(0.25)
+			end
+		end)
 	end
+	return coin
+end
+
+local function showReward(layer, passiveName, passiveIcon, rarityColor, onClose)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0, 420, 0, 210)
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.Position = UDim2.new(0.5, 0, 0.52, 0)
+	frame.BackgroundColor3 = Color3.fromRGB(44, 57, 92)
+	frame.BackgroundTransparency = 1
+	frame.BorderSizePixel = 0
+	frame.ZIndex = 140
+	frame.Parent = layer
+	createCorner(frame, 18)
+	createStroke(frame, rarityColor, 3, 0.05)
+	createGradient(frame, Color3.fromRGB(88, 114, 176), Color3.fromRGB(42, 53, 90), 90)
+
+	local icon = Instance.new("ImageLabel")
+	icon.Size = UDim2.new(0, 108, 0, 108)
+	icon.AnchorPoint = Vector2.new(0.5, 0)
+	icon.Position = UDim2.new(0.5, 0, 0, 20)
+	icon.BackgroundTransparency = 1
+	icon.Image = passiveIcon
+	icon.ZIndex = 141
+	icon.Parent = frame
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -24, 0, 58)
+	label.Position = UDim2.new(0, 12, 1, -70)
+	label.BackgroundTransparency = 1
+	label.Text = passiveName
+	label.TextColor3 = Color3.fromRGB(255, 247, 197)
+	label.Font = Enum.Font.GothamBlack
+	label.TextScaled = true
+	label.TextStrokeTransparency = 0.45
+	label.ZIndex = 141
+	label.Parent = frame
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.72
+	scale.Parent = frame
+	TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 0.04}):Play()
+	TweenService:Create(scale, TweenInfo.new(0.36, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 34, 0, 34)
+	closeBtn.Position = UDim2.new(0.5, -17, 1, 8)
+	closeBtn.Text = "✕"
+	closeBtn.Font = Enum.Font.GothamBlack
+	closeBtn.TextScaled = true
+	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 122, 122)
+	closeBtn.BorderSizePixel = 0
+	closeBtn.ZIndex = 145
+	closeBtn.Parent = frame
+	createCorner(closeBtn, 999)
+	closeBtn.MouseButton1Click:Connect(function()
+		if onClose then
+			onClose()
+		end
+	end)
+	return frame
+end
+
+local function cleanupAnimation(layer, dimmer, coins, rewardFrame)
+	local fadeInfo = TweenInfo.new(ROLL_ANIMATION_CONFIG.fadeOutTime)
+	TweenService:Create(dimmer, fadeInfo, {BackgroundTransparency = 1}):Play()
+	if rewardFrame then
+		TweenService:Create(rewardFrame, fadeInfo, {BackgroundTransparency = 1}):Play()
+	end
+	for _, coin in ipairs(coins) do
+		if coin and coin.Parent then
+			TweenService:Create(coin, fadeInfo, {ImageTransparency = 1}):Play()
+		end
+	end
+	task.wait(ROLL_ANIMATION_CONFIG.fadeOutTime + 0.05)
+	layer.Visible = false
+	for _, c in ipairs(layer:GetChildren()) do
+		c:Destroy()
+	end
+	isRovRolling = false
+end
+
+local function startRollAnimation(passiveName, passiveIcon, rarityColor)
+	if not passiveUi.rollFxLayer then return end
 	isRovRolling = true
 	for _, c in ipairs(passiveUi.rollFxLayer:GetChildren()) do
 		c:Destroy()
 	end
 	passiveUi.rollFxLayer.Visible = true
-	for _ = 1, 280 do
-		local coin = Instance.new("ImageLabel")
-		coin.BackgroundTransparency = 1
-		coin.Size = UDim2.new(0, math.random(16, 32), 0, math.random(16, 32))
-		coin.Position = UDim2.new(math.random(), -10, -0.3 - math.random() * 0.6, 0)
-		coin.Image = getAssetOrEmpty(ICON_ASSET_IDS.Coin)
-		coin.ZIndex = 95
-		coin.Parent = passiveUi.rollFxLayer
-		TweenService:Create(coin, TweenInfo.new(10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Position = UDim2.new(coin.Position.X.Scale, 0, 0.9 + math.random() * 0.2, 0),
-		}):Play()
-	end
-	local result = Instance.new("TextLabel")
-	result.Size = UDim2.new(0.7, 0, 0, 90)
-	result.Position = UDim2.new(0.15, 0, 0.42, 0)
-	result.BackgroundTransparency = 1
-	result.Text = resultText
-	result.TextColor3 = Color3.fromRGB(255, 248, 176)
-	result.Font = Enum.Font.GothamBlack
-	result.TextScaled = true
-	result.ZIndex = 100
-	result.Parent = passiveUi.rollFxLayer
-	result.TextTransparency = 1
-	TweenService:Create(result, TweenInfo.new(1.1), {TextTransparency = 0}):Play()
-	task.delay(10.2, function()
-		passiveUi.rollFxLayer.Visible = false
-		isRovRolling = false
+
+	local dimmer = Instance.new("Frame")
+	dimmer.Size = UDim2.new(1, 0, 1, 0)
+	dimmer.BackgroundColor3 = Color3.fromRGB(8, 14, 28)
+	dimmer.BackgroundTransparency = 1
+	dimmer.ZIndex = 91
+	dimmer.Parent = passiveUi.rollFxLayer
+	TweenService:Create(dimmer, TweenInfo.new(0.8), {BackgroundTransparency = 0.28}):Play()
+
+	local coinLayer = Instance.new("Frame")
+	coinLayer.Size = UDim2.new(1, 0, 1, 0)
+	coinLayer.BackgroundTransparency = 1
+	coinLayer.ZIndex = 93
+	coinLayer.Parent = passiveUi.rollFxLayer
+
+	local coins = {}
+	task.spawn(function()
+		local elapsed = 0
+		local rewardFrame = nil
+		local closeRequested = false
+		while elapsed < ROLL_ANIMATION_CONFIG.duration do
+			local progress = math.clamp(elapsed / ROLL_ANIMATION_CONFIG.duration, 0, 1)
+			table.insert(coins, spawnCoin(coinLayer, progress))
+			if elapsed >= ROLL_ANIMATION_CONFIG.rewardRevealTime and not rewardFrame then
+				rewardFrame = showReward(passiveUi.rollFxLayer, passiveName, passiveIcon, rarityColor, function()
+					closeRequested = true
+				end)
+			end
+			if closeRequested then
+				break
+			end
+			elapsed += ROLL_ANIMATION_CONFIG.coinSpawnInterval
+			task.wait(ROLL_ANIMATION_CONFIG.coinSpawnInterval)
+		end
+		while #coins < ROLL_ANIMATION_CONFIG.totalCoins do
+			table.insert(coins, spawnCoin(coinLayer, 1))
+		end
+		cleanupAnimation(passiveUi.rollFxLayer, dimmer, coins, rewardFrame)
 	end)
+end
+
+local function playRovAnimation(passiveDef)
+	local name = passiveDef and passiveDef.name or "Новый пассив"
+	local icon = getAssetOrEmpty(ICON_ASSET_IDS[(passiveDef and passiveDef.iconKey) or "Coin"])
+	local rarityColor = getRarityColor(passiveDef and passiveDef.rarity or "Common")
+	startRollAnimation(name, icon, rarityColor)
 end
 
 local function updateCard(card, levelValue, costValue, activeValue, maxLevel, currentCurrency, lockedReason)
@@ -1896,166 +2376,6 @@ local function getPaperProductionAmount()
 	local baseValue = 1 + paperValueLevel.Value
 	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
 	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getEquippedPassiveDef()
-	local state = parsePassiveState()
-	for _, entry in ipairs(state.inventory) do
-		if entry.uid == state.equippedUid then
-			return PASSIVE_DEFS[entry.passiveId]
-		end
-	end
-	return nil
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getEquippedPassiveDef()
-	local state = parsePassiveState()
-	for _, entry in ipairs(state.inventory) do
-		if entry.uid == state.equippedUid then
-			return PASSIVE_DEFS[entry.passiveId]
-		end
-	end
-	return nil
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getEquippedPassiveDef()
-	local state = parsePassiveState()
-	for _, entry in ipairs(state.inventory) do
-		if entry.uid == state.equippedUid then
-			return PASSIVE_DEFS[entry.passiveId]
-		end
-	end
-	return nil
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
-end
-
-local function getPaperCycleTime()
-	local value = 10 - (paperSpeedLevel.Value * 0.5)
-	if value < 5 then
-		value = 5
-	end
-	return roundToTenth(value)
-end
-
-local function getPaperProductionAmount()
-	local baseValue = 1 + paperValueLevel.Value
-	local multiplier = 1 + (paperMultiplierLevel.Value * 0.1)
-	return roundToTenth(baseValue * multiplier)
-end
-
-local function parsePassiveState()
-	local ok, decoded = pcall(function()
-		return HttpService:JSONDecode(passiveStateJson.Value)
-	end)
-	if ok and type(decoded) == "table" and type(decoded.inventory) == "table" then
-		return decoded
-	end
-	return {inventory = {}, equippedUid = ""}
 end
 
 local wallParts = {}
@@ -2108,6 +2428,8 @@ local function updateBoards()
 		rebirthNextText.Text = "4-е: x2 дерево, буст-доска, бумага"
 	elseif rebirthCount.Value == 4 then
 		rebirthNextText.Text = "5-е: пассивы и инвентарь (50 бумаги)"
+	elseif rebirthCount.Value == 5 then
+		rebirthNextText.Text = "6-е: система рун и индекса рун"
 	else
 		rebirthNextText.Text = "Все перерождения куплены"
 	end
@@ -2203,29 +2525,101 @@ local function updateBoards()
 				if def then
 					local b = Instance.new("TextButton")
 					local isEquipped = entry.uid == state.equippedUid
-					b.Size = UDim2.new(1, -8, 0, 42)
-					b.Text = def.name .. (isEquipped and " [E]" or "")
-					b.BackgroundColor3 = isEquipped and Color3.fromRGB(129, 211, 160) or Color3.fromRGB(90, 112, 162)
-					b.TextColor3 = Color3.fromRGB(245, 250, 255)
-					b.TextScaled = true
-					b.Font = Enum.Font.GothamBold
+					local isSelected = entry.uid == passiveUi.selectedUid
+					b.Size = UDim2.new(1, -8, 0, 112)
+					b.Text = ""
+					b.BackgroundColor3 = getCurrencyColor(def.currencyType)
+					b.BackgroundTransparency = isSelected and 0.05 or 0.15
 					b.BorderSizePixel = 0
 					b.Parent = passiveUi.slotsList
-					createCorner(b, 8)
+					createCorner(b, 10)
+					createStroke(b, isEquipped and Color3.fromRGB(206, 255, 192) or getRarityColor(def.rarity), isEquipped and 3 or 2, isSelected and 0.05 or 0.2)
+					addScaleHover(b)
+					local icon = Instance.new("ImageLabel")
+					icon.Size = UDim2.new(0, 72, 0, 72)
+					icon.Position = UDim2.new(0, 8, 0, 8)
+					icon.BackgroundTransparency = 1
+					icon.Image = getAssetOrEmpty(ICON_ASSET_IDS[def.iconKey or "Coin"])
+					icon.Parent = b
+					local title = Instance.new("TextLabel")
+					title.Size = UDim2.new(1, -90, 0, 28)
+					title.Position = UDim2.new(0, 84, 0, 8)
+					title.BackgroundTransparency = 1
+					title.TextXAlignment = Enum.TextXAlignment.Left
+					title.TextScaled = true
+					title.Font = Enum.Font.GothamBlack
+					title.TextColor3 = Color3.fromRGB(245, 250, 255)
+					title.Text = def.name
+					title.Parent = b
+					local info = Instance.new("TextLabel")
+					info.Size = UDim2.new(1, -90, 0, 44)
+					info.Position = UDim2.new(0, 84, 0, 34)
+					info.BackgroundTransparency = 1
+					info.TextXAlignment = Enum.TextXAlignment.Left
+					info.TextYAlignment = Enum.TextYAlignment.Top
+					info.TextWrapped = true
+					info.TextScaled = true
+					info.Font = Enum.Font.GothamSemibold
+					info.TextColor3 = Color3.fromRGB(228, 236, 255)
+					info.Text = tostring(def.effect or "") .. " | " .. tostring(def.currencyType or "") .. " | " .. tostring(def.rarity or "")
+					info.Parent = b
+					local status = Instance.new("TextLabel")
+					status.Size = UDim2.new(1, -90, 0, 18)
+					status.Position = UDim2.new(0, 84, 1, -24)
+					status.BackgroundTransparency = 1
+					status.TextXAlignment = Enum.TextXAlignment.Left
+					status.TextScaled = true
+					status.Font = Enum.Font.GothamBold
+					status.TextColor3 = isEquipped and Color3.fromRGB(198, 255, 190) or Color3.fromRGB(225, 235, 255)
+					status.Text = isEquipped and "Экипировано" or "Не экипировано"
+					status.Parent = b
 					b.MouseButton1Click:Connect(function()
 						passiveUi.selectedUid = entry.uid
 						passiveUi.manageTitle.Text = def.name
-						passiveUi.manageInfo.Text = "Rarity: " .. tostring(def.rarity) .. "\nChance: " .. tostring(def.chance or "?")
-							.. "\nCoin x" .. tostring(def.coinMultiplier or 1)
-							.. "\nWood x" .. tostring(def.woodMultiplier or 1)
-							.. "\nGlobal x" .. tostring(def.globalMultiplier or 1)
-							.. "\nSpeed x" .. tostring(def.speedMultiplier or 1)
+						passiveUi.manageInfo.Text = "Тип: " .. tostring(def.currencyType or "Coins")
+							.. "\nРедкость: " .. tostring(def.rarity or "Common")
+							.. "\nШанс: " .. tostring(def.chance or "?")
+							.. "\nЭффект: " .. tostring(def.effect or "—")
+							.. "\n\n" .. tostring(def.desc or "")
 					end)
 					if isEquipped then
 						equippedName = def.name
-					end
-				end
-			end
+		end
+
+		runeUi.worldStatsBillboard = Instance.new("BillboardGui")
+		runeUi.worldStatsBillboard.Name = "RuneWorldStats"
+		runeUi.worldStatsBillboard.Adornee = runeRollBlock
+		runeUi.worldStatsBillboard.Size = UDim2.new(0, 220, 0, 110)
+		runeUi.worldStatsBillboard.StudsOffset = Vector3.new(3.8, 4.8, 0)
+		runeUi.worldStatsBillboard.AlwaysOnTop = true
+		runeUi.worldStatsBillboard.MaxDistance = 28
+		runeUi.worldStatsBillboard.Parent = screenGui
+		local sbg = Instance.new("Frame")
+		sbg.Size = UDim2.new(1, 0, 1, 0)
+		sbg.BackgroundColor3 = Color3.fromRGB(42, 55, 90)
+		sbg.BackgroundTransparency = 0.1
+		sbg.BorderSizePixel = 0
+		sbg.Parent = runeUi.worldStatsBillboard
+		createCorner(sbg, 10)
+		local sbgImage = Instance.new("ImageLabel")
+		sbgImage.Size = UDim2.new(1, 0, 1, 0)
+		sbgImage.BackgroundTransparency = 1
+		sbgImage.Image = getAssetOrEmpty(AssetSlots.BillboardBackgrounds.RuneSession)
+		sbgImage.ScaleType = Enum.ScaleType.Stretch
+		sbgImage.Parent = sbg
+		local st = Instance.new("TextLabel")
+		st.Name = "Text"
+		st.Size = UDim2.new(1, -8, 1, -8)
+		st.Position = UDim2.new(0, 4, 0, 4)
+		st.BackgroundTransparency = 1
+		st.TextScaled = true
+		st.TextWrapped = true
+		st.TextYAlignment = Enum.TextYAlignment.Top
+		st.Font = Enum.Font.GothamBold
+		st.TextColor3 = Color3.fromRGB(236, 243, 255)
+		st.Parent = sbg
+	end
+end
 			local selectedStillExists = false
 			for _, entry in ipairs(state.inventory) do
 				if entry.uid == passiveUi.selectedUid then
@@ -2238,14 +2632,44 @@ local function updateBoards()
 				passiveUi.manageTitle.Text = "Выбери пассив"
 				passiveUi.manageInfo.Text = "Нажми слева на пассив"
 			end
-			passiveUi.emptyText.Visible = #state.inventory == 0
-			passiveUi.equippedText.Text = "Equipped: " .. equippedName .. " | Slots: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
+			passiveUi.emptyState.Visible = #state.inventory == 0
+			passiveUi.equippedText.Text = "Экипировано: " .. equippedName .. " | Слоты: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
 		if passiveUi.rollButton then
 			setButtonVisual(passiveUi.rollButton, "ROV / ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
 		end
 		if passiveUi.rollButtonInventory then
 			setButtonVisual(passiveUi.rollButtonInventory, "ROV / ROLL (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
 		end
+	end
+
+	if runeUi.panel then
+		local runeUnlocked = sixthSystemsUnlocked.Value
+		if runeUi.panel.Visible and not runeUnlocked then
+			runeUi.panel.Visible = false
+		end
+		local rs = parseRuneState()
+		local c = rs.counts or {}
+		local function stacks(v)
+			return math.min(10, tonumber(v) or 0)
+		end
+		runeUi.indexText.Text = "Обычная: " .. tostring(c.Common or 0) .. " (эф. " .. tostring(stacks(c.Common)) .. ")\n"
+			.. "Необычная: " .. tostring(c.Uncommon or 0) .. " (эф. " .. tostring(stacks(c.Uncommon)) .. ")\n"
+			.. "Редкая: " .. tostring(c.Rare or 0) .. " (эф. " .. tostring(stacks(c.Rare)) .. ")\n"
+			.. "Эпическая: " .. tostring(c.Epic or 0) .. " (эф. " .. tostring(stacks(c.Epic)) .. ")\n"
+			.. "Легендарная: " .. tostring(c.Legendary or 0) .. " (эф. " .. tostring(stacks(c.Legendary)) .. ")\n\n"
+			.. "Luck x" .. tostring(runeLuckLevel.Value) .. " | Speed x" .. tostring(runeSpeedLevel.Value) .. " | Bulk +" .. tostring(runeBulkLevel.Value)
+		setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ РУНЫ (50 дерева)", woodCurrency.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
+		runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)"
+		runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)"
+		runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)"
+		updateRuneSummaryGui()
+		updateRuneWorldDisplay()
+	end
+
+	if runeUpgradeCards then
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
 	end
 
 	updateWallVisual()
@@ -2259,23 +2683,14 @@ end
 if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
 	table.insert(passiveEffectParts, passiveInventoryBlock)
 end
-for _, p in ipairs(passiveEffectParts) do
-	if not p:FindFirstChild("PassiveFxLight") then
-		local l = Instance.new("PointLight")
-		l.Name = "PassiveFxLight"
-		l.Range = 12
-		l.Brightness = 1.7
-		l.Color = Color3.fromRGB(181, 219, 255)
-		l.Parent = p
-	end
+if runeRollBlock and runeRollBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, runeRollBlock)
 end
-
-local passiveEffectParts = {}
-if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
-	table.insert(passiveEffectParts, passiveRollBlock)
+if runeIndexBlock and runeIndexBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, runeIndexBlock)
 end
-if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
-	table.insert(passiveEffectParts, passiveInventoryBlock)
+if runeUpgradeBlock and runeUpgradeBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, runeUpgradeBlock)
 end
 for _, p in ipairs(passiveEffectParts) do
 	if not p:FindFirstChild("PassiveFxLight") then
@@ -2286,23 +2701,19 @@ for _, p in ipairs(passiveEffectParts) do
 		l.Color = Color3.fromRGB(181, 219, 255)
 		l.Parent = p
 	end
-end
-
-local passiveEffectParts = {}
-if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
-	table.insert(passiveEffectParts, passiveRollBlock)
-end
-if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
-	table.insert(passiveEffectParts, passiveInventoryBlock)
-end
-for _, p in ipairs(passiveEffectParts) do
-	if not p:FindFirstChild("PassiveFxLight") then
-		local l = Instance.new("PointLight")
-		l.Name = "PassiveFxLight"
-		l.Range = 12
-		l.Brightness = 1.7
-		l.Color = Color3.fromRGB(181, 219, 255)
-		l.Parent = p
+	if not p:FindFirstChild("PassiveFxParticles") then
+		local emitter = Instance.new("ParticleEmitter")
+		emitter.Name = "PassiveFxParticles"
+		emitter.Rate = 4
+		emitter.Lifetime = NumberRange.new(0.7, 1.2)
+		emitter.Speed = NumberRange.new(0.4, 1.2)
+		emitter.RotSpeed = NumberRange.new(-30, 30)
+		emitter.Size = NumberSequence.new(0.15, 0)
+		emitter.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.35),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		emitter.Parent = p
 	end
 end
 
@@ -2313,16 +2724,6 @@ end)
 
 selectWoodButton.MouseButton1Click:Connect(function()
 	selectedAdminCurrency = "Wood"
-	refreshAdminCurrencyButtons()
-end)
-
-selectPaperButton.MouseButton1Click:Connect(function()
-	selectedAdminCurrency = "Paper"
-	refreshAdminCurrencyButtons()
-end)
-
-selectPaperButton.MouseButton1Click:Connect(function()
-	selectedAdminCurrency = "Paper"
 	refreshAdminCurrencyButtons()
 end)
 
@@ -2408,108 +2809,24 @@ if paperUpgradeCards then
 	end)
 end
 
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
+if runeUpgradeCards then
+	runeUpgradeCards.luck.buyButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeLuck")
 	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
+	runeUpgradeCards.luck.maxButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeLuck")
 	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
+	runeUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeSpeed")
 	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
+	runeUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeSpeed")
 	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
+	runeUpgradeCards.bulk.buyButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeBulk")
 	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
-end
-
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
-end
-
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
-end
-
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
-end
-
-if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
+	runeUpgradeCards.bulk.maxButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeBulk")
 	end)
 end
 
@@ -2533,206 +2850,68 @@ if passiveUi.rollButton then
 		end
 		passiveActionEvent:FireServer("Roll")
 	end)
-	if passiveUi.rollButtonInventory then
-		passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
-			if isRovRolling then
-				showToast("Подожди, ролл уже идет")
-				return
-			end
-			passiveActionEvent:FireServer("Roll")
-		end)
-	end
-	if passiveUi.equipBtn then
-		passiveUi.equipBtn.MouseButton1Click:Connect(function()
-			if passiveUi.selectedUid == "" then
-				showToast("Выбери пассив")
-				return
-			end
-			if passiveUi.lastState.equippedUid == passiveUi.selectedUid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", passiveUi.selectedUid)
-			end
-		end)
-	end
-	if passiveUi.deleteBtn then
-		passiveUi.deleteBtn.MouseButton1Click:Connect(function()
-			if passiveUi.selectedUid == "" then
-				showToast("Выбери пассив")
-				return
-			end
-			passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
-			passiveUi.selectedUid = ""
-		end)
-	end
 end
 
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
+if passiveUi.rollButtonInventory then
+	passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
 		if isRovRolling then
 			showToast("Подожди, ролл уже идет")
 			return
 		end
 		passiveActionEvent:FireServer("Roll")
 	end)
-	if passiveUi.rollButtonInventory then
-		passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
-			if isRovRolling then
-				showToast("Подожди, ролл уже идет")
-				return
-			end
-			passiveActionEvent:FireServer("Roll")
-		end)
-	end
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.inventoryPanel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
 end
 
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
-		passiveActionEvent:FireServer("Roll")
+if passiveUi.equipBtn then
+	passiveUi.equipBtn.MouseButton1Click:Connect(function()
+		if passiveUi.selectedUid == "" then
+			showToast("Выбери пассив")
+			return
+		end
+		if passiveUi.lastState.equippedUid == passiveUi.selectedUid then
+			passiveActionEvent:FireServer("Unequip")
+		else
+			passiveActionEvent:FireServer("Equip", passiveUi.selectedUid)
+		end
 	end)
-	if passiveUi.rollButtonInventory then
-		passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
-			passiveActionEvent:FireServer("Roll")
-		end)
-	end
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.inventoryPanel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
 end
 
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
-		passiveActionEvent:FireServer("Roll")
+if passiveUi.deleteBtn then
+	passiveUi.deleteBtn.MouseButton1Click:Connect(function()
+		if passiveUi.selectedUid == "" then
+			showToast("Выбери пассив")
+			return
+		end
+		if passiveUi.deleteConfirm then
+			passiveUi.deleteConfirm.Visible = true
+		end
 	end)
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.panel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
 end
 
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
-		passiveActionEvent:FireServer("Roll")
+if passiveUi.deleteConfirmYes then
+	passiveUi.deleteConfirmYes.MouseButton1Click:Connect(function()
+		if passiveUi.selectedUid ~= "" then
+			passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
+			passiveUi.selectedUid = ""
+		end
+		passiveUi.deleteConfirm.Visible = false
 	end)
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.panel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
 end
 
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
-		passiveActionEvent:FireServer("Roll")
+if runeUi.luckBtn then
+	runeUi.luckBtn.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeLuck")
 	end)
-	for _, slot in ipairs(passiveUi.slots) do
-		slot.MouseButton1Click:Connect(function()
-			if not passiveUi.panel.Visible then
-				return
-			end
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if not entry then
-				return
-			end
-			if passiveUi.lastState.equippedUid == entry.uid then
-				passiveActionEvent:FireServer("Unequip")
-			else
-				passiveActionEvent:FireServer("Equip", entry.uid)
-			end
-		end)
-		slot.MouseButton2Click:Connect(function()
-			local index = table.find(passiveUi.slots, slot)
-			local entry = passiveUi.lastState.inventory[index]
-			if entry then
-				passiveActionEvent:FireServer("Delete", entry.uid)
-			end
-		end)
-	end
+end
+if runeUi.speedBtn then
+	runeUi.speedBtn.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeSpeed")
+	end)
+end
+if runeUi.bulkBtn then
+	runeUi.bulkBtn.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeBulk")
+	end)
 end
 
 giveCurrencyButton.MouseButton1Click:Connect(function()
@@ -2764,11 +2943,31 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 	elseif payload.kind == "passive_roll_result" then
 		local def = PASSIVE_DEFS[payload.passiveId or ""]
 		if def then
-			playRovAnimation("Выпало: " .. def.name .. " [" .. def.rarity .. "]")
+			playRovAnimation(def)
 			showToast("Новый пассив: " .. def.name .. " [" .. def.rarity .. "]")
 		else
 			showToast("Пассив получен")
 		end
+	elseif payload.kind == "rune_roll_result" then
+		local rolled = payload.rolled or {}
+		showToast("Открыто рун: " .. tostring(#rolled))
+	elseif payload.kind == "rune_roll_state" then
+		if payload.active then
+			startRuneRolling()
+		else
+			stopRuneRolling()
+		end
+	elseif payload.kind == "rune_roll_tick" then
+		local session = payload.session or {}
+		for runeId, amount in pairs(session) do
+			runeSessionCounts[runeId] = tonumber(amount) or 0
+		end
+		if not runeRollingActive then
+			startRuneRolling()
+		end
+		updateRuneSessionGui()
+		updateRuneSummaryGui()
+		updateRuneWorldDisplay()
 	else
 		showToast(payload.text or "Готово")
 	end
@@ -2810,6 +3009,24 @@ mouse.Button1Down:Connect(function()
 		else
 			showToast("Пассивы откроются на 5-м перерождении")
 		end
+		return
+	end
+
+	if runeUi.panel and (mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock) then
+		if sixthSystemsUnlocked.Value then
+			runeUi.panel.Visible = not runeUi.panel.Visible
+		else
+			showToast("Руны откроются на 6-м перерождении")
+		end
+		return
+	end
+
+	if runeUi.panel and mouse.Target == runeUpgradeBlock then
+		if sixthSystemsUnlocked.Value then
+			runeUi.panel.Visible = true
+		else
+			showToast("Руны откроются на 6-м перерождении")
+		end
 	end
 end)
 
@@ -2832,8 +3049,8 @@ local watchedValues = {
 
 	rebirthCount, rebirthNextCost, rebirthNextCurrency,
 	rebirthCoinMultiplierBonus, rebirthSpawnSpeedBonus, rebirthWoodMultiplierBonus,
-	secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked, fifthSystemsUnlocked,
-	passiveStateJson,
+	secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked, fifthSystemsUnlocked, sixthSystemsUnlocked,
+	passiveStateJson, runeStateJson, runeLuckLevel, runeSpeedLevel, runeBulkLevel, runeLuckCost, runeSpeedCost, runeBulkCost,
 }
 
 for _, obj in ipairs(watchedValues) do
@@ -2870,7 +3087,3 @@ if #passiveEffectParts > 0 then
 end
 
 updateBoards()
-	if isRovRolling then
-		return
-	end
-	isRovRolling = true
