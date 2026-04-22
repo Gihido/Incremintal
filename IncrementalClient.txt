@@ -109,9 +109,10 @@ boostDoska = workspace:WaitForChild("BoostDoska")
 paperFactoryDoska = workspace:WaitForChild("PaperFactoryDoska")
 	paperUpgradeDoska = workspace:FindFirstChild("PaperUpgradeDoska")
 	passiveRollBlock = workspace:FindFirstChild("PassiveRollBlock")
-	passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
-	runeRollBlock = workspace:FindFirstChild("RuneRollBlock")
-	runeIndexBlock = workspace:FindFirstChild("RuneIndexBlock")
+		passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
+		runeRollBlock = workspace:FindFirstChild("RuneRollBlock")
+		runeIndexBlock = workspace:FindFirstChild("RuneIndexBlock")
+		runeUpgradeBlock = workspace:FindFirstChild("RuneUpgradeBlock")
 
 local ADMIN_NAME = "Doter24_7"
 local MAX_COIN_SPAWN_SPEED_LEVEL = 3
@@ -140,10 +141,22 @@ local AssetSlots = {
 		Rebirth = ICON_ASSET_IDS.Rebirth,
 	},
 	UpgradeIcons = {
+		CoinGain = ICON_ASSET_IDS.Upgrade,
+		CoinMultiplier = ICON_ASSET_IDS.Upgrade,
 		CoinSpawnSpeed = ICON_ASSET_IDS.Upgrade,
+		CoinWoodBoost = ICON_ASSET_IDS.Upgrade,
+		TreeGain = ICON_ASSET_IDS.Upgrade,
+		TreeMultiplier = ICON_ASSET_IDS.Upgrade,
+		TreeSpeed = ICON_ASSET_IDS.Upgrade,
+		TreeCoinBoost = ICON_ASSET_IDS.Upgrade,
+		PaperGain = ICON_ASSET_IDS.Upgrade,
+		PaperMultiplier = ICON_ASSET_IDS.Upgrade,
+		PaperSpeed = ICON_ASSET_IDS.Upgrade,
 		RuneLuck = ICON_ASSET_IDS.Upgrade,
 		RuneSpeed = ICON_ASSET_IDS.Upgrade,
 		RuneBulk = ICON_ASSET_IDS.Upgrade,
+		PassiveRoll = ICON_ASSET_IDS.PassiveCard,
+		RebirthUpgrade = ICON_ASSET_IDS.Rebirth,
 	},
 	RuneIcons = {
 		Common = ICON_ASSET_IDS.Rune,
@@ -1274,7 +1287,7 @@ local function createPassiveUi()
 	ui.hintGui.Size = UDim2.new(0, 260, 0, 140)
 	ui.hintGui.StudsOffset = Vector3.new(0, 4.5, 0)
 	ui.hintGui.AlwaysOnTop = true
-	ui.hintGui.MaxDistance = 80
+	ui.hintGui.MaxDistance = 28
 	ui.hintGui.Parent = screenGui
 
 	local circle = Instance.new("Frame")
@@ -1355,20 +1368,44 @@ local function createPassiveUi()
 	indexList.BackgroundTransparency = 1
 	indexList.Parent = ui.indexPanel
 	local grid = Instance.new("UIGridLayout")
-	grid.CellSize = UDim2.new(0, 102, 0, 58)
-	grid.CellPadding = UDim2.new(0, 8, 0, 8)
+	grid.CellSize = UDim2.new(0, 108, 0, 104)
+	grid.CellPadding = UDim2.new(0, 8, 0, 10)
 	grid.Parent = indexList
 
 	for passiveId, passiveDef in pairs(PASSIVE_DEFS) do
 		local b = Instance.new("TextButton")
-		b.Text = passiveDef.name
-		b.BackgroundColor3 = Color3.fromRGB(98, 120, 173)
-		b.TextColor3 = Color3.fromRGB(245, 250, 255)
-		b.TextScaled = true
-		b.Font = Enum.Font.GothamBold
+		b.Text = ""
+		b.Size = UDim2.new(0, 108, 0, 104)
+		b.BackgroundColor3 = Color3.fromRGB(88, 110, 166)
 		b.BorderSizePixel = 0
 		b.Parent = indexList
-		createCorner(b, 10)
+		createCorner(b, 12)
+		createStroke(b, getRarityColor(passiveDef.rarity), 2, 0.15)
+		local cardIcon = Instance.new("ImageLabel")
+		cardIcon.Size = UDim2.new(0, 54, 0, 54)
+		cardIcon.AnchorPoint = Vector2.new(0.5, 0)
+		cardIcon.Position = UDim2.new(0.5, 0, 0, 8)
+		cardIcon.BackgroundTransparency = 1
+		cardIcon.Image = getAssetOrEmpty(AssetSlots.IndexCardImages[passiveId] or ICON_ASSET_IDS.PassiveCard)
+		cardIcon.Parent = b
+		local shine = Instance.new("Frame")
+		shine.Size = UDim2.new(1, -8, 0, 18)
+		shine.Position = UDim2.new(0, 4, 0, 4)
+		shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		shine.BackgroundTransparency = 0.9
+		shine.BorderSizePixel = 0
+		shine.Parent = b
+		createCorner(shine, 8)
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -8, 0, 32)
+		label.Position = UDim2.new(0, 4, 1, -36)
+		label.BackgroundTransparency = 1
+		label.Text = passiveDef.name
+		label.TextColor3 = Color3.fromRGB(245, 250, 255)
+		label.TextScaled = true
+		label.Font = Enum.Font.GothamBold
+		label.Parent = b
+		addScaleHover(b)
 		ui.indexButtons[b] = passiveId
 	end
 
@@ -1640,8 +1677,21 @@ local function openPassiveIndexCard(passiveId)
 	if not def then
 		return
 	end
+	local icon = passiveUi.indexDetail:FindFirstChild("CardIcon")
+	if not icon then
+		icon = Instance.new("ImageLabel")
+		icon.Name = "CardIcon"
+		icon.Size = UDim2.new(0, 84, 0, 84)
+		icon.AnchorPoint = Vector2.new(0.5, 0)
+		icon.Position = UDim2.new(0.5, 0, 0, 10)
+		icon.BackgroundTransparency = 1
+		icon.Parent = passiveUi.indexDetail
+	end
+	icon.Image = getAssetOrEmpty(AssetSlots.PassiveCardImages[passiveId] or ICON_ASSET_IDS.PassiveCard)
 	local detailText = passiveUi.indexDetail:FindFirstChild("Text")
 	if detailText and detailText:IsA("TextLabel") then
+		detailText.Position = UDim2.new(0, 8, 0, 100)
+		detailText.Size = UDim2.new(1, -16, 1, -148)
 		detailText.Text = def.name .. "\nРедкость: " .. tostring(def.rarity)
 			.. "\nТип: " .. tostring(def.currencyType or "Coins")
 			.. "\nЭффект: " .. tostring(def.effect or "—")
@@ -1736,6 +1786,7 @@ createRuneUi()
 
 local runeSessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0}
 local runeRollingActive = false
+local parseRuneState
 
 local function createRuneOverlays()
 	runeUi.summaryGui = Instance.new("Frame")
@@ -1785,9 +1836,9 @@ local function createRuneOverlays()
 		runeUi.worldBillboard.Name = "RuneWorldDisplay"
 		runeUi.worldBillboard.Adornee = runeRollBlock
 		runeUi.worldBillboard.Size = UDim2.new(0, 420, 0, 220)
-		runeUi.worldBillboard.StudsOffset = Vector3.new(0, 5.5, 0)
-		runeUi.worldBillboard.AlwaysOnTop = true
-		runeUi.worldBillboard.MaxDistance = 90
+			runeUi.worldBillboard.StudsOffset = Vector3.new(0, 5.5, 0)
+			runeUi.worldBillboard.AlwaysOnTop = true
+			runeUi.worldBillboard.MaxDistance = 32
 		runeUi.worldBillboard.Parent = screenGui
 		local bg = Instance.new("Frame")
 		bg.Size = UDim2.new(1, 0, 1, 0)
@@ -1833,11 +1884,11 @@ local function updateRuneSummaryGui()
 	local text = runeUi.summaryGui:FindFirstChild("Text")
 	if text then
 		text.Text = "СВОДКА РУН\n"
-			.. "Обычная: +" .. tostring(stacks(counts.Common) * 0.01) .. "x монет\n"
-			.. "Необычная: +" .. tostring(stacks(counts.Uncommon) * 0.10) .. "x монет\n"
-			.. "Редкая: +" .. tostring(stacks(counts.Rare) * 0.25) .. "x монет\n"
-			.. "Эпическая: +" .. tostring(stacks(counts.Epic) * 0.01) .. "x дерева\n"
-			.. "Легендарная: +" .. tostring(stacks(counts.Legendary) * 0.01) .. "x бумаги"
+			.. "Обычная: всего " .. tostring(counts.Common or 0) .. " | эф. " .. tostring(stacks(counts.Common)) .. " | +" .. tostring(stacks(counts.Common) * 0.01) .. "x монет\n"
+			.. "Необычная: всего " .. tostring(counts.Uncommon or 0) .. " | эф. " .. tostring(stacks(counts.Uncommon)) .. " | +" .. tostring(stacks(counts.Uncommon) * 0.10) .. "x монет\n"
+			.. "Редкая: всего " .. tostring(counts.Rare or 0) .. " | эф. " .. tostring(stacks(counts.Rare)) .. " | +" .. tostring(stacks(counts.Rare) * 0.25) .. "x монет\n"
+			.. "Эпическая: всего " .. tostring(counts.Epic or 0) .. " | эф. " .. tostring(stacks(counts.Epic)) .. " | +" .. tostring(stacks(counts.Epic) * 0.01) .. "x дерева\n"
+			.. "Легендарная: всего " .. tostring(counts.Legendary or 0) .. " | эф. " .. tostring(stacks(counts.Legendary)) .. " | +" .. tostring(stacks(counts.Legendary) * 0.01) .. "x бумаги"
 	end
 end
 
@@ -1854,6 +1905,14 @@ local function updateRuneWorldDisplay()
 		.. "Эпическая (" .. tostring(c.Epic or 0) .. ")\n"
 		.. "Легендарная (" .. tostring(c.Legendary or 0) .. ")\n"
 		.. "\nLuck: " .. tostring(runeLuckLevel.Value) .. "  Speed: " .. tostring(runeSpeedLevel.Value) .. "  Bulk: " .. tostring(runeBulkLevel.Value)
+	if runeUi.worldStatsBillboard then
+		local st = runeUi.worldStatsBillboard:FindFirstChildOfClass("Frame") and runeUi.worldStatsBillboard:FindFirstChildOfClass("Frame"):FindFirstChild("Text")
+		if st then
+			st.Text = "СТАТЫ РУН\nRune Luck: " .. tostring(runeLuckLevel.Value * 10)
+				.. "\nRune Speed: " .. tostring(runeSpeedLevel.Value)
+				.. "\nRune Bulk: +" .. tostring(runeBulkLevel.Value)
+		end
+	end
 end
 
 local function startRuneRolling()
@@ -1881,7 +1940,7 @@ local function parsePassiveState()
 	return {inventory = {}, equippedUid = ""}
 end
 
-local function parseRuneState()
+parseRuneState = function()
 	local ok, decoded = pcall(function()
 		return HttpService:JSONDecode(runeStateJson.Value)
 	end)
@@ -2490,9 +2549,36 @@ local function updateBoards()
 					end)
 					if isEquipped then
 						equippedName = def.name
-					end
-				end
-			end
+		end
+
+		runeUi.worldStatsBillboard = Instance.new("BillboardGui")
+		runeUi.worldStatsBillboard.Name = "RuneWorldStats"
+		runeUi.worldStatsBillboard.Adornee = runeRollBlock
+		runeUi.worldStatsBillboard.Size = UDim2.new(0, 220, 0, 110)
+		runeUi.worldStatsBillboard.StudsOffset = Vector3.new(3.8, 4.8, 0)
+		runeUi.worldStatsBillboard.AlwaysOnTop = true
+		runeUi.worldStatsBillboard.MaxDistance = 28
+		runeUi.worldStatsBillboard.Parent = screenGui
+		local sbg = Instance.new("Frame")
+		sbg.Size = UDim2.new(1, 0, 1, 0)
+		sbg.BackgroundColor3 = Color3.fromRGB(42, 55, 90)
+		sbg.BackgroundTransparency = 0.1
+		sbg.BorderSizePixel = 0
+		sbg.Parent = runeUi.worldStatsBillboard
+		createCorner(sbg, 10)
+		local st = Instance.new("TextLabel")
+		st.Name = "Text"
+		st.Size = UDim2.new(1, -8, 1, -8)
+		st.Position = UDim2.new(0, 4, 0, 4)
+		st.BackgroundTransparency = 1
+		st.TextScaled = true
+		st.TextWrapped = true
+		st.TextYAlignment = Enum.TextYAlignment.Top
+		st.Font = Enum.Font.GothamBold
+		st.TextColor3 = Color3.fromRGB(236, 243, 255)
+		st.Parent = sbg
+	end
+end
 			local selectedStillExists = false
 			for _, entry in ipairs(state.inventory) do
 				if entry.uid == passiveUi.selectedUid then
@@ -2550,6 +2636,15 @@ end
 if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
 	table.insert(passiveEffectParts, passiveInventoryBlock)
 end
+if runeRollBlock and runeRollBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, runeRollBlock)
+end
+if runeIndexBlock and runeIndexBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, runeIndexBlock)
+end
+if runeUpgradeBlock and runeUpgradeBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, runeUpgradeBlock)
+end
 for _, p in ipairs(passiveEffectParts) do
 	if not p:FindFirstChild("PassiveFxLight") then
 		local l = Instance.new("PointLight")
@@ -2558,6 +2653,20 @@ for _, p in ipairs(passiveEffectParts) do
 		l.Brightness = 1.7
 		l.Color = Color3.fromRGB(181, 219, 255)
 		l.Parent = p
+	end
+	if not p:FindFirstChild("PassiveFxParticles") then
+		local emitter = Instance.new("ParticleEmitter")
+		emitter.Name = "PassiveFxParticles"
+		emitter.Rate = 4
+		emitter.Lifetime = NumberRange.new(0.7, 1.2)
+		emitter.Speed = NumberRange.new(0.4, 1.2)
+		emitter.RotSpeed = NumberRange.new(-30, 30)
+		emitter.Size = NumberSequence.new(0.15, 0)
+		emitter.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.35),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		emitter.Parent = p
 	end
 end
 
@@ -2843,6 +2952,15 @@ mouse.Button1Down:Connect(function()
 	if runeUi.panel and (mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock) then
 		if sixthSystemsUnlocked.Value then
 			runeUi.panel.Visible = not runeUi.panel.Visible
+		else
+			showToast("Руны откроются на 6-м перерождении")
+		end
+		return
+	end
+
+	if runeUi.panel and mouse.Target == runeUpgradeBlock then
+		if sixthSystemsUnlocked.Value then
+			runeUi.panel.Visible = true
 		else
 			showToast("Руны откроются на 6-м перерождении")
 		end
