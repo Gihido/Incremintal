@@ -9,7 +9,11 @@ player = Players.LocalPlayer
 mouse = player:GetMouse()
 playerGui = player:WaitForChild("PlayerGui")
 
-data = player:WaitForChild("PlayerData")
+data = player:WaitForChild("PlayerData", 30)
+if not data then
+	warn("PlayerData was not created within 30 seconds for " .. player.Name)
+	return
+end
 coins = data:WaitForChild("Coins")
 
 coinUpgrades = data:WaitForChild("CoinUpgrades")
