@@ -2001,8 +2001,8 @@ local function createRuneOverlays()
 			iconLabel.Parent = iconBadge
 
 			local nameLabel = Instance.new("TextLabel")
-			nameLabel.Size = UDim2.new(0.42, -6, 0, 26)
-			nameLabel.Position = UDim2.new(0, 50, 0, 1)
+			nameLabel.Size = UDim2.new(0.58, -6, 0, 24)
+			nameLabel.Position = UDim2.new(0, 50, 0, 2)
 			nameLabel.BackgroundTransparency = 1
 			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 			nameLabel.Text = visual.name
@@ -2012,8 +2012,8 @@ local function createRuneOverlays()
 			nameLabel.Parent = row
 
 			local infoPanel = Instance.new("Frame")
-			infoPanel.Size = UDim2.new(0.62, -6, 0, 40)
-			infoPanel.Position = UDim2.new(0.36, 0, 0.5, -20)
+			infoPanel.Size = UDim2.new(0.62, -6, 0, 30)
+			infoPanel.Position = UDim2.new(0.36, 0, 0, 32)
 			infoPanel.BackgroundColor3 = Color3.fromRGB(13, 20, 28)
 			infoPanel.BackgroundTransparency = 0.3
 			infoPanel.BorderSizePixel = 0
@@ -2091,17 +2091,24 @@ local function createRuneOverlays()
 		headerText.TextScaled = true
 		headerText.Parent = header
 
+		local listHolder = Instance.new("ScrollingFrame")
+		listHolder.Size = UDim2.new(1, -16, 1, -62)
+		listHolder.Position = UDim2.new(0, 8, 0, 54)
+		listHolder.BackgroundTransparency = 1
+		listHolder.BorderSizePixel = 0
+		listHolder.ScrollBarThickness = 8
+		listHolder.ScrollBarImageColor3 = Color3.fromRGB(196, 255, 124)
+		listHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
+		listHolder.Parent = panel
+
 		local list = Instance.new("UIListLayout")
 		list.Padding = UDim.new(0, 5)
-		list.Parent = panel
+		list.Parent = listHolder
 		list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		list.VerticalAlignment = Enum.VerticalAlignment.Top
-		local padding = Instance.new("UIPadding")
-		padding.PaddingTop = UDim.new(0, 56)
-		padding.PaddingLeft = UDim.new(0, 8)
-		padding.PaddingRight = UDim.new(0, 8)
-		padding.PaddingBottom = UDim.new(0, 8)
-		padding.Parent = panel
+		list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			listHolder.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 4)
+		end)
 
 		for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
 			local visual = RUNE_VISUALS[runeId]
@@ -2109,7 +2116,7 @@ local function createRuneOverlays()
 			row.Size = UDim2.new(1, 0, 0, 44)
 			row.BackgroundColor3 = visual.rowColor
 			row.BorderSizePixel = 0
-			row.Parent = panel
+			row.Parent = listHolder
 			createCorner(row, 10)
 			createStroke(row, visual.accent, 2, 0.25)
 
@@ -2637,6 +2644,12 @@ local function updateWallVisual()
 end
 
 local function updateBoards()
+	local secondUnlockedVisual = secondAreaUnlocked.Value or rebirthCount.Value >= 2
+	local thirdUnlockedVisual = thirdUpgradeUnlocked.Value or rebirthCount.Value >= 3
+	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
+	local fifthUnlockedVisual = fifthSystemsUnlocked.Value or rebirthCount.Value >= 5
+	local sixthUnlockedVisual = sixthSystemsUnlocked.Value or rebirthCount.Value >= 6
+
 	coinValueLabel.Text = formatNumber(coins.Value)
 	coinRewardLabel.Text = formatNumber(getCoinReward())
 	xpValueLabel.Text = formatNumber(xpValue.Value)
@@ -2655,7 +2668,7 @@ local function updateBoards()
 		coinWoodBoostActive.Value,
 		10,
 		coins.Value,
-		thirdUpgradeUnlocked.Value and nil or "Откроется на 3-м"
+		thirdUnlockedVisual and nil or "Откроется на 3-м"
 	)
 
 	rebirthLevelText.Text = "Rebirth " .. tostring(rebirthCount.Value) .. "/" .. tostring(MAX_REBIRTH_COUNT)
@@ -2704,7 +2717,7 @@ local function updateBoards()
 	treeRewardText.Text = formatNumber(getWoodReward())
 	treeMultiplierText.Text = "x" .. formatNumber(1 + woodMultiplierLevel.Value + (coinWoodBoostLevel.Value * 0.25))
 	treeCooldownText.Text = formatNumber(getWoodCooldown()) .. "s"
-	treeUnlockStatusText.Text = secondAreaUnlocked.Value and "Открыто" or "Закрыто"
+	treeUnlockStatusText.Text = secondUnlockedVisual and "Открыто" or "Закрыто"
 
 	updateCard(treeGainCard, woodValueLevel.Value, woodValueCost.Value, woodValueActive.Value, math.huge, woodCurrency.Value)
 	updateCard(treeMultiCard, woodMultiplierLevel.Value, woodMultiplierCost.Value, woodMultiplierActive.Value, math.huge, woodCurrency.Value)
@@ -2716,7 +2729,7 @@ local function updateBoards()
 		woodCoinBoostActive.Value,
 		20,
 		woodCurrency.Value,
-		thirdUpgradeUnlocked.Value and nil or "Откроется на 3-м"
+		thirdUnlockedVisual and nil or "Откроется на 3-м"
 	)
 
 	local goalFactor, goalsReached, nextTarget = computeGoalWoodFactor(coins.Value)
@@ -2742,18 +2755,18 @@ local function updateBoards()
 		updateCard(paperUpgradeCards.multi, paperMultiplierLevel.Value, paperMultiplierCost.Value, paperMultiplierActive.Value, math.huge, paperValue.Value)
 		updateCard(paperUpgradeCards.speed, paperSpeedLevel.Value, paperSpeedCost.Value, paperSpeedActive.Value, 10, paperValue.Value)
 		if paperUpgradeLockedOverlay then
-			paperUpgradeLockedOverlay.Visible = not fourthSystemsUnlocked.Value
+			paperUpgradeLockedOverlay.Visible = not fourthUnlockedVisual
 		end
 	end
 
-	treeInfoLockedOverlay.Visible = not secondAreaUnlocked.Value
-	treeUpgradeLockedOverlay.Visible = not secondAreaUnlocked.Value
-	boostLockedOverlay.Visible = not fourthSystemsUnlocked.Value
-	factoryLockedOverlay.Visible = not fourthSystemsUnlocked.Value
+	treeInfoLockedOverlay.Visible = not secondUnlockedVisual
+	treeUpgradeLockedOverlay.Visible = not secondUnlockedVisual
+	boostLockedOverlay.Visible = not fourthUnlockedVisual
+	factoryLockedOverlay.Visible = not fourthUnlockedVisual
 
-		if passiveUi.hintGui then
-			passiveUi.hintGui.Enabled = fifthSystemsUnlocked.Value
-		end
+	if passiveUi.hintGui then
+		passiveUi.hintGui.Enabled = fifthUnlockedVisual
+	end
 		if passiveUi.inventoryPanel then
 			local state = parsePassiveState()
 			passiveUi.lastState = state
@@ -2845,15 +2858,15 @@ local function updateBoards()
 			passiveUi.emptyState.Visible = #state.inventory == 0
 			passiveUi.equippedText.Text = "Экипировано: " .. equippedName .. " | Слоты: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
 			if passiveUi.rollButton then
-				setButtonVisual(passiveUi.rollButton, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
+					setButtonVisual(passiveUi.rollButton, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
+				end
+				if passiveUi.rollButtonInventory then
+					setButtonVisual(passiveUi.rollButtonInventory, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
+				end
 			end
-			if passiveUi.rollButtonInventory then
-				setButtonVisual(passiveUi.rollButtonInventory, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthSystemsUnlocked.Value, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthSystemsUnlocked.Value)
-			end
-		end
 
 	if runeUi.panel then
-		local runeUnlocked = sixthSystemsUnlocked.Value
+		local runeUnlocked = sixthUnlockedVisual
 		if runeUi.panel.Visible and not runeUnlocked then
 			runeUi.panel.Visible = false
 		end
@@ -2883,13 +2896,13 @@ local function updateBoards()
 	end
 
 	if runeUpgradeCards then
-		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
-		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
-		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
 	end
 
 	if xpUpgradeCards then
-		local xpUnlocked = secondAreaUnlocked.Value
+		local xpUnlocked = secondUnlockedVisual
 		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
 		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
 		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
@@ -2905,7 +2918,7 @@ local function updateBoards()
 		xpProgressUi.costText.Text = xpBoostNextCost.Value <= 0 and "MAX" or tostring(math.floor(xpBoostNextCost.Value + 0.5))
 		local progress = xpBoostNextCost.Value > 0 and math.clamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
 		TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
-		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondAreaUnlocked.Value and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondAreaUnlocked.Value)
+		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
 	end
 
 	updateWallVisual()
