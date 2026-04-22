@@ -113,6 +113,7 @@ paperFactoryDoska = workspace:WaitForChild("PaperFactoryDoska")
 		runeRollBlock = workspace:FindFirstChild("RuneRollBlock")
 		runeIndexBlock = workspace:FindFirstChild("RuneIndexBlock")
 		runeUpgradeBlock = workspace:FindFirstChild("RuneUpgradeBlock")
+		runeUpgradeDoska = workspace:FindFirstChild("RuneUpgradeDoska")
 
 local ADMIN_NAME = "Doter24_7"
 local MAX_COIN_SPAWN_SPEED_LEVEL = 3
@@ -177,6 +178,15 @@ local AssetSlots = {
 	WorldPanelIcons = {
 		RuneRollBlock = ICON_ASSET_IDS.Rune,
 		RuneIndexBlock = ICON_ASSET_IDS.Rune,
+	},
+	BoardIcons = {
+		RuneUpgradeBoard = ICON_ASSET_IDS.Upgrade,
+		XPUpgradeBoard = ICON_ASSET_IDS.Upgrade,
+		XPProgressBoard = ICON_ASSET_IDS.Upgrade,
+	},
+	BillboardBackgrounds = {
+		RuneMain = "",
+		RuneSession = "",
 	},
 }
 
@@ -1170,7 +1180,7 @@ local paperProductionText = createStatRow(factoryStats, "Производств�
 
 local productionBarBg = Instance.new("Frame")
 productionBarBg.Size = UDim2.new(1, 0, 0, 16)
-productionBarBg.Position = UDim2.new(0, 0, 0, 162)
+productionBarBg.Position = UDim2.new(0, 0, 0, 176)
 productionBarBg.BackgroundColor3 = Color3.fromRGB(53, 66, 98)
 productionBarBg.BorderSizePixel = 0
 productionBarBg.Parent = factoryBoard
@@ -1186,8 +1196,8 @@ createGradient(productionBarFill, Color3.fromRGB(164, 216, 255), Color3.fromRGB(
 
 local factoryButtonsFrame = Instance.new("Frame")
 factoryButtonsFrame.BackgroundTransparency = 1
-factoryButtonsFrame.Size = UDim2.new(1, 0, 0, 42)
-factoryButtonsFrame.Position = UDim2.new(0, 0, 1, -50)
+factoryButtonsFrame.Size = UDim2.new(1, 0, 0, 36)
+factoryButtonsFrame.Position = UDim2.new(0, 0, 1, -38)
 factoryButtonsFrame.Parent = factoryBoard
 
 local addFuelButton = Instance.new("TextButton")
@@ -1240,6 +1250,23 @@ local function createPaperUpgradeUi()
 end
 
 local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
+
+local runeUpgradeCards = nil
+if runeUpgradeDoska then
+	local _, runeUpgradeBoard = createWorldBoard("RuneUpgradeBoardSurfaceGui", runeUpgradeDoska, Enum.NormalId.Front, 78)
+	createHeader(runeUpgradeBoard, "RUNE UPGRADES", "Luck / Speed / Bulk")
+	local runeScroll = createHorizontalScroller(runeUpgradeBoard, 66, 12)
+	local runeLuckCard = createUpgradeCard(runeScroll, "RuneLuck", "Улучшает удачу рун.", "Luck", AssetSlots.UpgradeIcons.RuneLuck, "L", {
+		card1 = Color3.fromRGB(151, 227, 184), card2 = Color3.fromRGB(95, 177, 130), inner1 = Color3.fromRGB(192, 255, 222), inner2 = Color3.fromRGB(128, 212, 167), icon1 = Color3.fromRGB(229, 255, 237), icon2 = Color3.fromRGB(166, 238, 198),
+	})
+	local runeSpeedCard = createUpgradeCard(runeScroll, "RuneSpeed", "Ускоряет ролл рун.", "Speed", AssetSlots.UpgradeIcons.RuneSpeed, "S", {
+		card1 = Color3.fromRGB(135, 188, 255), card2 = Color3.fromRGB(91, 137, 217), inner1 = Color3.fromRGB(181, 221, 255), inner2 = Color3.fromRGB(119, 164, 235), icon1 = Color3.fromRGB(220, 241, 255), icon2 = Color3.fromRGB(153, 201, 255),
+	})
+	local runeBulkCard = createUpgradeCard(runeScroll, "RuneBulk", "Больше независимых роллов.", "Bulk", AssetSlots.UpgradeIcons.RuneBulk, "B", {
+		card1 = Color3.fromRGB(214, 163, 255), card2 = Color3.fromRGB(152, 103, 210), inner1 = Color3.fromRGB(235, 203, 255), inner2 = Color3.fromRGB(185, 138, 235), icon1 = Color3.fromRGB(255, 220, 255), icon2 = Color3.fromRGB(223, 173, 255),
+	})
+	runeUpgradeCards = {luck = runeLuckCard, speed = runeSpeedCard, bulk = runeBulkCard}
+end
 
 local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
@@ -1732,11 +1759,13 @@ local function createRuneUi()
 	ui.openBtn = Instance.new("TextButton")
 	ui.openBtn.Size = UDim2.new(1, -16, 0, 40)
 	ui.openBtn.Position = UDim2.new(0, 8, 0, 70)
-	ui.openBtn.Text = "ОТКРЫТЬ РУНЫ (50 дерева)"
-	ui.openBtn.BackgroundColor3 = Color3.fromRGB(151, 227, 184)
-	ui.openBtn.TextColor3 = Color3.fromRGB(22, 56, 41)
+	ui.openBtn.Text = "АВТО-РОЛЛ: ВСТАНЬ НА RUNE BLOCK"
+	ui.openBtn.BackgroundColor3 = Color3.fromRGB(121, 138, 176)
+	ui.openBtn.TextColor3 = Color3.fromRGB(230, 236, 248)
 	ui.openBtn.TextScaled = true
 	ui.openBtn.Font = Enum.Font.GothamBlack
+	ui.openBtn.AutoButtonColor = false
+	ui.openBtn.Active = false
 	ui.openBtn.Parent = ui.panel
 	createCorner(ui.openBtn, 12)
 	addScaleHover(ui.openBtn)
@@ -1847,6 +1876,12 @@ local function createRuneOverlays()
 		bg.BorderSizePixel = 0
 		bg.Parent = runeUi.worldBillboard
 		createCorner(bg, 12)
+		local bgImage = Instance.new("ImageLabel")
+		bgImage.Size = UDim2.new(1, 0, 1, 0)
+		bgImage.BackgroundTransparency = 1
+		bgImage.Image = getAssetOrEmpty(AssetSlots.BillboardBackgrounds.RuneMain)
+		bgImage.ScaleType = Enum.ScaleType.Stretch
+		bgImage.Parent = bg
 		local txt = Instance.new("TextLabel")
 		txt.Name = "Text"
 		txt.Size = UDim2.new(1, -12, 1, -12)
@@ -2566,6 +2601,12 @@ local function updateBoards()
 		sbg.BorderSizePixel = 0
 		sbg.Parent = runeUi.worldStatsBillboard
 		createCorner(sbg, 10)
+		local sbgImage = Instance.new("ImageLabel")
+		sbgImage.Size = UDim2.new(1, 0, 1, 0)
+		sbgImage.BackgroundTransparency = 1
+		sbgImage.Image = getAssetOrEmpty(AssetSlots.BillboardBackgrounds.RuneSession)
+		sbgImage.ScaleType = Enum.ScaleType.Stretch
+		sbgImage.Parent = sbg
 		local st = Instance.new("TextLabel")
 		st.Name = "Text"
 		st.Size = UDim2.new(1, -8, 1, -8)
@@ -2623,6 +2664,12 @@ end
 		runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)"
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
+	end
+
+	if runeUpgradeCards then
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, sixthSystemsUnlocked.Value and nil or "Откроется на 6-м")
 	end
 
 	updateWallVisual()
@@ -2762,6 +2809,27 @@ if paperUpgradeCards then
 	end)
 end
 
+if runeUpgradeCards then
+	runeUpgradeCards.luck.buyButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeLuck")
+	end)
+	runeUpgradeCards.luck.maxButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeLuck")
+	end)
+	runeUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeSpeed")
+	end)
+	runeUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeSpeed")
+	end)
+	runeUpgradeCards.bulk.buyButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeBulk")
+	end)
+	runeUpgradeCards.bulk.maxButton.MouseButton1Click:Connect(function()
+		runeActionEvent:FireServer("UpgradeBulk")
+	end)
+end
+
 rebirthButton.MouseButton1Click:Connect(function()
 	purchaseRebirthEvent:FireServer()
 end)
@@ -2830,11 +2898,6 @@ if passiveUi.deleteConfirmYes then
 	end)
 end
 
-if runeUi.openBtn then
-	runeUi.openBtn.MouseButton1Click:Connect(function()
-		runeActionEvent:FireServer("Open")
-	end)
-end
 if runeUi.luckBtn then
 	runeUi.luckBtn.MouseButton1Click:Connect(function()
 		runeActionEvent:FireServer("UpgradeLuck")
