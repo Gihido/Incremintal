@@ -13,7 +13,7 @@ local rebirthWall = Workspace:WaitForChild("RebirthWall")
 local treeBlock = Workspace:WaitForChild("TreeBlock")
 local runeRollBlock = Workspace:FindFirstChild("RuneRollBlock")
 
-local SAVE_STORE_NAME = "IncrementalSave_v9"
+local SAVE_STORE_NAME = "IncrementalSave_v10"
 
 local MAX_COINS = 10
 local BASE_COIN_RESPAWN = 3
@@ -69,6 +69,24 @@ local RUNE_UPGRADES = {
 	Luck = {levelName = "RuneLuckLevel", costName = "RuneLuckCost", startCost = 50000, maxLevel = 4, currency = "Coins"},
 	Speed = {levelName = "RuneSpeedLevel", costName = "RuneSpeedCost", startCost = 5000, maxLevel = 5, currency = "Wood"},
 	Bulk = {levelName = "RuneBulkLevel", costName = "RuneBulkCost", startCost = 50, maxLevel = 5, currency = "Paper"},
+}
+
+local XP_UPGRADES = {
+	CoinXP = {levelName = "CoinXPLevel", costName = "CoinXPCost", startCost = 1, priceMultiplier = 1.5, maxLevel = 10},
+	PaperXP = {levelName = "PaperXPLevel", costName = "PaperXPCost", startCost = 1, priceMultiplier = 1.5, maxLevel = 10},
+	WoodXP = {levelName = "WoodXPLevel", costName = "WoodXPCost", startCost = 1, priceMultiplier = 1.5, maxLevel = 10},
+	XPMultiplier = {levelName = "XPMultiplierLevel", costName = "XPMultiplierCost", startCost = 10, priceMultiplier = 1.5, maxLevel = 5},
+	RuneLuckXP = {levelName = "RuneLuckXPLevel", costName = "RuneLuckXPCost", startCost = 1, priceMultiplier = 1.5, maxLevel = 3},
+	RuneBulkXP = {levelName = "RuneBulkXPLevel", costName = "RuneBulkXPCost", startCost = 1, priceMultiplier = 1.5, maxLevel = 5},
+	RuneSpeedXP = {levelName = "RuneSpeedXPLevel", costName = "RuneSpeedXPCost", startCost = 1, priceMultiplier = 1.5, maxLevel = 2},
+}
+
+local XP_BOOST_CONFIG = {
+	levelName = "Level",
+	costName = "NextCost",
+	startCost = 10,
+	priceMultiplier = 3,
+	maxLevel = 10,
 }
 
 local REBIRTH_STAGES = {
@@ -406,6 +424,7 @@ local woodClickEvent = ensureRemote("WoodClick")
 local factoryActionEvent = ensureRemote("FactoryAction")
 local passiveActionEvent = ensureRemote("PassiveAction")
 local runeActionEvent = ensureRemote("RuneAction")
+local xpActionEvent = ensureRemote("XPAction")
 
 local activeCoinCount = 0
 local animatedCoins = {}
@@ -561,6 +580,26 @@ local function getPaperCurrencyObject(player)
 	return paperFactory and paperFactory:FindFirstChild("Paper") or nil
 end
 
+local function getXPFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("XP") or nil
+end
+
+local function getXPCurrencyObject(player)
+	local xpFolder = getXPFolder(player)
+	return xpFolder and xpFolder:FindFirstChild("XPValue") or nil
+end
+
+local function getXPUpgradesFolder(player)
+	local xpFolder = getXPFolder(player)
+	return xpFolder and xpFolder:FindFirstChild("XPUpgrades") or nil
+end
+
+local function getXPBoostFolder(player)
+	local xpFolder = getXPFolder(player)
+	return xpFolder and xpFolder:FindFirstChild("XPBoost") or nil
+end
+
 local function getRebirthFolder(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("Rebirth") or nil
@@ -645,6 +684,99 @@ local function getPassiveMultipliers(player)
 	end
 
 	return passiveDef.coinMultiplier or 1, passiveDef.woodMultiplier or 1, passiveDef.globalMultiplier or 1, passiveDef.speedMultiplier or 1
+end
+
+local function emptyRuneState()
+	return {
+		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+	}
+end
+
+local function getRuneFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("Runes") or nil
+end
+
+local function getRuneState(player)
+	if not runeStates[player] then
+		runeStates[player] = emptyRuneState()
+	end
+	return runeStates[player]
+end
+
+local function writeRuneStateValue(player)
+	local folder = getRuneFolder(player)
+	if not folder then return end
+	local jsonValue = folder:FindFirstChild("StateJson")
+	if jsonValue then
+		jsonValue.Value = HttpService:JSONEncode(getRuneState(player))
+	end
+end
+
+local function getRuneUpgradeFolder(player)
+	local folder = getRuneFolder(player)
+	return folder and folder:FindFirstChild("Upgrades") or nil
+end
+
+local function chooseRuneType(luckLevel)
+	local luckPoints = math.max(0, luckLevel or 0) * 10
+	local luckFactor = 1 + (luckPoints * 0.01)
+	local weighted = {}
+	local total = 0
+	for runeId, runeDef in pairs(RUNE_TYPES) do
+		local weight = runeDef.weight or 0
+		if runeId ~= "Common" then
+			weight *= luckFactor
+		end
+		total += weight
+		weighted[runeId] = weight
+	end
+	local roll = math.random() * total
+	local running = 0
+	for runeId, weight in pairs(weighted) do
+		running += weight
+		if roll <= running then
+			return runeId
+		end
+	end
+	return "Common"
+end
+
+local function getRuneBonusMultipliers(player)
+	local state = getRuneState(player)
+	local coinMul, woodMul, paperMul = 1, 1, 1
+	for runeId, runeDef in pairs(RUNE_TYPES) do
+		local count = 0
+		if state.counts then
+			count = tonumber(state.counts[runeId]) or 0
+		end
+		local stacks = math.clamp(count, 0, RUNE_MAX_EFFECTIVE_STACKS)
+		coinMul += (runeDef.coinBonus or 0) * stacks
+		woodMul += (runeDef.woodBonus or 0) * stacks
+		paperMul += (runeDef.paperBonus or 0) * stacks
+	end
+	return coinMul, woodMul, paperMul
+end
+
+local function getXPBoostMultiplier(player)
+	local boostFolder = getXPBoostFolder(player)
+	if not boostFolder then
+		return 1
+	end
+	local lvl = boostFolder:FindFirstChild(XP_BOOST_CONFIG.levelName)
+	return 1 + math.max(0, tonumber(lvl and lvl.Value) or 0)
+end
+
+local function getEffectiveRuneStats(player)
+	local runeUpgrades = getRuneUpgradeFolder(player)
+	local xpUpgrades = getXPUpgradesFolder(player)
+	if not runeUpgrades then
+		return 0, 0, 0
+	end
+	local luck = runeUpgrades.RuneLuckLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneLuckXPLevel") and xpUpgrades.RuneLuckXPLevel.Value or 0))
+	local speed = runeUpgrades.RuneSpeedLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneSpeedXPLevel") and xpUpgrades.RuneSpeedXPLevel.Value or 0))
+	local bulk = runeUpgrades.RuneBulkLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneBulkXPLevel") and xpUpgrades.RuneBulkXPLevel.Value or 0))
+	return luck, speed, bulk
 end
 
 local function emptyRuneState()
@@ -916,6 +1048,17 @@ local function setupPlayerDataObjects(player)
 		createValue(paperUpgrades, "BoolValue", config.activeName, false)
 	end
 
+	local xpFolder = ensureFolder(playerData, "XP")
+	createValue(xpFolder, "NumberValue", "XPValue", 0)
+	local xpUpgrades = ensureFolder(xpFolder, "XPUpgrades")
+	for _, cfg in pairs(XP_UPGRADES) do
+		createValue(xpUpgrades, "IntValue", cfg.levelName, 0)
+		createValue(xpUpgrades, "NumberValue", cfg.costName, cfg.startCost)
+	end
+	local xpBoost = ensureFolder(xpFolder, "XPBoost")
+	createValue(xpBoost, "IntValue", XP_BOOST_CONFIG.levelName, 0)
+	createValue(xpBoost, "NumberValue", XP_BOOST_CONFIG.costName, XP_BOOST_CONFIG.startCost)
+
 	local rebirthFolder = ensureFolder(playerData, "Rebirth")
 	createValue(rebirthFolder, "IntValue", "Count", 0)
 	createValue(rebirthFolder, "IntValue", "NextCost", REBIRTH_STAGES[1].cost)
@@ -1132,9 +1275,35 @@ local function resetWoodProgress(player)
 	paperProcessAnchors[player] = os.clock()
 end
 
+local function resetXPProgress(player)
+	local xp = getXPCurrencyObject(player)
+	local xpUpgrades = getXPUpgradesFolder(player)
+	local xpBoost = getXPBoostFolder(player)
+	if xp then
+		xp.Value = 0
+	end
+	if xpUpgrades then
+		for _, cfg in pairs(XP_UPGRADES) do
+			local lvl = xpUpgrades:FindFirstChild(cfg.levelName)
+			local cost = xpUpgrades:FindFirstChild(cfg.costName)
+			if lvl then lvl.Value = 0 end
+			if cost then cost.Value = cfg.startCost end
+		end
+	end
+	if xpBoost then
+		if xpBoost:FindFirstChild(XP_BOOST_CONFIG.levelName) then
+			xpBoost[XP_BOOST_CONFIG.levelName].Value = 0
+		end
+		if xpBoost:FindFirstChild(XP_BOOST_CONFIG.costName) then
+			xpBoost[XP_BOOST_CONFIG.costName].Value = XP_BOOST_CONFIG.startCost
+		end
+	end
+end
+
 local function resetAllPlayerData(player)
 	resetCoinProgress(player)
 	resetWoodProgress(player)
+	resetXPProgress(player)
 
 	local rebirth = getRebirthFolder(player)
 	if rebirth then
@@ -1174,8 +1343,10 @@ local function getCoinReward(player)
 	local baseValue = 1 + coinUpgrades.CoinValueLevel.Value
 	local baseMultiplier = 1 + (coinUpgrades.MultiplierLevel.Value * 0.1)
 	local woodCoinBoostMultiplier = 1.1 ^ woodUpgrades.CoinBoostLevel.Value
+	local xpUpgrades = getXPUpgradesFolder(player)
+	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 
-	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier)
+	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul)
 end
 
 local function getCoinRespawnDelay(player)
@@ -1220,7 +1391,9 @@ local function getWoodReward(player)
 		goalFactor = computeGoalWoodFactorFromCoins(coins.Value)
 	end
 
-	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier * passiveGlobalMultiplier * runeWoodMultiplier)
+	local xpUpgrades = getXPUpgradesFolder(player)
+	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("WoodXPLevel") and xpUpgrades.WoodXPLevel.Value or 0) * 0.2)
+	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier * passiveGlobalMultiplier * runeWoodMultiplier * xpMul)
 end
 
 local function getWoodCooldown(player)
@@ -1249,7 +1422,9 @@ local function getPaperProductionAmount(player)
 	local multiplier = 1 + (paperUpgrades.PaperMultiplierLevel.Value * 0.1)
 	local _, _, runePaperMultiplier = getRuneBonusMultipliers(player)
 
-	return roundToTenth(baseValue * multiplier * runePaperMultiplier)
+	local xpUpgrades = getXPUpgradesFolder(player)
+	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("PaperXPLevel") and xpUpgrades.PaperXPLevel.Value or 0) * 0.2)
+	return roundToTenth(baseValue * multiplier * runePaperMultiplier * xpMul)
 end
 
 local function getPaperCycleTime(player)
@@ -1292,6 +1467,8 @@ local function getCurrencyObjectForName(player, currencyName)
 		return getWoodCurrencyObject(player)
 	elseif currencyName == "Paper" then
 		return getPaperCurrencyObject(player)
+	elseif currencyName == "XP" then
+		return getXPCurrencyObject(player)
 	end
 	return nil
 end
@@ -1378,6 +1555,16 @@ local function handleUpgradePurchase(player, upgradeFamily, upgradeKey, mode)
 		currencyObject = getPaperCurrencyObject(player)
 		notEnoughText = "Не хватает бумаги"
 		lockedText = "Откроется на 4-м перерождении"
+	elseif upgradeFamily == "XP" then
+		if not rebirth.SecondAreaUnlocked.Value then
+			fireSimple(player, "XP откроется на 2-м перерождении")
+			return
+		end
+		configTable = XP_UPGRADES
+		folder = getXPUpgradesFolder(player)
+		currencyObject = getXPCurrencyObject(player)
+		notEnoughText = "Не хватает XP"
+		lockedText = "Откроется на 2-м перерождении"
 	else
 		return
 	end
@@ -1597,6 +1784,183 @@ local function handlePassiveAction(player, actionName, argument)
 		markDirty(player)
 		fireSimple(player, "Пассив удалён")
 	end
+end
+
+local function getRuneOpenDuration(player)
+	local upgrades = getRuneUpgradeFolder(player)
+	if not upgrades then
+		return RUNE_OPEN_BASE_TIME
+	end
+	local speedLevel = upgrades.RuneSpeedLevel.Value
+	local t = RUNE_OPEN_BASE_TIME - (speedLevel * 2.5)
+	return math.max(5, t)
+end
+
+local function getRuneRollInterval(player)
+	local runeUpgrades = getRuneUpgradeFolder(player)
+	if not runeUpgrades then
+		return 1
+	end
+	local baseInterval = 1.0
+	local _, speed = getEffectiveRuneStats(player)
+	local interval = baseInterval / (1 + (speed * 0.5))
+	return math.max(0.2, interval)
+end
+
+local function rollRuneForPlayer(player)
+	if not getRuneUpgradeFolder(player) then
+		return nil
+	end
+	local luck, _, bulkLevel = getEffectiveRuneStats(player)
+	local bulk = 1 + bulkLevel
+	local state = getRuneState(player)
+	local rolled = {}
+	for _ = 1, bulk do
+		local runeId = chooseRuneType(luck)
+		state.counts[runeId] = (state.counts[runeId] or 0) + 1
+		table.insert(rolled, runeId)
+	end
+	writeRuneStateValue(player)
+	markDirty(player)
+	return rolled, state
+end
+
+local function startRuneRolling(player)
+	local session = runeRollingSessions[player]
+	if session and session.active then
+		return
+	end
+	runeRollingSessions[player] = {
+		active = true,
+		lastRollAt = 0,
+		sessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+	}
+	notifyEvent:FireClient(player, {kind = "rune_roll_state", active = true})
+end
+
+local function stopRuneRolling(player)
+	local session = runeRollingSessions[player]
+	if not session or not session.active then
+		return
+	end
+	session.active = false
+	notifyEvent:FireClient(player, {
+		kind = "rune_roll_state",
+		active = false,
+		session = session.sessionCounts,
+	})
+end
+
+local function isCharacterOnRuneBlock(player)
+	if not runeRollBlock then
+		return false
+	end
+	local character = player.Character
+	local hrp = character and character:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		return false
+	end
+	local localPos = runeRollBlock.CFrame:PointToObjectSpace(hrp.Position)
+	local half = runeRollBlock.Size * 0.5
+	local tolerance = Vector3.new(1.2, 3.5, 1.2)
+	return math.abs(localPos.X) <= (half.X + tolerance.X)
+		and math.abs(localPos.Z) <= (half.Z + tolerance.Z)
+		and math.abs(localPos.Y) <= (half.Y + tolerance.Y)
+end
+
+local function tryBuyRuneUpgrade(player, upgradeKey)
+	local cfg = RUNE_UPGRADES[upgradeKey]
+	local upgrades = getRuneUpgradeFolder(player)
+	if not cfg or not upgrades then return end
+	local rebirth = getRebirthFolder(player)
+	if not rebirth or not rebirth.SixthSystemsUnlocked.Value then
+		fireSimple(player, "Руны откроются на 6-м перерождении")
+		return
+	end
+	local levelObj = upgrades:FindFirstChild(cfg.levelName)
+	local costObj = upgrades:FindFirstChild(cfg.costName)
+	if not levelObj or not costObj then return end
+	if levelObj.Value >= cfg.maxLevel then
+		fireSimple(player, "Улучшение на максимуме")
+		return
+	end
+	local currencyObj
+	if cfg.currency == "Coins" then
+		currencyObj = getCoinsObject(player)
+	elseif cfg.currency == "Wood" then
+		currencyObj = getWoodCurrencyObject(player)
+	else
+		currencyObj = getPaperCurrencyObject(player)
+	end
+	if not currencyObj or currencyObj.Value < costObj.Value then
+		fireSimple(player, "Недостаточно ресурса")
+		return
+	end
+	if not spendCurrency(currencyObj, costObj.Value) then
+		return
+	end
+	levelObj.Value += 1
+	costObj.Value = math.floor(costObj.Value * 2 + 0.5)
+	fireSimple(player, "Улучшение рун куплено")
+	markDirty(player)
+end
+
+local function handleRuneAction(player, actionName)
+	local rebirth = getRebirthFolder(player)
+	local runeUpgrades = getRuneUpgradeFolder(player)
+	local wood = getWoodCurrencyObject(player)
+	if not rebirth or not runeUpgrades or not wood then return end
+	if not rebirth.SixthSystemsUnlocked.Value then
+		fireSimple(player, "Система рун откроется после 6-го перерождения")
+		return
+	end
+
+	if actionName == "Open" then
+		fireSimple(player, "Ролл рун теперь автоматический при стоянии на блоке")
+	elseif actionName == "UpgradeLuck" then
+		tryBuyRuneUpgrade(player, "Luck")
+	elseif actionName == "UpgradeSpeed" then
+		tryBuyRuneUpgrade(player, "Speed")
+	elseif actionName == "UpgradeBulk" then
+		tryBuyRuneUpgrade(player, "Bulk")
+	end
+end
+
+local function handleXPAction(player, actionName)
+	local rebirth = getRebirthFolder(player)
+	local xp = getXPCurrencyObject(player)
+	local xpBoost = getXPBoostFolder(player)
+	if not rebirth or not xp or not xpBoost then
+		return
+	end
+	if not rebirth.SecondAreaUnlocked.Value then
+		fireSimple(player, "XP откроется на 2-м перерождении")
+		return
+	end
+	if actionName ~= "BuyXPBoost" then
+		return
+	end
+	local levelObj = xpBoost:FindFirstChild(XP_BOOST_CONFIG.levelName)
+	local costObj = xpBoost:FindFirstChild(XP_BOOST_CONFIG.costName)
+	if not levelObj or not costObj then
+		return
+	end
+	if levelObj.Value >= XP_BOOST_CONFIG.maxLevel then
+		fireSimple(player, "XP Boost уже в MAX")
+		return
+	end
+	if not spendCurrency(xp, costObj.Value) then
+		fireSimple(player, "Не хватает XP")
+		return
+	end
+	levelObj.Value += 1
+	if levelObj.Value >= XP_BOOST_CONFIG.maxLevel then
+		costObj.Value = 0
+	else
+		costObj.Value = math.floor(costObj.Value * XP_BOOST_CONFIG.priceMultiplier + 0.5)
+	end
+	markDirty(player)
+	fireSimple(player, "XP Boost улучшен")
 end
 
 local function getRuneOpenDuration(player)
@@ -2107,9 +2471,17 @@ local function spawnCoin()
 		taken = true
 		coin.CanTouch = false
 
-		local reward = getCoinReward(player)
-		addCurrency(getCoinsObject(player), reward)
-		markDirty(player)
+			local reward = getCoinReward(player)
+			addCurrency(getCoinsObject(player), reward)
+			local rebirth = getRebirthFolder(player)
+			if rebirth and rebirth.SecondAreaUnlocked.Value then
+				local xpUpgrades = getXPUpgradesFolder(player)
+				local xpPerCoin = 1 + (xpUpgrades and xpUpgrades:FindFirstChild("XPMultiplierLevel") and xpUpgrades.XPMultiplierLevel.Value or 0)
+				local xpReward = roundToTenth(xpPerCoin * getXPBoostMultiplier(player))
+				addCurrency(getXPCurrencyObject(player), xpReward)
+				firePickup(player, "XP", xpReward)
+			end
+			markDirty(player)
 
 		if touchConnection then
 			touchConnection:Disconnect()
@@ -2180,13 +2552,19 @@ local function buildSaveData(player)
 	local paperUpgrades = getPaperUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
+	local xp = getXPCurrencyObject(player)
+	local xpUpgrades = getXPUpgradesFolder(player)
+	local xpBoost = getXPBoostFolder(player)
+	local xp = getXPCurrencyObject(player)
+	local xpUpgrades = getXPUpgradesFolder(player)
+	local xpBoost = getXPBoostFolder(player)
 
-	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades then
+	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
 		return nil
 	end
 
 	return {
-			Version = 9,
+			Version = 10,
 		Coins = coins.Value,
 		CoinUpgrades = {
 			CoinValueLevel = coinUpgrades.CoinValueLevel.Value,
@@ -2229,6 +2607,29 @@ local function buildSaveData(player)
 				RuneLuckCost = runeUpgrades.RuneLuckCost.Value,
 				RuneSpeedCost = runeUpgrades.RuneSpeedCost.Value,
 				RuneBulkCost = runeUpgrades.RuneBulkCost.Value,
+			},
+			XP = {
+				Value = xp.Value,
+				Upgrades = {
+					CoinXPLevel = xpUpgrades.CoinXPLevel.Value,
+					PaperXPLevel = xpUpgrades.PaperXPLevel.Value,
+					WoodXPLevel = xpUpgrades.WoodXPLevel.Value,
+					XPMultiplierLevel = xpUpgrades.XPMultiplierLevel.Value,
+					RuneLuckXPLevel = xpUpgrades.RuneLuckXPLevel.Value,
+					RuneBulkXPLevel = xpUpgrades.RuneBulkXPLevel.Value,
+					RuneSpeedXPLevel = xpUpgrades.RuneSpeedXPLevel.Value,
+					CoinXPCost = xpUpgrades.CoinXPCost.Value,
+					PaperXPCost = xpUpgrades.PaperXPCost.Value,
+					WoodXPCost = xpUpgrades.WoodXPCost.Value,
+					XPMultiplierCost = xpUpgrades.XPMultiplierCost.Value,
+					RuneLuckXPCost = xpUpgrades.RuneLuckXPCost.Value,
+					RuneBulkXPCost = xpUpgrades.RuneBulkXPCost.Value,
+					RuneSpeedXPCost = xpUpgrades.RuneSpeedXPCost.Value,
+				},
+				Boost = {
+					Level = xpBoost.Level.Value,
+					NextCost = xpBoost.NextCost.Value,
+				},
 			},
 			Passives = getPassiveState(player),
 			Runes = getRuneState(player),
@@ -2299,6 +2700,13 @@ local function loadPlayerData(player)
 	local paperUpgrades = getPaperUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
+	local xp = getXPCurrencyObject(player)
+	local xpUpgrades = getXPUpgradesFolder(player)
+	local xpBoost = getXPBoostFolder(player)
+
+	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
+		return
+	end
 
 	coins.Value = roundToTenth(data.Coins or 0)
 
@@ -2351,6 +2759,32 @@ local function loadPlayerData(player)
 	runeUpgrades.RuneSpeedCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneSpeedCost) or RUNE_UPGRADES.Speed.startCost)
 	runeUpgrades.RuneBulkCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneBulkCost) or RUNE_UPGRADES.Bulk.startCost)
 
+	local savedXP = data.XP or {}
+	xp.Value = roundToTenth(tonumber(savedXP.Value) or 0)
+	local savedXPUpgrades = savedXP.Upgrades or {}
+	for key, cfg in pairs(XP_UPGRADES) do
+		local lvl = xpUpgrades:FindFirstChild(cfg.levelName)
+		local cost = xpUpgrades:FindFirstChild(cfg.costName)
+		if lvl then
+			lvl.Value = math.clamp(tonumber(savedXPUpgrades[cfg.levelName]) or 0, 0, cfg.maxLevel)
+		end
+		if cost then
+			local fallbackCost = cfg.startCost
+			cost.Value = math.max(0, tonumber(savedXPUpgrades[cfg.costName]) or fallbackCost)
+		end
+	end
+	local savedXPBoost = savedXP.Boost or {}
+	xpBoost.Level.Value = math.clamp(tonumber(savedXPBoost.Level) or 0, 0, XP_BOOST_CONFIG.maxLevel)
+	xpBoost.NextCost.Value = xpBoost.Level.Value >= XP_BOOST_CONFIG.maxLevel and 0 or math.max(1, tonumber(savedXPBoost.NextCost) or XP_BOOST_CONFIG.startCost)
+
+	local savedRuneUpgrades = data.RuneUpgrades or {}
+	runeUpgrades.RuneLuckLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneLuckLevel) or 0, 0, RUNE_UPGRADES.Luck.maxLevel)
+	runeUpgrades.RuneSpeedLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneSpeedLevel) or 0, 0, RUNE_UPGRADES.Speed.maxLevel)
+	runeUpgrades.RuneBulkLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneBulkLevel) or 0, 0, RUNE_UPGRADES.Bulk.maxLevel)
+	runeUpgrades.RuneLuckCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneLuckCost) or RUNE_UPGRADES.Luck.startCost)
+	runeUpgrades.RuneSpeedCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneSpeedCost) or RUNE_UPGRADES.Speed.startCost)
+	runeUpgrades.RuneBulkCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneBulkCost) or RUNE_UPGRADES.Bulk.startCost)
+
 	local savedRuneUpgrades = data.RuneUpgrades or {}
 	runeUpgrades.RuneLuckLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneLuckLevel) or 0, 0, RUNE_UPGRADES.Luck.maxLevel)
 	runeUpgrades.RuneSpeedLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneSpeedLevel) or 0, 0, RUNE_UPGRADES.Speed.maxLevel)
@@ -2377,6 +2811,17 @@ local function loadPlayerData(player)
 		passiveStates[player] = emptyPassiveState()
 	end
 	writePassiveStateValue(player)
+
+	local savedRunes = data.Runes
+	if type(savedRunes) == "table" and type(savedRunes.counts) == "table" then
+		runeStates[player] = {counts = {}}
+		for runeId, _ in pairs(RUNE_TYPES) do
+			runeStates[player].counts[runeId] = math.max(0, tonumber(savedRunes.counts[runeId]) or 0)
+		end
+	else
+		runeStates[player] = emptyRuneState()
+	end
+	writeRuneStateValue(player)
 
 	local savedRunes = data.Runes
 	if type(savedRunes) == "table" and type(savedRunes.counts) == "table" then
@@ -2488,6 +2933,20 @@ passiveActionEvent.OnServerEvent:Connect(function(player, actionName, argument)
 		return
 	end
 	handlePassiveAction(player, actionName, argument)
+end)
+
+runeActionEvent.OnServerEvent:Connect(function(player, actionName)
+	if type(actionName) ~= "string" then
+		return
+	end
+	handleRuneAction(player, actionName)
+end)
+
+xpActionEvent.OnServerEvent:Connect(function(player, actionName)
+	if type(actionName) ~= "string" then
+		return
+	end
+	handleXPAction(player, actionName)
 end)
 
 runeActionEvent.OnServerEvent:Connect(function(player, actionName)
