@@ -1581,6 +1581,47 @@ if runeIndexBlock then
 	end
 end
 
+local runeIndexBoardRows = {}
+if runeIndexBlock then
+	local _, runeIndexBoard = createWorldBoard("RuneIndexBoardSurfaceGui", runeIndexBlock, Enum.NormalId.Front, 72)
+	createHeader(runeIndexBoard, "RUNE INDEX", "Инфо по эффектам рун")
+	local list = Instance.new("ScrollingFrame")
+	list.Size = UDim2.new(1, 0, 1, -66)
+	list.Position = UDim2.new(0, 0, 0, 66)
+	list.BackgroundTransparency = 1
+	list.BorderSizePixel = 0
+	list.ScrollBarThickness = 8
+	list.CanvasSize = UDim2.new(0, 0, 0, 0)
+	list.Parent = runeIndexBoard
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 6)
+	layout.Parent = list
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		list.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
+	end)
+	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, 0, 0, 72)
+		row.BackgroundColor3 = Color3.fromRGB(43, 67, 96)
+		row.BorderSizePixel = 0
+		row.Parent = list
+		createCorner(row, 10)
+		local text = Instance.new("TextLabel")
+		text.Size = UDim2.new(1, -12, 1, -8)
+		text.Position = UDim2.new(0, 6, 0, 4)
+		text.BackgroundTransparency = 1
+		text.TextXAlignment = Enum.TextXAlignment.Left
+		text.TextYAlignment = Enum.TextYAlignment.Top
+		text.TextWrapped = true
+		text.TextScaled = true
+		text.Font = Enum.Font.GothamBold
+		text.TextColor3 = Color3.fromRGB(236, 245, 255)
+		text.Text = runeId
+		text.Parent = row
+		runeIndexBoardRows[runeId] = text
+	end
+end
+
 local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
@@ -1841,21 +1882,6 @@ local function createPassiveUi()
 	closeInvBtn.Parent = ui.inventoryPanel
 	closeInvBtn.BorderSizePixel = 0
 	createCorner(closeInvBtn, 999)
-
-	local closeInventoryButton = Instance.new("TextButton")
-	closeInventoryButton.Size = UDim2.new(0, 36, 0, 36)
-	closeInventoryButton.Position = UDim2.new(1, -44, 0, 8)
-	closeInventoryButton.Text = "✕"
-	closeInventoryButton.BackgroundColor3 = Color3.fromRGB(255, 121, 121)
-	closeInventoryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeInventoryButton.Font = Enum.Font.GothamBlack
-	closeInventoryButton.TextScaled = true
-	closeInventoryButton.Parent = ui.inventoryPanel
-	createCorner(closeInventoryButton, 10)
-	addScaleHover(closeInventoryButton)
-	closeInventoryButton.MouseButton1Click:Connect(function()
-		ui.inventoryPanel.Visible = false
-	end)
 
 	ui.rollButtonInventory = Instance.new("TextButton")
 	ui.rollButtonInventory.Size = UDim2.new(0.5, -12, 0, 40)

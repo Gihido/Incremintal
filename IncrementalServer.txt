@@ -498,6 +498,32 @@ local function getServerRuneEventBoosts()
 	return luckMul, speedMul, bulkAdd
 end
 
+local function getActiveAdminEventPayload(nowTime)
+	nowTime = nowTime or os.clock()
+	local payload = {}
+	for eventId, endAt in pairs(activeAdminEvents) do
+		if endAt > nowTime then
+			payload[eventId] = math.max(0, math.floor(endAt - nowTime))
+		end
+	end
+	return payload
+end
+
+local function broadcastAdminEventState()
+	local payload = getActiveAdminEventPayload()
+	for _, player in ipairs(Players:GetPlayers()) do
+		notifyEvent:FireClient(player, {kind = "admin_event_state", events = payload})
+	end
+end
+
+local function getServerRuneEventBoosts()
+	local nowTime = os.clock()
+	local luckMul = activeAdminEvents.RuneLuckEvent > nowTime and 2 or 1
+	local bulkAdd = activeAdminEvents.RuneBulkEvent > nowTime and 5 or 0
+	local speedMul = activeAdminEvents.RuneSpeedEvent > nowTime and 1.5 or 1
+	return luckMul, speedMul, bulkAdd
+end
+
 local function roundToTenth(value)
 	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
 end
@@ -799,6 +825,14 @@ local function getPassiveMultipliers(player)
 	end
 
 	return passiveDef.coinMultiplier or 1, passiveDef.woodMultiplier or 1, passiveDef.globalMultiplier or 1, passiveDef.speedMultiplier or 1
+end
+
+local function getPassiveSpecialBoosts(player)
+	local passiveDef = getEquippedPassiveDef(player)
+	if not passiveDef then
+		return 1, 1, 1, 1
+	end
+	return passiveDef.runeLuckMultiplier or 1, passiveDef.runeSpeedMultiplier or 1, passiveDef.runeBulkMultiplier or 1, passiveDef.xpMultiplier or 1
 end
 
 local function getPassiveSpecialBoosts(player)
@@ -2526,56 +2560,6 @@ local function loadPlayerData(player)
 	xpBoost.Level.Value = math.clamp(tonumber(savedXPBoost.Level) or 0, 0, XP_BOOST_CONFIG.maxLevel)
 	xpBoost.NextCost.Value = xpBoost.Level.Value >= XP_BOOST_CONFIG.maxLevel and 0 or math.max(1, tonumber(savedXPBoost.NextCost) or XP_BOOST_CONFIG.startCost)
 
-	local savedRuneUpgrades = data.RuneUpgrades or {}
-	runeUpgrades.RuneLuckLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneLuckLevel) or 0, 0, RUNE_UPGRADES.Luck.maxLevel)
-	runeUpgrades.RuneSpeedLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneSpeedLevel) or 0, 0, RUNE_UPGRADES.Speed.maxLevel)
-	runeUpgrades.RuneBulkLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneBulkLevel) or 0, 0, RUNE_UPGRADES.Bulk.maxLevel)
-	runeUpgrades.RuneLuckCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneLuckCost) or RUNE_UPGRADES.Luck.startCost)
-	runeUpgrades.RuneSpeedCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneSpeedCost) or RUNE_UPGRADES.Speed.startCost)
-	runeUpgrades.RuneBulkCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneBulkCost) or RUNE_UPGRADES.Bulk.startCost)
-
-	local savedXP = data.XP or {}
-	xp.Value = roundToTenth(tonumber(savedXP.Value) or 0)
-	local savedXPUpgrades = savedXP.Upgrades or {}
-	for key, cfg in pairs(XP_UPGRADES) do
-		local lvl = xpUpgrades:FindFirstChild(cfg.levelName)
-		local cost = xpUpgrades:FindFirstChild(cfg.costName)
-		if lvl then
-			lvl.Value = math.clamp(tonumber(savedXPUpgrades[cfg.levelName]) or 0, 0, cfg.maxLevel)
-		end
-		if cost then
-			local fallbackCost = cfg.startCost
-			cost.Value = math.max(0, tonumber(savedXPUpgrades[cfg.costName]) or fallbackCost)
-		end
-	end
-	local savedXPBoost = savedXP.Boost or {}
-	xpBoost.Level.Value = math.clamp(tonumber(savedXPBoost.Level) or 0, 0, XP_BOOST_CONFIG.maxLevel)
-	xpBoost.NextCost.Value = xpBoost.Level.Value >= XP_BOOST_CONFIG.maxLevel and 0 or math.max(1, tonumber(savedXPBoost.NextCost) or XP_BOOST_CONFIG.startCost)
-
-	local savedRuneUpgrades = data.RuneUpgrades or {}
-	runeUpgrades.RuneLuckLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneLuckLevel) or 0, 0, RUNE_UPGRADES.Luck.maxLevel)
-	runeUpgrades.RuneSpeedLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneSpeedLevel) or 0, 0, RUNE_UPGRADES.Speed.maxLevel)
-	runeUpgrades.RuneBulkLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneBulkLevel) or 0, 0, RUNE_UPGRADES.Bulk.maxLevel)
-	runeUpgrades.RuneLuckCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneLuckCost) or RUNE_UPGRADES.Luck.startCost)
-	runeUpgrades.RuneSpeedCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneSpeedCost) or RUNE_UPGRADES.Speed.startCost)
-	runeUpgrades.RuneBulkCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneBulkCost) or RUNE_UPGRADES.Bulk.startCost)
-
-	local savedRuneUpgrades = data.RuneUpgrades or {}
-	runeUpgrades.RuneLuckLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneLuckLevel) or 0, 0, RUNE_UPGRADES.Luck.maxLevel)
-	runeUpgrades.RuneSpeedLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneSpeedLevel) or 0, 0, RUNE_UPGRADES.Speed.maxLevel)
-	runeUpgrades.RuneBulkLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneBulkLevel) or 0, 0, RUNE_UPGRADES.Bulk.maxLevel)
-	runeUpgrades.RuneLuckCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneLuckCost) or RUNE_UPGRADES.Luck.startCost)
-	runeUpgrades.RuneSpeedCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneSpeedCost) or RUNE_UPGRADES.Speed.startCost)
-	runeUpgrades.RuneBulkCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneBulkCost) or RUNE_UPGRADES.Bulk.startCost)
-
-	local savedRuneUpgrades = data.RuneUpgrades or {}
-	runeUpgrades.RuneLuckLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneLuckLevel) or 0, 0, RUNE_UPGRADES.Luck.maxLevel)
-	runeUpgrades.RuneSpeedLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneSpeedLevel) or 0, 0, RUNE_UPGRADES.Speed.maxLevel)
-	runeUpgrades.RuneBulkLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneBulkLevel) or 0, 0, RUNE_UPGRADES.Bulk.maxLevel)
-	runeUpgrades.RuneLuckCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneLuckCost) or RUNE_UPGRADES.Luck.startCost)
-	runeUpgrades.RuneSpeedCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneSpeedCost) or RUNE_UPGRADES.Speed.startCost)
-	runeUpgrades.RuneBulkCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneBulkCost) or RUNE_UPGRADES.Bulk.startCost)
-
 	local savedPassives = data.Passives
 	if type(savedPassives) == "table" and type(savedPassives.inventory) == "table" then
 		passiveStates[player] = {
@@ -2586,50 +2570,6 @@ local function loadPlayerData(player)
 		passiveStates[player] = emptyPassiveState()
 	end
 	writePassiveStateValue(player)
-
-	local savedRunes = data.Runes
-	if type(savedRunes) == "table" and type(savedRunes.counts) == "table" then
-		runeStates[player] = {counts = {}}
-		for runeId, _ in pairs(RUNE_TYPES) do
-			runeStates[player].counts[runeId] = math.max(0, tonumber(savedRunes.counts[runeId]) or 0)
-		end
-	else
-		runeStates[player] = emptyRuneState()
-	end
-	writeRuneStateValue(player)
-
-	local savedRunes = data.Runes
-	if type(savedRunes) == "table" and type(savedRunes.counts) == "table" then
-		runeStates[player] = {counts = {}}
-		for runeId, _ in pairs(RUNE_TYPES) do
-			runeStates[player].counts[runeId] = math.max(0, tonumber(savedRunes.counts[runeId]) or 0)
-		end
-	else
-		runeStates[player] = emptyRuneState()
-	end
-	writeRuneStateValue(player)
-
-	local savedRunes = data.Runes
-	if type(savedRunes) == "table" and type(savedRunes.counts) == "table" then
-		runeStates[player] = {counts = {}}
-		for runeId, _ in pairs(RUNE_TYPES) do
-			runeStates[player].counts[runeId] = math.max(0, tonumber(savedRunes.counts[runeId]) or 0)
-		end
-	else
-		runeStates[player] = emptyRuneState()
-	end
-	writeRuneStateValue(player)
-
-	local savedRunes = data.Runes
-	if type(savedRunes) == "table" and type(savedRunes.counts) == "table" then
-		runeStates[player] = {counts = {}}
-		for runeId, _ in pairs(RUNE_TYPES) do
-			runeStates[player].counts[runeId] = math.max(0, tonumber(savedRunes.counts[runeId]) or 0)
-		end
-	else
-		runeStates[player] = emptyRuneState()
-	end
-	writeRuneStateValue(player)
 
 	local savedRunes = data.Runes
 	if type(savedRunes) == "table" and type(savedRunes.counts) == "table" then
@@ -2719,20 +2659,6 @@ passiveActionEvent.OnServerEvent:Connect(function(player, actionName, argument)
 		return
 	end
 	handlePassiveAction(player, actionName, argument)
-end)
-
-runeActionEvent.OnServerEvent:Connect(function(player, actionName)
-	if type(actionName) ~= "string" then
-		return
-	end
-	handleRuneAction(player, actionName)
-end)
-
-xpActionEvent.OnServerEvent:Connect(function(player, actionName)
-	if type(actionName) ~= "string" then
-		return
-	end
-	handleXPAction(player, actionName)
 end)
 
 runeActionEvent.OnServerEvent:Connect(function(player, actionName)
