@@ -510,6 +510,24 @@ function getServerRuneEventBoosts()
 	return luckMul, speedMul, bulkMul, bulkAdd
 end
 
+function getActiveAdminEventUpgrades(now)
+	now = now or os.clock()
+	local upgrades = {}
+	for eventKey, eventState in pairs(activeAdminEvents) do
+		local cfg = ACTIVE_SERVER_EVENTS[eventKey]
+		if cfg and now < (eventState.endsAt or 0) then
+			upgrades[eventKey] = {
+				endsAt = eventState.endsAt,
+				runeLuckMul = cfg.runeLuckMul or 1,
+				runeSpeedMul = cfg.runeSpeedMul or 1,
+				runeBulkMul = cfg.runeBulkMul or 1,
+				runeBulkAdd = cfg.runeBulkAdd or 0,
+			}
+		end
+	end
+	return upgrades
+end
+
 local function roundToTenth(value)
 	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
 end

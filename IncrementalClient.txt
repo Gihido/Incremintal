@@ -2825,14 +2825,7 @@ local function getClientEffectiveRuneStats()
 	local passiveBulkMul = passive and (passive.runeBulkMultiplier or 1) or 1
 	local passiveGlobalMul = passive and (passive.globalMultiplier or 1) or 1
 	local passiveCommonSpeedMul = passive and (passive.speedMultiplier or 1) or 1
-	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = 1, 1, 1, 0
-	for _, ev in ipairs(activeAdminEvents or {}) do
-		if (tonumber(ev.timeLeft) or 0) > 0 then
-			if ev.key == "RuneLuckX2" then eventLuckMul *= 2 end
-			if ev.key == "RuneSpeedX2" then eventSpeedMul *= 2 end
-			if ev.key == "RuneBulkX5" then eventBulkMul *= 5 end
-		end
-	end
+	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = getActiveAdminEventUpgrades()
 	local luck = math.floor(baseLuck * passiveLuckMul * passiveGlobalMul * mythicLuckSpeedMul * eventLuckMul + 0.5)
 	local speed = math.floor(baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul * mythicLuckSpeedMul * eventSpeedMul + 0.5)
 	local bulk = math.floor(baseBulk * passiveBulkMul * passiveGlobalMul * eventBulkMul + 0.5) + mythicBulkAdd + eventBulkAdd
@@ -2879,6 +2872,13 @@ local function showToast(text)
 end
 
 local activeAdminEvents = {}
+local ADMIN_EVENT_UPGRADES = {
+	RuneLuckX2 = {runeLuckMul = 2, adminUpgradeLabel = "Luck x2"},
+	RuneSpeedX2 = {runeSpeedMul = 2, adminUpgradeLabel = "Speed x2"},
+	RuneBulkX5 = {runeBulkMul = 5, adminUpgradeLabel = "Bulk x5"},
+	StatsX2 = {adminUpgradeLabel = "Global x2"},
+	PassiveLuckX3 = {adminUpgradeLabel = "PassiveLuck x3"},
+}
 local adminEventTitles = {
 	StatsX2 = "x2 Stats",
 	RuneBulkX5 = "x5 Rune Bulk",
@@ -2893,6 +2893,22 @@ local adminEventDescs = {
 	RuneLuckX2 = "Удваивает Rune Luck.",
 	PassiveLuckX3 = "Утрояет шанс редких пассивов.",
 }
+
+local function getActiveAdminEventUpgrades()
+	local luckMul, speedMul, bulkMul, bulkAdd = 1, 1, 1, 0
+	for _, ev in ipairs(activeAdminEvents or {}) do
+		if (tonumber(ev.timeLeft) or 0) > 0 then
+			local cfg = ADMIN_EVENT_UPGRADES[tostring(ev.key or "")]
+			if cfg then
+				luckMul *= cfg.runeLuckMul or 1
+				speedMul *= cfg.runeSpeedMul or 1
+				bulkMul *= cfg.runeBulkMul or 1
+				bulkAdd += cfg.runeBulkAdd or 0
+			end
+		end
+	end
+	return luckMul, speedMul, bulkMul, bulkAdd
+end
 
 local function renderAdminEvents(events)
 	for _, child in ipairs(adminEventGui:GetChildren()) do
@@ -2918,7 +2934,8 @@ local function renderAdminEvents(events)
 		text.Position = UDim2.new(0, 38, 0, 0)
 		text.BackgroundTransparency = 1
 		text.TextXAlignment = Enum.TextXAlignment.Left
-		text.Text = (adminEventTitles[ev.key] or ev.key) .. "  " .. tostring(ev.timeLeft or 0) .. "s"
+		local upgradeLabel = (ADMIN_EVENT_UPGRADES[ev.key] and ADMIN_EVENT_UPGRADES[ev.key].adminUpgradeLabel) or ""
+		text.Text = (adminEventTitles[ev.key] or ev.key) .. (upgradeLabel ~= "" and (" [" .. upgradeLabel .. "]") or "") .. "  " .. tostring(ev.timeLeft or 0) .. "s"
 		text.TextColor3 = Color3.fromRGB(236, 245, 255)
 		text.Font = Enum.Font.GothamBold
 		text.TextScaled = true
@@ -3587,11 +3604,14 @@ updateBoards = function()
 		updateRuneWorldDisplay()
 		if runeStatsRows and runeStatsRows.luck then
 			local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+			local adminLuckMul, adminSpeedMul, adminBulkMul, adminBulkAdd = getActiveAdminEventUpgrades()
 			local speedSeconds = math.max(0.01, 10 / math.max(1, effSpeed))
 			runeStatsRows.luck.Text = "x" .. formatNumber(effLuck)
 			runeStatsRows.bulk.Text = "+" .. formatNumber(effBulk)
 			runeStatsRows.speed.Text = string.format("1 rune / %.2fs", speedSeconds)
 			runeStatsRows.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulk)
+				.. "\nAdmin: Luck x" .. formatNumber(adminLuckMul) .. " | Speed x" .. formatNumber(adminSpeedMul)
+				.. " | Bulk x" .. formatNumber(adminBulkMul) .. (adminBulkAdd > 0 and (" +" .. formatNumber(adminBulkAdd)) or "")
 		end
 	end
 
@@ -4207,6 +4227,11 @@ end
 				if nextValue > 0 then
 					table.insert(stillActive, ev)
 				end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)
