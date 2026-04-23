@@ -3790,8 +3790,61 @@ local function triggerRuneBurst()
 	end)
 end
 
+function getButtonPurchaseContext(button)
+	return {
+		button = button,
+		text = button and button.Text or "",
+		active = button and button.Active or false,
+		selectable = button and button.Selectable or false,
+	}
+end
+
+function checkButtonExistsRequirement(context)
+	if context.button then
+		return true, "ok"
+	end
+	return false, "missing_button"
+end
+
+function checkButtonInteractableRequirement(context)
+	if context.active and context.selectable then
+		return true, "ok"
+	end
+	return false, "inactive"
+end
+
+function checkButtonDisplayStateRequirement(context)
+	if context.text == "LOCKED" then
+		return false, "locked"
+	end
+	if context.text == "MAX" then
+		return false, "maxed"
+	end
+	return true, "ok"
+end
+
+function buildButtonPurchaseState(context)
+	local existsOk, existsReason = checkButtonExistsRequirement(context)
+	if not existsOk then
+		return { purchasable = false, reason = existsReason, displayState = "hidden" }
+	end
+
+	local interactableOk, interactableReason = checkButtonInteractableRequirement(context)
+	if not interactableOk then
+		return { purchasable = false, reason = interactableReason, displayState = "disabled" }
+	end
+
+	local displayOk, displayReason = checkButtonDisplayStateRequirement(context)
+	if not displayOk then
+		return { purchasable = false, reason = displayReason, displayState = displayReason }
+	end
+
+	return { purchasable = true, reason = "ok", displayState = "active" }
+end
+
 function isButtonPurchasable(button)
-	return button and button.Active and button.Selectable and button.Text ~= "LOCKED" and button.Text ~= "MAX"
+	local purchaseState = buildButtonPurchaseState(getButtonPurchaseContext(button))
+	return purchaseState.purchasable
 end
 
 function bindUpgradeCard(card, family, key)
