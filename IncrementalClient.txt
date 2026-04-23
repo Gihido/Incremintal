@@ -3691,7 +3691,8 @@ end
 if runeUpgradeBlock and runeUpgradeBlock:IsA("BasePart") then
 	table.insert(passiveEffectParts, runeUpgradeBlock)
 end
-for _, p in ipairs(passiveEffectParts) do
+for i = 1, #passiveEffectParts do
+	local p = passiveEffectParts[i]
 	if not p:FindFirstChild("PassiveFxLight") then
 		local l = Instance.new("PointLight")
 		l.Name = "PassiveFxLight"
@@ -4187,8 +4188,8 @@ local watchedValues = {
 	coinXpCost, woodXpCost, paperXpCost, xpMultiplierCost, runeLuckXpCost, runeBulkXpCost, runeSpeedXpCost, xpBoostLevel, xpBoostNextCost,
 }
 
-for _, obj in ipairs(watchedValues) do
-	obj:GetPropertyChangedSignal("Value"):Connect(updateBoards)
+for i = 1, #watchedValues do
+	watchedValues[i]:GetPropertyChangedSignal("Value"):Connect(updateBoards)
 end
 
 if passiveUi.hintEmoji then
@@ -4228,6 +4229,11 @@ end
 					if nextValue > 0 then
 						table.insert(stillActive, ev)
 					end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)
