@@ -3790,26 +3790,6 @@ local function triggerRuneBurst()
 	end)
 end
 
-local function initializeClientBindingsAndRuntime()
-selectCoinsButton.MouseButton1Click:Connect(function()
-	selectedAdminCurrency = "Coins"
-	refreshAdminCurrencyButtons()
-end)
-
-selectWoodButton.MouseButton1Click:Connect(function()
-	selectedAdminCurrency = "Wood"
-	refreshAdminCurrencyButtons()
-end)
-
-selectPaperButton.MouseButton1Click:Connect(function()
-	selectedAdminCurrency = "Paper"
-	refreshAdminCurrencyButtons()
-end)
-selectXPButton.MouseButton1Click:Connect(function()
-	selectedAdminCurrency = "XP"
-	refreshAdminCurrencyButtons()
-end)
-
 local function isButtonPurchasable(button)
 	return button and button.Active and button.Selectable and button.Text ~= "LOCKED" and button.Text ~= "MAX"
 end
@@ -3826,388 +3806,386 @@ local function bindUpgradeCard(card, family, key)
 	end)
 end
 
-bindUpgradeCard(coinGainCard, "Coin", "CoinValue")
-bindUpgradeCard(coinMultiCard, "Coin", "Multiplier")
-bindUpgradeCard(coinSpawnCard, "Coin", "SpawnSpeed")
-bindUpgradeCard(coinWoodBoostCard, "Coin", "WoodBoost")
-bindUpgradeCard(treeGainCard, "Wood", "WoodValue")
-bindUpgradeCard(treeMultiCard, "Wood", "WoodMultiplier")
-bindUpgradeCard(treeSpeedCard, "Wood", "WoodSpeed")
-bindUpgradeCard(treeCoinBoostCard, "Wood", "CoinBoost")
-
-if paperUpgradeCards then
-	bindUpgradeCard(paperUpgradeCards.gain, "Paper", "PaperValue")
-	bindUpgradeCard(paperUpgradeCards.multi, "Paper", "PaperMultiplier")
-	bindUpgradeCard(paperUpgradeCards.speed, "Paper", "PaperSpeed")
+local function bindRuneUpgradeCard(card, buyAction, maxAction)
+	if not card then return end
+	card.buyButton.MouseButton1Click:Connect(function()
+		if not isButtonPurchasable(card.buyButton) then return end
+		runeActionEvent:FireServer(buyAction)
+	end)
+	card.maxButton.MouseButton1Click:Connect(function()
+		if not isButtonPurchasable(card.maxButton) then return end
+		runeActionEvent:FireServer(maxAction)
+	end)
 end
 
-if runeUpgradeCards then
-	local function bindRuneCard(card, buyAction, maxAction)
-		card.buyButton.MouseButton1Click:Connect(function()
-			if not isButtonPurchasable(card.buyButton) then return end
-			runeActionEvent:FireServer(buyAction)
-		end)
-		card.maxButton.MouseButton1Click:Connect(function()
-			if not isButtonPurchasable(card.maxButton) then return end
-			runeActionEvent:FireServer(maxAction)
-		end)
-	end
-	bindRuneCard(runeUpgradeCards.luck, "UpgradeLuck", "UpgradeLuckMax")
-	bindRuneCard(runeUpgradeCards.speed, "UpgradeSpeed", "UpgradeSpeedMax")
-	bindRuneCard(runeUpgradeCards.bulk, "UpgradeBulk", "UpgradeBulkMax")
+local function bindAdminCurrencySelectors()
+	selectCoinsButton.MouseButton1Click:Connect(function()
+		selectedAdminCurrency = "Coins"
+		refreshAdminCurrencyButtons()
+	end)
+	selectWoodButton.MouseButton1Click:Connect(function()
+		selectedAdminCurrency = "Wood"
+		refreshAdminCurrencyButtons()
+	end)
+	selectPaperButton.MouseButton1Click:Connect(function()
+		selectedAdminCurrency = "Paper"
+		refreshAdminCurrencyButtons()
+	end)
+	selectXPButton.MouseButton1Click:Connect(function()
+		selectedAdminCurrency = "XP"
+		refreshAdminCurrencyButtons()
+	end)
 end
 
-if xpUpgradeCards then
-	local xpBindings = {
-		{card = xpUpgradeCards.coin, key = "CoinXP"},
-		{card = xpUpgradeCards.wood, key = "WoodXP"},
-		{card = xpUpgradeCards.paper, key = "PaperXP"},
-		{card = xpUpgradeCards.xpMul, key = "XPMultiplier"},
-		{card = xpUpgradeCards.runeLuck, key = "RuneLuckXP"},
-		{card = xpUpgradeCards.runeBulk, key = "RuneBulkXP"},
-		{card = xpUpgradeCards.runeSpeed, key = "RuneSpeedXP"},
+local function bindUpgradeBoards()
+	local upgrades = {
+		{coinGainCard, "Coin", "CoinValue"},
+		{coinMultiCard, "Coin", "Multiplier"},
+		{coinSpawnCard, "Coin", "SpawnSpeed"},
+		{coinWoodBoostCard, "Coin", "WoodBoost"},
+		{treeGainCard, "Wood", "WoodValue"},
+		{treeMultiCard, "Wood", "WoodMultiplier"},
+		{treeSpeedCard, "Wood", "WoodSpeed"},
+		{treeCoinBoostCard, "Wood", "CoinBoost"},
 	}
-	for idx = 1, #xpBindings do
-		local binding = xpBindings[idx]
-		bindUpgradeCard(binding.card, "XP", binding.key)
-	end
-end
-
-if xpProgressUi and xpProgressUi.buyButton then
-	xpProgressUi.buyButton.MouseButton1Click:Connect(function()
-		xpActionEvent:FireServer("BuyXPBoost")
-	end)
-end
-
-rebirthButton.MouseButton1Click:Connect(function()
-	purchaseRebirthEvent:FireServer()
-end)
-
-addFuelButton.MouseButton1Click:Connect(function()
-	factoryActionEvent:FireServer("AddFuelOnce")
-end)
-
-addFuelMaxButton.MouseButton1Click:Connect(function()
-	factoryActionEvent:FireServer("AddFuelMax")
-end)
-
-if passiveUi.rollButton then
-	passiveUi.rollButton.MouseButton1Click:Connect(function()
-		if isRovRolling then
-			showToast("Подожди, ролл уже идет")
-			return
-		end
-		passiveActionEvent:FireServer("Roll")
-	end)
-end
-
-if passiveUi.rollButtonInventory then
-	passiveUi.rollButtonInventory.MouseButton1Click:Connect(function()
-		if isRovRolling then
-			showToast("Подожди, ролл уже идет")
-			return
-		end
-		passiveActionEvent:FireServer("Roll")
-	end)
-end
-
-if passiveUi.equipBtn then
-	passiveUi.equipBtn.MouseButton1Click:Connect(function()
-		if passiveUi.selectedUid == "" then
-			showToast("Выбери пассив")
-			return
-		end
-		if passiveUi.lastState.equippedUid == passiveUi.selectedUid then
-			passiveActionEvent:FireServer("Unequip")
-		else
-			passiveActionEvent:FireServer("Equip", passiveUi.selectedUid)
-		end
-	end)
-end
-
-if passiveUi.deleteBtn then
-	passiveUi.deleteBtn.MouseButton1Click:Connect(function()
-		if passiveUi.selectedUid == "" then
-			showToast("Выбери пассив")
-			return
-		end
-		if passiveUi.deleteConfirm then
-			passiveUi.deleteConfirm.Visible = true
-		end
-	end)
-end
-
-if passiveUi.deleteConfirmYes then
-	passiveUi.deleteConfirmYes.MouseButton1Click:Connect(function()
-		if passiveUi.selectedUid ~= "" then
-			passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
-			passiveUi.selectedUid = ""
-		end
-		passiveUi.deleteConfirm.Visible = false
-	end)
-end
-
-if runeUi.luckBtn then
-	runeUi.luckBtn.MouseButton1Click:Connect(function()
-		runeActionEvent:FireServer("UpgradeLuck")
-	end)
-end
-if runeUi.speedBtn then
-	runeUi.speedBtn.MouseButton1Click:Connect(function()
-		runeActionEvent:FireServer("UpgradeSpeed")
-	end)
-end
-if runeUi.bulkBtn then
-	runeUi.bulkBtn.MouseButton1Click:Connect(function()
-		runeActionEvent:FireServer("UpgradeBulk")
-	end)
-end
-
-giveCurrencyButton.MouseButton1Click:Connect(function()
-	local amount = tonumber(adminAmountBox.Text)
-	local targetName = tostring(adminTargetBox.Text or "me")
-	if amount then
-		adminActionEvent:FireServer("GiveCurrency", selectedAdminCurrency, {amount = amount, targetName = targetName})
-	else
-		showToast("Введи число")
-	end
-end)
-
-resetButton.MouseButton1Click:Connect(function()
-	adminActionEvent:FireServer("ResetSelf")
-end)
-
-givePassiveButton.MouseButton1Click:Connect(function()
-	local passiveId = tostring(adminPassiveBox.Text or "")
-	if passiveId == "" then
-		showToast("Укажи passive id")
-		return
-	end
-	adminActionEvent:FireServer("GivePassive", passiveId, {targetName = tostring(adminTargetBox.Text or "me")})
-end)
-
-adminRuneBoostButton.MouseButton1Click:Connect(function()
-	adminActionEvent:FireServer("AdminRuneBoost", "", {targetName = tostring(adminTargetBox.Text or "me")})
-end)
-
-startAllEventsButton.MouseButton1Click:Connect(function()
-	adminActionEvent:FireServer("StartServerEvent", "All", selectedAdminDuration)
-end)
-
-duration5Button.MouseButton1Click:Connect(function() selectedAdminDuration = 300 end)
-duration15Button.MouseButton1Click:Connect(function() selectedAdminDuration = 900 end)
-duration60Button.MouseButton1Click:Connect(function() selectedAdminDuration = 3600 end)
-for eventId in pairs(eventButtons) do
-	eventButtons[eventId].MouseButton1Click:Connect(function()
-		selectedAdminEvent = eventId
-		adminActionEvent:FireServer("StartServerEvent", selectedAdminEvent, selectedAdminDuration)
-	end)
-end
-
-toggleAdminButton.MouseButton1Click:Connect(function()
-	adminFrame.Visible = not adminFrame.Visible
-	toggleAdminButton.Text = adminFrame.Visible and "Admin Hide" or "Admin Show"
-end)
-
-notifyEvent.OnClientEvent:Connect(function(payload)
-	if typeof(payload) ~= "table" then
-		showToast(tostring(payload))
-		return
+	for i = 1, #upgrades do
+		local cfg = upgrades[i]
+		bindUpgradeCard(cfg[1], cfg[2], cfg[3])
 	end
 
-	if payload.kind == "pickup" then
-		local ok = pcall(function()
-			showPickup(payload.icon or "Coin", payload.amount or 1)
+	if paperUpgradeCards then
+		bindUpgradeCard(paperUpgradeCards.gain, "Paper", "PaperValue")
+		bindUpgradeCard(paperUpgradeCards.multi, "Paper", "PaperMultiplier")
+		bindUpgradeCard(paperUpgradeCards.speed, "Paper", "PaperSpeed")
+	end
+
+	if runeUpgradeCards then
+		bindRuneUpgradeCard(runeUpgradeCards.luck, "UpgradeLuck", "UpgradeLuckMax")
+		bindRuneUpgradeCard(runeUpgradeCards.speed, "UpgradeSpeed", "UpgradeSpeedMax")
+		bindRuneUpgradeCard(runeUpgradeCards.bulk, "UpgradeBulk", "UpgradeBulkMax")
+	end
+
+	if xpUpgradeCards then
+		local xpBindings = {
+			{xpUpgradeCards.coin, "CoinXP"},
+			{xpUpgradeCards.wood, "WoodXP"},
+			{xpUpgradeCards.paper, "PaperXP"},
+			{xpUpgradeCards.xpMul, "XPMultiplier"},
+			{xpUpgradeCards.runeLuck, "RuneLuckXP"},
+			{xpUpgradeCards.runeBulk, "RuneBulkXP"},
+			{xpUpgradeCards.runeSpeed, "RuneSpeedXP"},
+		}
+		for idx = 1, #xpBindings do
+			local binding = xpBindings[idx]
+			bindUpgradeCard(binding[1], "XP", binding[2])
+		end
+	end
+
+	if xpProgressUi and xpProgressUi.buyButton then
+		xpProgressUi.buyButton.MouseButton1Click:Connect(function()
+			xpActionEvent:FireServer("BuyXPBoost")
 		end)
-		if not ok then
-			showToast("+" .. tostring(payload.amount or 1))
+	end
+end
+
+local function bindPassiveAndRuneButtons()
+	rebirthButton.MouseButton1Click:Connect(function() purchaseRebirthEvent:FireServer() end)
+	addFuelButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelOnce") end)
+	addFuelMaxButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelMax") end)
+
+	local function firePassiveRoll()
+		if isRovRolling then
+			showToast("Подожди, ролл уже идет")
+			return
 		end
-	elseif payload.kind == "passive_roll_result" then
-		local def = PASSIVE_DEFS[payload.passiveId or ""]
-		if def then
-			playRovAnimation(def)
-			showToast("Новый пассив: " .. def.name .. " [" .. def.rarity .. "]")
+		passiveActionEvent:FireServer("Roll")
+	end
+
+	if passiveUi.rollButton then passiveUi.rollButton.MouseButton1Click:Connect(firePassiveRoll) end
+	if passiveUi.rollButtonInventory then passiveUi.rollButtonInventory.MouseButton1Click:Connect(firePassiveRoll) end
+
+	if passiveUi.equipBtn then
+		passiveUi.equipBtn.MouseButton1Click:Connect(function()
+			if passiveUi.selectedUid == "" then
+				showToast("Выбери пассив")
+				return
+			end
+			if passiveUi.lastState.equippedUid == passiveUi.selectedUid then
+				passiveActionEvent:FireServer("Unequip")
+			else
+				passiveActionEvent:FireServer("Equip", passiveUi.selectedUid)
+			end
+		end)
+	end
+
+	if passiveUi.deleteBtn then
+		passiveUi.deleteBtn.MouseButton1Click:Connect(function()
+			if passiveUi.selectedUid == "" then
+				showToast("Выбери пассив")
+				return
+			end
+			if passiveUi.deleteConfirm then
+				passiveUi.deleteConfirm.Visible = true
+			end
+		end)
+	end
+
+	if passiveUi.deleteConfirmYes then
+		passiveUi.deleteConfirmYes.MouseButton1Click:Connect(function()
+			if passiveUi.selectedUid ~= "" then
+				passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
+				passiveUi.selectedUid = ""
+			end
+			passiveUi.deleteConfirm.Visible = false
+		end)
+	end
+
+	if runeUi.luckBtn then runeUi.luckBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeLuck") end) end
+	if runeUi.speedBtn then runeUi.speedBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeSpeed") end) end
+	if runeUi.bulkBtn then runeUi.bulkBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeBulk") end) end
+end
+
+local function bindAdminPanelActions()
+	giveCurrencyButton.MouseButton1Click:Connect(function()
+		local amount = tonumber(adminAmountBox.Text)
+		local targetName = tostring(adminTargetBox.Text or "me")
+		if amount then
+			adminActionEvent:FireServer("GiveCurrency", selectedAdminCurrency, {amount = amount, targetName = targetName})
 		else
-			showToast("Пассив получен")
+			showToast("Введи число")
 		end
-	elseif payload.kind == "rune_roll_result" then
-		local rolled = payload.rolled or {}
-		showToast("Открыто рун: " .. tostring(#rolled))
-	elseif payload.kind == "rune_roll_state" then
-		if payload.active then
-			startRuneRolling()
+	end)
+
+	resetButton.MouseButton1Click:Connect(function() adminActionEvent:FireServer("ResetSelf") end)
+
+	givePassiveButton.MouseButton1Click:Connect(function()
+		local passiveId = tostring(adminPassiveBox.Text or "")
+		if passiveId == "" then
+			showToast("Укажи passive id")
+			return
+		end
+		adminActionEvent:FireServer("GivePassive", passiveId, {targetName = tostring(adminTargetBox.Text or "me")})
+	end)
+
+	adminRuneBoostButton.MouseButton1Click:Connect(function()
+		adminActionEvent:FireServer("AdminRuneBoost", "", {targetName = tostring(adminTargetBox.Text or "me")})
+	end)
+
+	startAllEventsButton.MouseButton1Click:Connect(function()
+		adminActionEvent:FireServer("StartServerEvent", "All", selectedAdminDuration)
+	end)
+
+	duration5Button.MouseButton1Click:Connect(function() selectedAdminDuration = 300 end)
+	duration15Button.MouseButton1Click:Connect(function() selectedAdminDuration = 900 end)
+	duration60Button.MouseButton1Click:Connect(function() selectedAdminDuration = 3600 end)
+
+	for eventId in pairs(eventButtons) do
+		eventButtons[eventId].MouseButton1Click:Connect(function()
+			selectedAdminEvent = eventId
+			adminActionEvent:FireServer("StartServerEvent", selectedAdminEvent, selectedAdminDuration)
+		end)
+	end
+
+	toggleAdminButton.MouseButton1Click:Connect(function()
+		adminFrame.Visible = not adminFrame.Visible
+		toggleAdminButton.Text = adminFrame.Visible and "Admin Hide" or "Admin Show"
+	end)
+end
+
+local function registerNotifyEventListeners()
+	notifyEvent.OnClientEvent:Connect(function(payload)
+		if typeof(payload) ~= "table" then
+			showToast(tostring(payload))
+			return
+		end
+
+		if payload.kind == "pickup" then
+			local ok = pcall(function()
+				showPickup(payload.icon or "Coin", payload.amount or 1)
+			end)
+			if not ok then
+				showToast("+" .. tostring(payload.amount or 1))
+			end
+		elseif payload.kind == "passive_roll_result" then
+			local def = PASSIVE_DEFS[payload.passiveId or ""]
+			if def then
+				playRovAnimation(def)
+				showToast("Новый пассив: " .. def.name .. " [" .. def.rarity .. "]")
+			else
+				showToast("Пассив получен")
+			end
+		elseif payload.kind == "rune_roll_result" then
+			local rolled = payload.rolled or {}
+			showToast("Открыто рун: " .. tostring(#rolled))
+		elseif payload.kind == "rune_roll_state" then
+			if payload.active then startRuneRolling() else stopRuneRolling() end
+		elseif payload.kind == "rune_roll_tick" then
+			local session = payload.session or {}
+			for runeId, amount in pairs(session) do runeSessionCounts[runeId] = tonumber(amount) or 0 end
+			if not runeRollingActive then startRuneRolling() end
+			updateRuneSessionGui()
+			updateRuneSummaryGui()
+			updateRuneWorldDisplay()
+			triggerRuneBurst()
+		elseif payload.kind == "admin_event_state" then
+			activeAdminEvents = normalizeAdminEvents(payload.events)
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then updateBoards() end
 		else
-			stopRuneRolling()
+			showToast(payload.text or "Готово")
 		end
-	elseif payload.kind == "rune_roll_tick" then
-		local session = payload.session or {}
-		for runeId, amount in pairs(session) do
-			runeSessionCounts[runeId] = tonumber(amount) or 0
+	end)
+end
+
+local function registerWorldInputBindings()
+	mouse.Button1Down:Connect(function()
+		if UserInputService:GetFocusedTextBox() then return end
+
+		if not isSystemUnlocked(2) then
+			if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
+				passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
+			elseif passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
+				passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
+			end
+			return
 		end
-		if not runeRollingActive then
-			startRuneRolling()
+
+		if mouse.Target == treeBlock then
+			woodClickEvent:FireServer()
+			return
 		end
-		updateRuneSessionGui()
-		updateRuneSummaryGui()
-		updateRuneWorldDisplay()
-		triggerRuneBurst()
-	elseif payload.kind == "admin_event_state" then
-		activeAdminEvents = normalizeAdminEvents(payload.events)
+
+		if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
+			if isSystemUnlocked(5) then
+				passiveUi.inventoryPanel.Visible = false
+				passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
+			else
+				showToast("Пассивы откроются на 5-м перерождении")
+			end
+			return
+		end
+
+		if passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
+			if isSystemUnlocked(5) then
+				passiveUi.indexPanel.Visible = false
+				passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
+			else
+				showToast("Пассивы откроются на 5-м перерождении")
+			end
+			return
+		end
+
+		if mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock then
+			if not isSystemUnlocked(6) then
+				showToast("Руны откроются на 6-м перерождении")
+			end
+			return
+		end
+	end)
+end
+
+local function registerWatchedValueUpdates()
+	local watchedValues = {
+		coins,
+		coinValueLevel, coinMultiplierLevel, coinSpawnLevel, coinWoodBoostLevel,
+		coinValueCost, coinMultiplierCost, coinSpawnCost, coinWoodBoostCost,
+		coinValueActive, coinMultiplierActive, coinSpawnActive, coinWoodBoostActive,
+		woodCurrency,
+		woodValueLevel, woodMultiplierLevel, woodSpeedLevel, woodCoinBoostLevel,
+		woodValueCost, woodMultiplierCost, woodSpeedCost, woodCoinBoostCost,
+		woodValueActive, woodMultiplierActive, woodSpeedActive, woodCoinBoostActive,
+		paperValue, fuelValue, factoryCountdown, factoryRunning,
+		paperValueLevel, paperMultiplierLevel, paperSpeedLevel,
+		paperValueCost, paperMultiplierCost, paperSpeedCost,
+		paperValueActive, paperMultiplierActive, paperSpeedActive,
+		rebirthCount, rebirthNextCost, rebirthNextCurrency,
+		rebirthCoinMultiplierBonus, rebirthSpawnSpeedBonus, rebirthWoodMultiplierBonus,
+		secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked, fifthSystemsUnlocked, sixthSystemsUnlocked,
+		passiveStateJson, runeStateJson, runeLuckLevel, runeSpeedLevel, runeBulkLevel, runeLuckCost, runeSpeedCost, runeBulkCost,
+		xpValue, coinXpLevel, woodXpLevel, paperXpLevel, xpMultiplierLevel, runeLuckXpLevel, runeBulkXpLevel, runeSpeedXpLevel,
+		coinXpCost, woodXpCost, paperXpCost, xpMultiplierCost, runeLuckXpCost, runeBulkXpCost, runeSpeedXpCost, xpBoostLevel, xpBoostNextCost,
+	}
+	for i = 1, #watchedValues do
+		local watched = watchedValues[i]
+		if watched then watched:GetPropertyChangedSignal("Value"):Connect(updateBoards) end
+	end
+end
+
+local function startRuntimeUiUpdates()
+	if passiveUi.hintEmoji then
+		RunService.RenderStepped:Connect(function()
+			local t = os.clock()
+			local blink = math.sin(t * 1.2)
+			if blink > 0.985 then
+				passiveUi.hintEmoji.Text = ";)"
+			elseif blink < -0.985 then
+				passiveUi.hintEmoji.Text = "-_-"
+			else
+				passiveUi.hintEmoji.Text = "😊"
+			end
+			passiveUi.hintEmoji.Rotation = math.sin(t * 0.8) * 6
+			if runeRollBlock and runeRollBlock:IsA("BasePart") then
+				local pulse = (math.sin(t * 1.6) + 1) * 0.5
+				local green = math.floor(120 + pulse * 90)
+				runeRollBlock.Color = Color3.fromRGB(40 + math.floor(pulse * 24), green, 52 + math.floor(pulse * 24))
+				local light = runeRollBlock:FindFirstChild("PassiveFxLight")
+				if light and light:IsA("PointLight") then
+					light.Brightness = 1.5 + pulse * 1.2
+					light.Color = Color3.fromRGB(122, 255, 138)
+				end
+			end
+		end)
+	end
+
+	local function tickAdminEventTimers()
+		if #activeAdminEvents == 0 then return end
+		local nextEvents = {}
+		for idx = 1, #activeAdminEvents do
+			local ev = activeAdminEvents[idx]
+			local left = math.max(0, (tonumber(ev.timeLeft) or 0) - 1)
+			ev.timeLeft = left
+			if left > 0 then nextEvents[#nextEvents + 1] = ev end
+		end
+		activeAdminEvents = nextEvents
 		renderAdminEvents(activeAdminEvents)
-		if updateBoards then
+	end
+
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			tickAdminEventTimers()
+		end
+	end)
+
+	task.spawn(function()
+		while true do
+			task.wait(0.2)
 			updateBoards()
 		end
-	else
-		showToast(payload.text or "Готово")
-	end
-end)
-
-mouse.Button1Down:Connect(function()
-	if UserInputService:GetFocusedTextBox() then
-		return
-	end
-
-	if not isSystemUnlocked(2) then
-		if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
-			passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
-		elseif passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
-			passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
-		end
-		return
-	end
-
-	if mouse.Target == treeBlock then
-		woodClickEvent:FireServer()
-		return
-	end
-
-	if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
-		if isSystemUnlocked(5) then
-			passiveUi.inventoryPanel.Visible = false
-			passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
-		else
-			showToast("Пассивы откроются на 5-м перерождении")
-		end
-		return
-	end
-
-	if passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
-		if isSystemUnlocked(5) then
-			passiveUi.indexPanel.Visible = false
-			passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
-		else
-			showToast("Пассивы откроются на 5-м перерождении")
-		end
-		return
-	end
-
-	if mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock then
-		if not isSystemUnlocked(6) then
-			showToast("Руны откроются на 6-м перерождении")
-		end
-		return
-	end
-end)
-
-local watchedValues = {
-	coins,
-
-	coinValueLevel, coinMultiplierLevel, coinSpawnLevel, coinWoodBoostLevel,
-	coinValueCost, coinMultiplierCost, coinSpawnCost, coinWoodBoostCost,
-	coinValueActive, coinMultiplierActive, coinSpawnActive, coinWoodBoostActive,
-
-	woodCurrency,
-	woodValueLevel, woodMultiplierLevel, woodSpeedLevel, woodCoinBoostLevel,
-	woodValueCost, woodMultiplierCost, woodSpeedCost, woodCoinBoostCost,
-	woodValueActive, woodMultiplierActive, woodSpeedActive, woodCoinBoostActive,
-
-	paperValue, fuelValue, factoryCountdown, factoryRunning,
-	paperValueLevel, paperMultiplierLevel, paperSpeedLevel,
-	paperValueCost, paperMultiplierCost, paperSpeedCost,
-	paperValueActive, paperMultiplierActive, paperSpeedActive,
-
-	rebirthCount, rebirthNextCost, rebirthNextCurrency,
-	rebirthCoinMultiplierBonus, rebirthSpawnSpeedBonus, rebirthWoodMultiplierBonus,
-	secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked, fifthSystemsUnlocked, sixthSystemsUnlocked,
-	passiveStateJson, runeStateJson, runeLuckLevel, runeSpeedLevel, runeBulkLevel, runeLuckCost, runeSpeedCost, runeBulkCost,
-	xpValue, coinXpLevel, woodXpLevel, paperXpLevel, xpMultiplierLevel, runeLuckXpLevel, runeBulkXpLevel, runeSpeedXpLevel,
-	coinXpCost, woodXpCost, paperXpCost, xpMultiplierCost, runeLuckXpCost, runeBulkXpCost, runeSpeedXpCost, xpBoostLevel, xpBoostNextCost,
-}
-
-for i = 1, #watchedValues do
-	watchedValues[i]:GetPropertyChangedSignal("Value"):Connect(updateBoards)
-end
-
-if passiveUi.hintEmoji then
-	RunService.RenderStepped:Connect(function()
-		local t = os.clock()
-		local blink = math.sin(t * 1.2)
-		if blink > 0.985 then
-			passiveUi.hintEmoji.Text = ";)"
-		elseif blink < -0.985 then
-			passiveUi.hintEmoji.Text = "-_-"
-		else
-			passiveUi.hintEmoji.Text = "😊"
-		end
-		passiveUi.hintEmoji.Rotation = math.sin(t * 0.8) * 6
-		if runeRollBlock and runeRollBlock:IsA("BasePart") then
-			local pulse = (math.sin(t * 1.6) + 1) * 0.5
-			local green = math.floor(120 + pulse * 90)
-			runeRollBlock.Color = Color3.fromRGB(40 + math.floor(pulse * 24), green, 52 + math.floor(pulse * 24))
-			local light = runeRollBlock:FindFirstChild("PassiveFxLight")
-			if light and light:IsA("PointLight") then
-				light.Brightness = 1.5 + pulse * 1.2
-				light.Color = Color3.fromRGB(122, 255, 138)
-			end
-		end
 	end)
-end
 
-local function tickAdminEventTimers()
-	if #activeAdminEvents == 0 then
-		return
-	end
-	local nextEvents = {}
-	for idx = 1, #activeAdminEvents do
-		local ev = activeAdminEvents[idx]
-		local left = math.max(0, (tonumber(ev.timeLeft) or 0) - 1)
-		ev.timeLeft = left
-		if left > 0 then
-			nextEvents[#nextEvents + 1] = ev
-		end
-	end
-	activeAdminEvents = nextEvents
-	renderAdminEvents(activeAdminEvents)
-end
-
-task.spawn(function()
-	while true do
-		task.wait(1)
-		tickAdminEventTimers()
-	end
-end)
-
-task.spawn(function()
-	while true do
-		task.wait(0.2)
-		updateBoards()
-	end
-end)
-
-if #passiveEffectParts > 0 then
-	RunService.RenderStepped:Connect(function()
-		local t = os.clock()
-		for idx, part in ipairs(passiveEffectParts) do
-			local alpha = (math.sin(t * (1.3 + idx * 0.2)) + 1) / 2
-			part.Color = Color3.fromRGB(95 + math.floor(alpha * 90), 130 + math.floor(alpha * 70), 210 + math.floor(alpha * 45))
-			local light = part:FindFirstChild("PassiveFxLight")
-			if light then
-				light.Brightness = 1.2 + alpha * 2.1
+	if #passiveEffectParts > 0 then
+		RunService.RenderStepped:Connect(function()
+			local t = os.clock()
+			for idx, part in ipairs(passiveEffectParts) do
+				local alpha = (math.sin(t * (1.3 + idx * 0.2)) + 1) / 2
+				part.Color = Color3.fromRGB(95 + math.floor(alpha * 90), 130 + math.floor(alpha * 70), 210 + math.floor(alpha * 45))
+				local light = part:FindFirstChild("PassiveFxLight")
+				if light then light.Brightness = 1.2 + alpha * 2.1 end
 			end
-		end
-	end)
+		end)
+	end
 end
 
+local function initializeClientBindingsAndRuntime()
+	bindAdminCurrencySelectors()
+	bindUpgradeBoards()
+	bindPassiveAndRuneButtons()
+	bindAdminPanelActions()
+	registerNotifyEventListeners()
+	registerWorldInputBindings()
+	registerWatchedValueUpdates()
+	startRuntimeUiUpdates()
 end
 
 initializeClientBindingsAndRuntime()
