@@ -4219,14 +4219,20 @@ end
 	task.spawn(function()
 	while true do
 		task.wait(1)
-		if #activeAdminEvents > 0 then
-			local stillActive = {}
-			for _, ev in ipairs(activeAdminEvents) do
-				local nextValue = math.max(0, (tonumber(ev.timeLeft) or 0) - 1)
-				ev.timeLeft = nextValue
-				if nextValue > 0 then
-					table.insert(stillActive, ev)
-				end
+			if #activeAdminEvents > 0 then
+				local stillActive = {}
+				for i = 1, #activeAdminEvents do
+					local ev = activeAdminEvents[i]
+					local nextValue = math.max(0, (tonumber(ev.timeLeft) or 0) - 1)
+					ev.timeLeft = nextValue
+					if nextValue > 0 then
+						table.insert(stillActive, ev)
+					end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)
