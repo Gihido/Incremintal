@@ -117,6 +117,7 @@ passiveRollBlock = workspace:FindFirstChild("PassiveRollBlock")
 passiveInventoryBlock = workspace:FindFirstChild("PassiveInventoryBlock")
 runeRollBlock = workspace:FindFirstChild("RuneRollBlock")
 runeIndexBlock = workspace:FindFirstChild("RuneIndexBlock")
+runeStatsIndexBlock = workspace:FindFirstChild("RuneStatsIndexBlock")
 runeUpgradeBlock = workspace:FindFirstChild("RuneUpgradeBlock")
 runeUpgradeDoska = workspace:FindFirstChild("RuneUpgradeDoska")
 xpUpgradeDoska = workspace:FindFirstChild("XPUpgradeDoska")
@@ -289,9 +290,11 @@ local AssetSlots = {
 		RuneSession = "",
 	},
 	AdminEventIcons = {
-		RuneLuckEvent = "rbxassetid://6031079152",
-		RuneBulkEvent = "rbxassetid://6031079152",
-		RuneSpeedEvent = "rbxassetid://6031079152",
+		StatsX2 = "rbxassetid://6031260785",
+		RuneBulkX5 = "rbxassetid://6031079152",
+		RuneSpeedX2 = "rbxassetid://6031079152",
+		RuneLuckX2 = "rbxassetid://6031079152",
+		PassiveLuckX3 = "rbxassetid://6031229361",
 	},
 }
 
@@ -327,6 +330,7 @@ end
 
 local selectedAdminCurrency = "Coins"
 local selectedAdminEvent = "StatsX2"
+local selectedAdminDuration = 300
 local ROLL_ANIMATION_CONFIG = {
 	duration = 3,
 	totalCoins = 45,
@@ -559,6 +563,25 @@ adminEventTooltip.ZIndex = 120
 adminEventTooltip.Parent = screenGui
 createCorner(adminEventTooltip, 10)
 
+local unlockDebugLabel = Instance.new("TextLabel")
+unlockDebugLabel.Name = "UnlockDebugLabel"
+unlockDebugLabel.AnchorPoint = Vector2.new(0, 1)
+unlockDebugLabel.Position = UDim2.new(0, 12, 1, -126)
+unlockDebugLabel.Size = UDim2.new(0, 420, 0, 112)
+unlockDebugLabel.BackgroundColor3 = Color3.fromRGB(20, 28, 44)
+unlockDebugLabel.BackgroundTransparency = 0.15
+unlockDebugLabel.TextColor3 = Color3.fromRGB(199, 232, 255)
+unlockDebugLabel.TextXAlignment = Enum.TextXAlignment.Left
+unlockDebugLabel.TextYAlignment = Enum.TextYAlignment.Top
+unlockDebugLabel.TextWrapped = true
+unlockDebugLabel.Font = Enum.Font.Code
+unlockDebugLabel.TextSize = 13
+unlockDebugLabel.Text = "unlock debug..."
+unlockDebugLabel.BorderSizePixel = 0
+unlockDebugLabel.Parent = screenGui
+createCorner(unlockDebugLabel, 10)
+createStroke(unlockDebugLabel, Color3.fromRGB(128, 168, 255), 1, 0.45)
+
 local adminFrame = Instance.new("Frame")
 adminFrame.AnchorPoint = Vector2.new(1, 0)
 adminFrame.Position = UDim2.new(1, -18, 0, 18)
@@ -587,8 +610,54 @@ adminTitle.Font = Enum.Font.GothamBlack
 adminTitle.TextSize = 20
 adminTitle.Parent = adminFrame
 
+adminTabs = Instance.new("Frame")
+adminTabs.Position = UDim2.new(0,0,0,28)
+adminTabs.Size = UDim2.new(1,0,0,32)
+adminTabs.BackgroundTransparency = 1
+adminTabs.Parent = adminFrame
+
+tabCurrency = Instance.new("TextButton")
+tabCurrency.Size = UDim2.new(0.32,0,1,0)
+tabCurrency.Text = "Валюта"
+tabCurrency.Font = Enum.Font.GothamBold
+tabCurrency.TextScaled = true
+tabCurrency.BackgroundColor3 = Color3.fromRGB(120,132,182)
+tabCurrency.TextColor3 = Color3.fromRGB(255,255,255)
+tabCurrency.Parent = adminTabs
+createCorner(tabCurrency,10)
+tabPersonal = tabCurrency:Clone()
+tabPersonal.Position = UDim2.new(0.34,0,0,0)
+tabPersonal.Text = "Личные"
+tabPersonal.Parent = adminTabs
+tabEvents = tabCurrency:Clone()
+tabEvents.Position = UDim2.new(0.68,0,0,0)
+tabEvents.Text = "События"
+tabEvents.Parent = adminTabs
+
+adminSectionCurrency = Instance.new("Frame")
+adminSectionCurrency.BackgroundTransparency = 1
+adminSectionCurrency.Position = UDim2.new(0,0,0,64)
+adminSectionCurrency.Size = UDim2.new(1,0,1,-64)
+adminSectionCurrency.Parent = adminFrame
+adminSectionPersonal = adminSectionCurrency:Clone()
+adminSectionPersonal.Visible = false
+adminSectionPersonal.Parent = adminFrame
+adminSectionEvents = adminSectionCurrency:Clone()
+adminSectionEvents.Visible = false
+adminSectionEvents.Parent = adminFrame
+
+local function setAdminSection(key)
+	adminSectionCurrency.Visible = key=="currency"
+	adminSectionPersonal.Visible = key=="personal"
+	adminSectionEvents.Visible = key=="events"
+end
+
+tabCurrency.MouseButton1Click:Connect(function() setAdminSection("currency") end)
+tabPersonal.MouseButton1Click:Connect(function() setAdminSection("personal") end)
+tabEvents.MouseButton1Click:Connect(function() setAdminSection("events") end)
+
 local adminAmountBox = Instance.new("TextBox")
-adminAmountBox.Position = UDim2.new(0, 0, 0, 34)
+adminAmountBox.Position = UDim2.new(0, 0, 0, 4)
 adminAmountBox.Size = UDim2.new(1, 0, 0, 36)
 adminAmountBox.BackgroundColor3 = Color3.fromRGB(114, 104, 165)
 adminAmountBox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -596,14 +665,14 @@ adminAmountBox.PlaceholderText = "Сколько выдать"
 adminAmountBox.Text = "10"
 adminAmountBox.Font = Enum.Font.Gotham
 adminAmountBox.TextSize = 16
-adminAmountBox.Parent = adminFrame
+adminAmountBox.Parent = adminSectionCurrency
 createCorner(adminAmountBox, 12)
 
 local currencySelector = Instance.new("Frame")
-currencySelector.Position = UDim2.new(0, 0, 0, 78)
+currencySelector.Position = UDim2.new(0, 0, 0, 46)
 currencySelector.Size = UDim2.new(1, 0, 0, 34)
 currencySelector.BackgroundTransparency = 1
-currencySelector.Parent = adminFrame
+currencySelector.Parent = adminSectionCurrency
 
 local selectCoinsButton = Instance.new("TextButton")
 selectCoinsButton.Size = UDim2.new(0.23, 0, 1, 0)
@@ -657,33 +726,33 @@ createCorner(selectXPButton, 12)
 addScaleHover(selectXPButton)
 
 local giveCurrencyButton = Instance.new("TextButton")
-giveCurrencyButton.Position = UDim2.new(0, 0, 0, 126)
+giveCurrencyButton.Position = UDim2.new(0, 0, 0, 86)
 giveCurrencyButton.Size = UDim2.new(1, 0, 0, 32)
 giveCurrencyButton.BackgroundColor3 = Color3.fromRGB(96, 241, 203)
 giveCurrencyButton.TextColor3 = Color3.fromRGB(20, 42, 56)
 giveCurrencyButton.Text = "Выдать валюту"
 giveCurrencyButton.Font = Enum.Font.GothamBlack
 giveCurrencyButton.TextSize = 16
-giveCurrencyButton.Parent = adminFrame
+giveCurrencyButton.Parent = adminSectionCurrency
 giveCurrencyButton.BorderSizePixel = 0
 createCorner(giveCurrencyButton, 12)
 addScaleHover(giveCurrencyButton)
 
 local resetButton = Instance.new("TextButton")
-resetButton.Position = UDim2.new(0, 0, 0, 170)
+resetButton.Position = UDim2.new(0, 0, 0, 126)
 resetButton.Size = UDim2.new(1, 0, 0, 32)
 resetButton.BackgroundColor3 = Color3.fromRGB(255, 121, 121)
 resetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 resetButton.Text = "Полный сброс"
 resetButton.Font = Enum.Font.GothamBlack
 resetButton.TextSize = 16
-resetButton.Parent = adminFrame
+resetButton.Parent = adminSectionCurrency
 resetButton.BorderSizePixel = 0
 createCorner(resetButton, 12)
 addScaleHover(resetButton)
 
 local adminPassiveBox = Instance.new("TextBox")
-adminPassiveBox.Position = UDim2.new(0, 0, 0, 212)
+adminPassiveBox.Position = UDim2.new(0, 0, 0, 6)
 adminPassiveBox.Size = UDim2.new(1, 0, 0, 30)
 adminPassiveBox.BackgroundColor3 = Color3.fromRGB(114, 104, 165)
 adminPassiveBox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -691,44 +760,81 @@ adminPassiveBox.PlaceholderText = "Passive ID (например MythicRunelord)"
 adminPassiveBox.Text = "MythicRunelord"
 adminPassiveBox.Font = Enum.Font.Gotham
 adminPassiveBox.TextSize = 14
-adminPassiveBox.Parent = adminFrame
+adminPassiveBox.Parent = adminSectionPersonal
 createCorner(adminPassiveBox, 10)
 
 local givePassiveButton = Instance.new("TextButton")
-givePassiveButton.Position = UDim2.new(0, 0, 0, 248)
+givePassiveButton.Position = UDim2.new(0, 0, 0, 42)
 givePassiveButton.Size = UDim2.new(1, 0, 0, 28)
 givePassiveButton.BackgroundColor3 = Color3.fromRGB(128, 228, 188)
 givePassiveButton.TextColor3 = Color3.fromRGB(20, 52, 38)
 givePassiveButton.Text = "Выдать пассив"
 givePassiveButton.Font = Enum.Font.GothamBlack
 givePassiveButton.TextSize = 14
-givePassiveButton.Parent = adminFrame
+givePassiveButton.Parent = adminSectionPersonal
 givePassiveButton.BorderSizePixel = 0
 createCorner(givePassiveButton, 10)
 
 local adminRuneBoostButton = Instance.new("TextButton")
-adminRuneBoostButton.Position = UDim2.new(0, 0, 0, 280)
+adminRuneBoostButton.Position = UDim2.new(0, 0, 0, 78)
 adminRuneBoostButton.Size = UDim2.new(1, 0, 0, 28)
 adminRuneBoostButton.BackgroundColor3 = Color3.fromRGB(166, 212, 94)
 adminRuneBoostButton.TextColor3 = Color3.fromRGB(28, 46, 20)
 adminRuneBoostButton.Text = "Rune boosts x20"
 adminRuneBoostButton.Font = Enum.Font.GothamBlack
 adminRuneBoostButton.TextSize = 14
-adminRuneBoostButton.Parent = adminFrame
+adminRuneBoostButton.Parent = adminSectionPersonal
 adminRuneBoostButton.BorderSizePixel = 0
 createCorner(adminRuneBoostButton, 10)
 
 local startAllEventsButton = Instance.new("TextButton")
-startAllEventsButton.Position = UDim2.new(0, 0, 0, 312)
+startAllEventsButton.Position = UDim2.new(0, 0, 0, 6)
 startAllEventsButton.Size = UDim2.new(1, 0, 0, 28)
 startAllEventsButton.BackgroundColor3 = Color3.fromRGB(109, 195, 255)
 startAllEventsButton.TextColor3 = Color3.fromRGB(18, 44, 66)
 startAllEventsButton.Text = "Start all server events (5m)"
 startAllEventsButton.Font = Enum.Font.GothamBlack
 startAllEventsButton.TextSize = 13
-startAllEventsButton.Parent = adminFrame
+startAllEventsButton.Parent = adminSectionEvents
 startAllEventsButton.BorderSizePixel = 0
 createCorner(startAllEventsButton, 10)
+
+
+duration5Button = Instance.new("TextButton")
+duration5Button.Position = UDim2.new(0,0,0,42)
+duration5Button.Size = UDim2.new(0.32,0,0,24)
+duration5Button.Text = "5m"
+duration5Button.Parent = adminSectionEvents
+createCorner(duration5Button,8)
+duration15Button = duration5Button:Clone()
+duration15Button.Position = UDim2.new(0.34,0,0,42)
+duration15Button.Text = "15m"
+duration15Button.Parent = adminSectionEvents
+duration60Button = duration5Button:Clone()
+duration60Button.Position = UDim2.new(0.68,0,0,42)
+duration60Button.Text = "1h"
+duration60Button.Parent = adminSectionEvents
+
+eventButtons = {}
+local function mkEventBtn(id,text,y)
+	local b = Instance.new("TextButton")
+	b.Position = UDim2.new(0,0,0,y)
+	b.Size = UDim2.new(1,0,0,26)
+	b.Text = text
+	b.Font = Enum.Font.GothamBold
+	b.TextScaled = true
+	b.BackgroundColor3 = Color3.fromRGB(103,140,205)
+	b.TextColor3 = Color3.fromRGB(255,255,255)
+	b.Parent = adminSectionEvents
+	createCorner(b,9)
+	eventButtons[id]=b
+	return b
+end
+mkEventBtn("StatsX2","x2 Stats",74)
+mkEventBtn("RuneBulkX5","x5 Rune Bulk",104)
+mkEventBtn("RuneSpeedX2","x2 Rune Speed",134)
+mkEventBtn("RuneLuckX2","x2 Rune Luck",164)
+mkEventBtn("PassiveLuckX3","x3 Passive Luck",194)
 
 local toggleAdminButton = Instance.new("TextButton")
 toggleAdminButton.AnchorPoint = Vector2.new(1, 0)
@@ -1581,47 +1687,24 @@ if runeIndexBlock then
 	end
 end
 
-local runeIndexBoardRows = {}
-if runeIndexBlock then
-	local _, runeIndexBoard = createWorldBoard("RuneIndexBoardSurfaceGui", runeIndexBlock, Enum.NormalId.Front, 72)
-	createHeader(runeIndexBoard, "RUNE INDEX", "Инфо по эффектам рун")
-	local list = Instance.new("ScrollingFrame")
-	list.Size = UDim2.new(1, 0, 1, -66)
-	list.Position = UDim2.new(0, 0, 0, 66)
-	list.BackgroundTransparency = 1
-	list.BorderSizePixel = 0
-	list.ScrollBarThickness = 8
-	list.CanvasSize = UDim2.new(0, 0, 0, 0)
-	list.Parent = runeIndexBoard
+
+runeStatsRows = {}
+if runeStatsIndexBlock then
+	local _, runeStatsBoard = createWorldBoard("RuneStatsIndexBoardSurfaceGui", runeStatsIndexBlock, Enum.NormalId.Front, 72)
+	createHeader(runeStatsBoard, "RUNE STATS", "Luck / Bulk / Speed")
+	local body = Instance.new("Frame")
+	body.Size = UDim2.new(1, -12, 1, -72)
+	body.Position = UDim2.new(0, 6, 0, 66)
+	body.BackgroundTransparency = 1
+	body.Parent = runeStatsBoard
 	local layout = Instance.new("UIListLayout")
 	layout.Padding = UDim.new(0, 6)
-	layout.Parent = list
-	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		list.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
-	end)
-	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
-		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, 0, 0, 72)
-		row.BackgroundColor3 = Color3.fromRGB(43, 67, 96)
-		row.BorderSizePixel = 0
-		row.Parent = list
-		createCorner(row, 10)
-		local text = Instance.new("TextLabel")
-		text.Size = UDim2.new(1, -12, 1, -8)
-		text.Position = UDim2.new(0, 6, 0, 4)
-		text.BackgroundTransparency = 1
-		text.TextXAlignment = Enum.TextXAlignment.Left
-		text.TextYAlignment = Enum.TextYAlignment.Top
-		text.TextWrapped = true
-		text.TextScaled = true
-		text.Font = Enum.Font.GothamBold
-		text.TextColor3 = Color3.fromRGB(236, 245, 255)
-		text.Text = runeId
-		text.Parent = row
-		runeIndexBoardRows[runeId] = text
-	end
+	layout.Parent = body
+	runeStatsRows.luck = createStatRow(body, "Rune Luck")
+	runeStatsRows.bulk = createStatRow(body, "Rune Bulk")
+	runeStatsRows.speed = createStatRow(body, "Rune Speed")
+	runeStatsRows.total = createStatRow(body, "Итоговый рун-стат")
 end
-
 local treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 local treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 local boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
@@ -2201,7 +2284,7 @@ local function createRuneOverlays()
 
 		local header = Instance.new("Frame")
 		header.Size = UDim2.new(1, -18, 0, 44)
-		header.Position = UDim2.new(0, 9, 0, 8)
+		header.Position = UDim2.new(0, 7, 0, 6)
 		header.BackgroundColor3 = Color3.fromRGB(35, 110, 34)
 		header.BorderSizePixel = 0
 		header.Parent = root
@@ -2357,14 +2440,14 @@ local function createRuneOverlays()
 	local function createRuneSessionScreen()
 		local panel = Instance.new("Frame")
 		panel.Name = "RuneSessionPanel"
-		panel.Size = UDim2.new(0, 290, 0, 370)
+		panel.Size = UDim2.new(0, 238, 0, 300)
 		panel.AnchorPoint = Vector2.new(1, 1)
 		panel.Position = UDim2.new(1, -14, 1, -14)
 		panel.BackgroundColor3 = Color3.fromRGB(22, 80, 20)
 		panel.BorderSizePixel = 0
 		panel.Visible = false
 		panel.Parent = screenGui
-		createCorner(panel, 18)
+		createCorner(panel, 14)
 		createStroke(panel, Color3.fromRGB(120, 220, 50), 4, 0)
 		createGradient(panel, Color3.fromRGB(65, 140, 28), Color3.fromRGB(15, 58, 14), 90)
 
@@ -2377,8 +2460,8 @@ local function createRuneOverlays()
 		bgImage.Parent = panel
 
 		local header = Instance.new("Frame")
-		header.Size = UDim2.new(1, -18, 0, 42)
-		header.Position = UDim2.new(0, 9, 0, 8)
+		header.Size = UDim2.new(1, -14, 0, 34)
+		header.Position = UDim2.new(0, 7, 0, 6)
 		header.BackgroundColor3 = Color3.fromRGB(35, 110, 34)
 		header.BorderSizePixel = 0
 		header.Parent = panel
@@ -2394,8 +2477,8 @@ local function createRuneOverlays()
 		headerText.Parent = header
 
 		local listHolder = Instance.new("ScrollingFrame")
-		listHolder.Size = UDim2.new(1, -16, 1, -62)
-		listHolder.Position = UDim2.new(0, 8, 0, 54)
+		listHolder.Size = UDim2.new(1, -12, 1, -48)
+		listHolder.Position = UDim2.new(0, 6, 0, 42)
 		listHolder.BackgroundTransparency = 1
 		listHolder.BorderSizePixel = 0
 		listHolder.ScrollBarThickness = 8
@@ -2416,7 +2499,7 @@ local function createRuneOverlays()
 			local visual = RUNE_VISUALS[runeId]
 			local row = Instance.new("Frame")
 			row.Name = runeId .. "SessionRow"
-			row.Size = UDim2.new(1, 0, 0, 50)
+			row.Size = UDim2.new(1, 0, 0, 40)
 			row.BackgroundColor3 = visual.rowColor
 			row.BorderSizePixel = 0
 			row.Parent = listHolder
@@ -2425,8 +2508,8 @@ local function createRuneOverlays()
 
 			-- Rune icon
 			local iconFrame = Instance.new("Frame")
-			iconFrame.Size = UDim2.new(0, 38, 0, 38)
-			iconFrame.Position = UDim2.new(0, 7, 0.5, -19)
+			iconFrame.Size = UDim2.new(0, 30, 0, 30)
+			iconFrame.Position = UDim2.new(0, 5, 0.5, -15)
 			iconFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 24)
 			iconFrame.BackgroundTransparency = 0.1
 			iconFrame.BorderSizePixel = 0
@@ -2444,8 +2527,8 @@ local function createRuneOverlays()
 
 			-- Name label
 			local nameLabel = Instance.new("TextLabel")
-			nameLabel.Size = UDim2.new(1, -110, 1, 0)
-			nameLabel.Position = UDim2.new(0, 54, 0, 0)
+			nameLabel.Size = UDim2.new(1, -92, 1, 0)
+			nameLabel.Position = UDim2.new(0, 42, 0, 0)
 			nameLabel.BackgroundTransparency = 1
 			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 			nameLabel.Text = visual.name
@@ -2457,8 +2540,8 @@ local function createRuneOverlays()
 			-- Gain label: "+1-99" style, right side
 			local gain = Instance.new("TextLabel")
 			gain.Name = "Gain"
-			gain.Size = UDim2.new(0, 58, 1, 0)
-			gain.Position = UDim2.new(1, -62, 0, 0)
+			gain.Size = UDim2.new(0, 48, 1, 0)
+			gain.Position = UDim2.new(1, -52, 0, 0)
 			gain.BackgroundTransparency = 1
 			gain.TextXAlignment = Enum.TextXAlignment.Right
 			gain.Text = "+0"
@@ -2472,9 +2555,6 @@ local function createRuneOverlays()
 		runeUi.sessionPanel = panel
 	end
 
-	if runeRollBlock then
-		runeUi.worldBillboard = createRuneBillboard(runeRollBlock, "RuneWorldMainDisplay", UDim2.new(0, 260, 0, 560), Vector3.new(0, 4.5, 0), "RuneMain")
-	end
 	createRuneSessionScreen()
 end
 
@@ -2616,6 +2696,32 @@ local function getWoodCooldown()
 	return roundToTenth(value / math.max(1, passiveSpeed))
 end
 
+local function isAdminEventActive(eventKey)
+	for _, ev in ipairs(activeAdminEvents or {}) do
+		if ev.key == eventKey and (tonumber(ev.timeLeft) or 0) > 0 then
+			return true
+		end
+	end
+	return false
+end
+
+local function getClientEffectiveRuneStats()
+	local baseLuck = runeLuckLevel.Value + runeLuckXpLevel.Value
+	local baseSpeed = runeSpeedLevel.Value + runeSpeedXpLevel.Value
+	local baseBulk = runeBulkLevel.Value + runeBulkXpLevel.Value
+	local passive = getEquippedPassiveDef()
+	local passiveLuckMul = passive and (passive.runeLuckMultiplier or 1) or 1
+	local passiveSpeedMul = passive and (passive.runeSpeedMultiplier or 1) or 1
+	local passiveBulkMul = passive and (passive.runeBulkMultiplier or 1) or 1
+	local luck = math.floor(baseLuck * passiveLuckMul + 0.5)
+	local speed = math.floor(baseSpeed * passiveSpeedMul + 0.5)
+	local bulk = math.floor(baseBulk * passiveBulkMul + 0.5)
+	if isAdminEventActive("RuneLuckX2") then luck *= 2 end
+	if isAdminEventActive("RuneSpeedX2") then speed *= 2 end
+	if isAdminEventActive("RuneBulkX5") then bulk += 5 end
+	return luck, speed, bulk
+end
+
 local function showToast(text)
 	local toast = Instance.new("Frame")
 	toast.AnchorPoint = Vector2.new(0.5, 0)
@@ -2657,55 +2763,53 @@ end
 
 local activeAdminEvents = {}
 local adminEventTitles = {
-	RuneLuckEvent = "Rune Luck Event",
-	RuneBulkEvent = "Rune Bulk Event",
-	RuneSpeedEvent = "Rune Speed Event",
+	StatsX2 = "x2 Stats",
+	RuneBulkX5 = "x5 Rune Bulk",
+	RuneSpeedX2 = "x2 Rune Speed",
+	RuneLuckX2 = "x2 Rune Luck",
+	PassiveLuckX3 = "x3 Passive Luck",
 }
 local adminEventDescs = {
-	RuneLuckEvent = "Даёт x2 Rune Luck",
-	RuneBulkEvent = "Даёт +5 Rune Bulk",
-	RuneSpeedEvent = "Даёт x1.5 Rune Speed",
+	StatsX2 = "Удваивает Coins/Wood/Paper/XP доход.",
+	RuneBulkX5 = "Добавляет +5 к Rune Bulk.",
+	RuneSpeedX2 = "Удваивает скорость открытия рун.",
+	RuneLuckX2 = "Удваивает Rune Luck.",
+	PassiveLuckX3 = "Утрояет шанс редких пассивов.",
 }
 
-local function renderAdminEvents()
+local function renderAdminEvents(events)
 	for _, child in ipairs(adminEventGui:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
-		end
+		if child:IsA("Frame") then child:Destroy() end
 	end
-	for eventId, remain in pairs(activeAdminEvents) do
-		if (tonumber(remain) or 0) > 0 then
-			local row = Instance.new("Frame")
-			row.Size = UDim2.new(1, 0, 0, 30)
-			row.BackgroundColor3 = Color3.fromRGB(42, 68, 108)
-			row.BorderSizePixel = 0
-			row.Parent = adminEventGui
-			createCorner(row, 10)
-			local icon = Instance.new("ImageLabel")
-			icon.Size = UDim2.new(0, 24, 0, 24)
-			icon.Position = UDim2.new(0, 4, 0.5, -12)
-			icon.BackgroundTransparency = 1
-			icon.Image = getAssetOrEmpty(AssetSlots.AdminEventIcons[eventId])
-			icon.Parent = row
-			local text = Instance.new("TextLabel")
-			text.Size = UDim2.new(1, -40, 1, 0)
-			text.Position = UDim2.new(0, 38, 0, 0)
-			text.BackgroundTransparency = 1
-			text.TextXAlignment = Enum.TextXAlignment.Left
-			text.Text = (adminEventTitles[eventId] or eventId) .. "  " .. tostring(remain) .. "s"
-			text.TextColor3 = Color3.fromRGB(236, 245, 255)
-			text.Font = Enum.Font.GothamBold
-			text.TextScaled = true
-			text.Parent = row
-			row.MouseEnter:Connect(function()
-				adminEventTooltip.Visible = true
-				adminEventTooltip.Position = UDim2.new(0, 300, 1, -120)
-				adminEventTooltip.Text = (adminEventTitles[eventId] or eventId) .. "\n" .. (adminEventDescs[eventId] or "") .. "\nОсталось: " .. tostring(remain) .. "с"
-			end)
-			row.MouseLeave:Connect(function()
-				adminEventTooltip.Visible = false
-			end)
-		end
+	for _, ev in ipairs(events or {}) do
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, 0, 0, 32)
+		row.BackgroundColor3 = Color3.fromRGB(42, 68, 108)
+		row.BorderSizePixel = 0
+		row.Parent = adminEventGui
+		createCorner(row, 10)
+		local icon = Instance.new("ImageLabel")
+		icon.Size = UDim2.new(0, 24, 0, 24)
+		icon.Position = UDim2.new(0, 4, 0.5, -12)
+		icon.BackgroundTransparency = 1
+		icon.Image = getAssetOrEmpty(AssetSlots.AdminEventIcons[ev.key] or "")
+		icon.Parent = row
+		local text = Instance.new("TextLabel")
+		text.Size = UDim2.new(1, -40, 1, 0)
+		text.Position = UDim2.new(0, 38, 0, 0)
+		text.BackgroundTransparency = 1
+		text.TextXAlignment = Enum.TextXAlignment.Left
+		text.Text = (adminEventTitles[ev.key] or ev.key) .. "  " .. tostring(ev.timeLeft or 0) .. "s"
+		text.TextColor3 = Color3.fromRGB(236, 245, 255)
+		text.Font = Enum.Font.GothamBold
+		text.TextScaled = true
+		text.Parent = row
+		row.MouseEnter:Connect(function()
+			adminEventTooltip.Visible = true
+			adminEventTooltip.Position = UDim2.new(0, 270, 1, -130)
+			adminEventTooltip.Text = (adminEventTitles[ev.key] or ev.key) .. "\n" .. (adminEventDescs[ev.key] or ev.tooltip or "") .. "\nОсталось: " .. tostring(ev.timeLeft or 0) .. "с"
+		end)
+		row.MouseLeave:Connect(function() adminEventTooltip.Visible = false end)
 	end
 end
 
@@ -2745,46 +2849,6 @@ local function showPickup(iconKey, amount)
 	task.delay(1, function()
 		holder:Destroy()
 	end)
-end
-
-local function renderAdminEvents(events)
-	for _, ch in ipairs(adminEventsHud:GetChildren()) do
-		if ch:IsA("Frame") then
-			ch:Destroy()
-		end
-	end
-	for _, ev in ipairs(events or {}) do
-		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, 0, 0, 30)
-		row.BackgroundColor3 = Color3.fromRGB(43, 58, 92)
-		row.BackgroundTransparency = 0.1
-		row.BorderSizePixel = 0
-		row.Parent = adminEventsHud
-		createCorner(row, 10)
-		local icon = Instance.new("ImageLabel")
-		icon.Size = UDim2.new(0, 22, 0, 22)
-		icon.Position = UDim2.new(0, 4, 0, 4)
-		icon.BackgroundTransparency = 1
-		icon.Image = getAssetOrEmpty(AssetSlots.AdminEventIcons[ev.key] or "")
-		icon.Parent = row
-		local txt = Instance.new("TextLabel")
-		txt.Size = UDim2.new(1, -34, 1, 0)
-		txt.Position = UDim2.new(0, 30, 0, 0)
-		txt.BackgroundTransparency = 1
-		txt.TextXAlignment = Enum.TextXAlignment.Left
-		txt.Text = tostring(ev.key) .. "  (" .. tostring(ev.timeLeft or 0) .. "s)"
-		txt.TextColor3 = Color3.fromRGB(237, 244, 255)
-		txt.Font = Enum.Font.GothamBold
-		txt.TextScaled = true
-		txt.Parent = row
-		row:SetAttribute("Tooltip", ev.tooltip or "")
-		row.MouseEnter:Connect(function()
-			local tip = row:GetAttribute("Tooltip")
-			if tip and tip ~= "" then
-				showToast(tip)
-			end
-		end)
-	end
 end
 
 local function setButtonVisual(button, text, canBuy, atMax, activeColor, disabledColor, textColor, locked)
@@ -3047,6 +3111,15 @@ for _, obj in ipairs(rebirthWall:GetDescendants()) do
 	end
 end
 
+local function isSystemUnlocked(stage)
+	if stage == 2 then return secondAreaUnlocked.Value or rebirthCount.Value >= 2 end
+	if stage == 3 then return thirdUpgradeUnlocked.Value or rebirthCount.Value >= 3 end
+	if stage == 4 then return fourthSystemsUnlocked.Value or rebirthCount.Value >= 4 end
+	if stage == 5 then return fifthSystemsUnlocked.Value or rebirthCount.Value >= 5 end
+	if stage == 6 then return sixthSystemsUnlocked.Value or rebirthCount.Value >= 6 end
+	return false
+end
+
 local function updateWallVisual()
 	for _, part in ipairs(wallParts) do
 		part.LocalTransparencyModifier = secondAreaUnlocked.Value and 0.78 or 0
@@ -3059,6 +3132,16 @@ local function updateBoards()
 	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
 	local fifthUnlockedVisual = fifthSystemsUnlocked.Value or rebirthCount.Value >= 5
 	local sixthUnlockedVisual = sixthSystemsUnlocked.Value or rebirthCount.Value >= 6
+	local function updateUnlockDebug()
+		local lines = {
+			string.format("Rebirth=%d | S2=%s S3=%s S4=%s S5=%s S6=%s", rebirthCount.Value, tostring(secondUnlockedVisual), tostring(thirdUnlockedVisual), tostring(fourthUnlockedVisual), tostring(fifthUnlockedVisual), tostring(sixthUnlockedVisual)),
+			string.format("CoinWoodBoost lock=%s | TreeCoinBoost lock=%s", tostring(not thirdUnlockedVisual), tostring(not thirdUnlockedVisual)),
+			string.format("PaperBoard lock=%s | XP lock=%s | Rune lock=%s", tostring(not fourthUnlockedVisual), tostring(not secondUnlockedVisual), tostring(not sixthUnlockedVisual)),
+			string.format("Rune events: Luck=%s Speed=%s Bulk=%s", tostring(isAdminEventActive("RuneLuckX2")), tostring(isAdminEventActive("RuneSpeedX2")), tostring(isAdminEventActive("RuneBulkX5"))),
+			string.format("Bools raw: [%s,%s,%s,%s,%s]", tostring(secondAreaUnlocked.Value), tostring(thirdUpgradeUnlocked.Value), tostring(fourthSystemsUnlocked.Value), tostring(fifthSystemsUnlocked.Value), tostring(sixthSystemsUnlocked.Value)),
+		}
+		unlockDebugLabel.Text = table.concat(lines, "\n")
+	end
 
 	coinValueLabel.Text = formatNumber(coins.Value)
 	coinRewardLabel.Text = formatNumber(getCoinReward())
@@ -3194,13 +3277,29 @@ local function updateBoards()
 				local isSelected = entry.uid == passiveUi.selectedUid
 				b.Size = UDim2.new(1, -8, 0, 112)
 				b.Text = ""
-				b.BackgroundColor3 = Color3.fromRGB(14, 16, 22)
-				b.BackgroundTransparency = isSelected and 0.05 or 0.15
-				b.BorderSizePixel = 0
-				b.Parent = passiveUi.slotsList
-				createCorner(b, 10)
-				local edgeColor = isEquipped and Color3.fromRGB(206, 255, 192) or getRarityColor(def.rarity)
-				local edge = createStroke(b, edgeColor, isEquipped and 3 or 2, isSelected and 0.05 or 0.2)
+					b.BackgroundColor3 = Color3.fromRGB(14, 16, 22)
+					b.BackgroundTransparency = isSelected and 0.05 or 0.15
+					b.BorderSizePixel = 0
+					b.Parent = passiveUi.slotsList
+					createCorner(b, 10)
+					local rarityGradient = Instance.new("UIGradient")
+					if def.rarity == "Mythic" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(255, 120, 211), Color3.fromRGB(113, 173, 255))
+					elseif def.rarity == "Legendary" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(255, 210, 110), Color3.fromRGB(173, 121, 41))
+					elseif def.rarity == "Epic" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(195, 126, 255), Color3.fromRGB(92, 65, 165))
+					elseif def.rarity == "Rare" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(121, 186, 255), Color3.fromRGB(54, 90, 158))
+					elseif def.rarity == "Uncommon" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(136, 221, 151), Color3.fromRGB(53, 121, 72))
+					else
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(180, 188, 206), Color3.fromRGB(87, 95, 121))
+					end
+					rarityGradient.Rotation = 35
+					rarityGradient.Parent = b
+					local edgeColor = isEquipped and Color3.fromRGB(206, 255, 192) or getRarityColor(def.rarity)
+					local edge = createStroke(b, edgeColor, isEquipped and 3 or 2, isSelected and 0.05 or 0.2)
 				if def.rarity == "Mythic" then
 					local mythicGradient = Instance.new("UIGradient")
 					mythicGradient.Color = ColorSequence.new({
@@ -3256,10 +3355,21 @@ local function updateBoards()
 				status.TextXAlignment = Enum.TextXAlignment.Left
 				status.TextScaled = true
 				status.Font = Enum.Font.GothamBold
-				status.TextColor3 = isEquipped and Color3.fromRGB(198, 255, 190) or Color3.fromRGB(225, 235, 255)
-				status.Text = isEquipped and "Экипировано" or "Не экипировано"
-				status.Parent = b
-				b.MouseButton1Click:Connect(function()
+					status.TextColor3 = isEquipped and Color3.fromRGB(198, 255, 190) or Color3.fromRGB(225, 235, 255)
+					status.Text = isEquipped and "Экипировано" or "Не экипировано"
+					status.Parent = b
+					local effectBadge = Instance.new("TextLabel")
+					effectBadge.Size = UDim2.new(0, 180, 0, 20)
+					effectBadge.Position = UDim2.new(1, -186, 1, -24)
+					effectBadge.BackgroundColor3 = Color3.fromRGB(23, 28, 40)
+					effectBadge.TextColor3 = edgeColor
+					effectBadge.BorderSizePixel = 0
+					effectBadge.Font = Enum.Font.GothamBold
+					effectBadge.TextScaled = true
+					effectBadge.Text = tostring(def.effect or "")
+					effectBadge.Parent = b
+					createCorner(effectBadge, 8)
+					b.MouseButton1Click:Connect(function()
 					passiveUi.selectedUid = entry.uid
 					passiveUi.manageTitle.Text = def.name
 					passiveUi.manageInfo.Text = "Тип: " .. tostring(def.currencyType or "Coins")
@@ -3299,29 +3409,28 @@ local function updateBoards()
 		local rs = parseRuneState()
 		local c = rs.counts or {}
 		local bonuses = {
-			Common = {per = "+0.01x монет", base = 0.01, target = "монет"},
-			Uncommon = {per = "+0.10x монет", base = 0.10, target = "монет"},
-			Rare = {per = "+0.25x монет", base = 0.25, target = "монет"},
-			Epic = {per = "+0.01x дерева", base = 0.01, target = "дерева"},
-			Legendary = {per = "+0.01x бумаги", base = 0.01, target = "бумаги"},
-			Mythic = {per = "+0.1x Luck/Speed +1 Bulk", base = 0.1, target = "рунных статов"},
+			Common = {per = "+0.10x монет", base = 0.10, target = "монет", cap = 10},
+			Uncommon = {per = "+0.10x XP", base = 0.10, target = "XP", cap = 10},
+			Rare = {per = "+0.15x дерева", base = 0.15, target = "дерева", cap = 10},
+			Epic = {per = "+0.10x бумаги", base = 0.10, target = "бумаги", cap = 5},
+			Legendary = {per = "+0.05x бумаги", base = 0.05, target = "бумаги", cap = 7.5},
+			Mythic = {per = "+0.10x Luck/Speed", base = 0.10, target = "рунных статов", cap = 5},
 		}
 		for runeId, label in pairs(runeIndexBoardRows) do
 			local count = tonumber(c[runeId]) or 0
-			local eff = math.min(10, count)
 			local info = bonuses[runeId] or bonuses.Common
+			local capMul = (info.cap or 10)
+			local eff = math.min(math.floor((capMul / math.max(info.base, 0.0001)) + 0.5), count)
 			local total = eff * info.base
-			label.Text = string.format("%s | Кол-во: %d\nЗа 1: %s | Суммарно: +%.2fx %s | Эфф: %d", tostring(runeId), count, info.per, total, info.target, eff)
+			local chance = (RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].chance) or "?"
+			label.Text = string.format("%s | Кол-во: %d | Шанс: %s\nЗа 1: %s | Суммарно: +%.2fx %s (cap x%.1f)", tostring(runeId), count, chance, info.per, total, info.target, capMul)
 		end
 	end
 
-	if runeUi.panel then
+	do
 		local runeUnlocked = sixthUnlockedVisual
-		if runeUi.panel.Visible and not runeUnlocked then
+		if runeUi.panel and runeUi.panel.Visible and not runeUnlocked then
 			runeUi.panel.Visible = false
-		end
-		if runeUi.worldBillboard then
-			runeUi.worldBillboard.Enabled = runeUnlocked
 		end
 		if runeUi.sessionPanel then
 			runeUi.sessionPanel.Visible = runeUnlocked and runeRollingActive
@@ -3331,24 +3440,39 @@ local function updateBoards()
 		local function stacks(v)
 			return math.min(10, tonumber(v) or 0)
 		end
-		runeUi.indexText.Text = "Обычная: " .. tostring(c.Common or 0) .. " (эф. " .. tostring(stacks(c.Common)) .. ")\n"
-			.. "Необычная: " .. tostring(c.Uncommon or 0) .. " (эф. " .. tostring(stacks(c.Uncommon)) .. ")\n"
-			.. "Редкая: " .. tostring(c.Rare or 0) .. " (эф. " .. tostring(stacks(c.Rare)) .. ")\n"
-			.. "Эпическая: " .. tostring(c.Epic or 0) .. " (эф. " .. tostring(stacks(c.Epic)) .. ")\n"
-			.. "Легендарная: " .. tostring(c.Legendary or 0) .. " (эф. " .. tostring(stacks(c.Legendary)) .. ")\n\n"
-			.. "Luck x" .. tostring(runeLuckLevel.Value) .. " | Speed x" .. tostring(runeSpeedLevel.Value) .. " | Bulk +" .. tostring(runeBulkLevel.Value)
-		setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ РУНЫ (50 дерева)", woodCurrency.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
-		runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)"
-		runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)"
-		runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)"
+		if runeUi.indexText then
+			runeUi.indexText.Text = "Обычная: " .. tostring(c.Common or 0) .. " (эф. " .. tostring(stacks(c.Common)) .. ")\n"
+				.. "Необычная: " .. tostring(c.Uncommon or 0) .. " (эф. " .. tostring(stacks(c.Uncommon)) .. ")\n"
+				.. "Редкая: " .. tostring(c.Rare or 0) .. " (эф. " .. tostring(stacks(c.Rare)) .. ")\n"
+				.. "Эпическая: " .. tostring(c.Epic or 0) .. " (эф. " .. tostring(stacks(c.Epic)) .. ")\n"
+				.. "Легендарная: " .. tostring(c.Legendary or 0) .. " (эф. " .. tostring(stacks(c.Legendary)) .. ")\n\n"
+				.. "Luck x" .. tostring(runeLuckLevel.Value) .. " | Speed x" .. tostring(runeSpeedLevel.Value) .. " | Bulk +" .. tostring(runeBulkLevel.Value)
+		end
+		if runeUi.openBtn then
+			setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ РУНЫ (50 дерева)", woodCurrency.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
+		end
+		if runeUi.luckBtn then runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)" end
+		if runeUi.speedBtn then runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)" end
+		if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
+		if runeStatsRows and runeStatsRows.luck then
+			local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+			local speedSeconds = math.max(0.1, 10 / math.max(1, effSpeed))
+			runeStatsRows.luck.Text = "x" .. tostring(effLuck)
+			runeStatsRows.bulk.Text = "+" .. tostring(effBulk)
+			runeStatsRows.speed.Text = string.format("1 rune / %.2fs", speedSeconds)
+			runeStatsRows.total.Text = "Luck x" .. tostring(effLuck) .. " | Speed x" .. tostring(effSpeed) .. " | Bulk +" .. tostring(effBulk)
+		end
 	end
 
 	if runeUpgradeCards then
 		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
 		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
 		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
+		if runeUpgradeLockedOverlay then
+			runeUpgradeLockedOverlay.Visible = not sixthUnlockedVisual
+		end
 	end
 
 	if xpUpgradeCards then
@@ -3374,8 +3498,25 @@ local function updateBoards()
 		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
 	end
 
+	-- Safety pass against stale visual lock states.
+	if thirdUnlockedVisual then
+		updateCard(coinWoodBoostCard, coinWoodBoostLevel.Value, coinWoodBoostCost.Value, coinWoodBoostActive.Value, 10, coins.Value, nil)
+		updateCard(treeCoinBoostCard, woodCoinBoostLevel.Value, woodCoinBoostCost.Value, woodCoinBoostActive.Value, 20, woodCurrency.Value, nil)
+	end
+	if secondUnlockedVisual and xpUpgradeCards then
+		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+	end
+	if sixthUnlockedVisual and runeUpgradeCards then
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil)
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, nil)
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil)
+	end
+
 	updateWallVisual()
 	refreshAdminCurrencyButtons()
+	updateUnlockDebug()
 end
 
 local passiveEffectParts = {}
@@ -3735,8 +3876,18 @@ adminRuneBoostButton.MouseButton1Click:Connect(function()
 end)
 
 startAllEventsButton.MouseButton1Click:Connect(function()
-	adminActionEvent:FireServer("StartServerEvent", "All", 0)
+	adminActionEvent:FireServer("StartServerEvent", "All", selectedAdminDuration)
 end)
+
+duration5Button.MouseButton1Click:Connect(function() selectedAdminDuration = 300 end)
+duration15Button.MouseButton1Click:Connect(function() selectedAdminDuration = 900 end)
+duration60Button.MouseButton1Click:Connect(function() selectedAdminDuration = 3600 end)
+for eventId, btn in pairs(eventButtons) do
+	btn.MouseButton1Click:Connect(function()
+		selectedAdminEvent = eventId
+		adminActionEvent:FireServer("StartServerEvent", selectedAdminEvent, selectedAdminDuration)
+	end)
+end
 
 toggleAdminButton.MouseButton1Click:Connect(function()
 	adminFrame.Visible = not adminFrame.Visible
@@ -3786,11 +3937,19 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 		updateRuneWorldDisplay()
 		triggerRuneBurst()
 	elseif payload.kind == "admin_event_state" then
-		activeAdminEvents = {}
-		for eventId, remain in pairs(payload.events or {}) do
-			activeAdminEvents[eventId] = tonumber(remain) or 0
+		if type(payload.events) == "table" and #payload.events > 0 then
+			activeAdminEvents = payload.events
+		else
+			activeAdminEvents = {}
+			for key, remain in pairs(payload.events or {}) do
+				table.insert(activeAdminEvents, {
+					key = tostring(key),
+					timeLeft = tonumber(remain) or 0,
+					tooltip = adminEventDescs[tostring(key)] or "",
+				})
+			end
 		end
-		renderAdminEvents()
+		renderAdminEvents(activeAdminEvents)
 	else
 		showToast(payload.text or "Готово")
 	end
@@ -3801,7 +3960,7 @@ mouse.Button1Down:Connect(function()
 		return
 	end
 
-	if not secondAreaUnlocked.Value then
+	if not isSystemUnlocked(2) then
 		if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
 			passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
 		elseif passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
@@ -3816,7 +3975,7 @@ mouse.Button1Down:Connect(function()
 	end
 
 	if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
-		if fifthSystemsUnlocked.Value then
+		if isSystemUnlocked(5) then
 			passiveUi.inventoryPanel.Visible = false
 			passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
 		else
@@ -3826,7 +3985,7 @@ mouse.Button1Down:Connect(function()
 	end
 
 	if passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
-		if fifthSystemsUnlocked.Value then
+		if isSystemUnlocked(5) then
 			passiveUi.indexPanel.Visible = false
 			passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
 		else
@@ -3836,7 +3995,7 @@ mouse.Button1Down:Connect(function()
 	end
 
 	if mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock then
-		if not sixthSystemsUnlocked.Value then
+		if not isSystemUnlocked(6) then
 			showToast("Руны откроются на 6-м перерождении")
 		end
 		return
@@ -3897,20 +4056,28 @@ if passiveUi.hintEmoji then
 	end)
 end
 
-task.spawn(function()
+	task.spawn(function()
 	while true do
 		task.wait(1)
-		local changed = false
-		for eventId, remain in pairs(activeAdminEvents) do
-			local nextRemain = math.max(0, tonumber(remain) - 1)
-			if nextRemain ~= remain then
-				activeAdminEvents[eventId] = nextRemain
-				changed = true
+		if #activeAdminEvents > 0 then
+			local stillActive = {}
+			for _, ev in ipairs(activeAdminEvents) do
+				local nextValue = math.max(0, (tonumber(ev.timeLeft) or 0) - 1)
+				ev.timeLeft = nextValue
+				if nextValue > 0 then
+					table.insert(stillActive, ev)
+				end
 			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
 		end
-		if changed then
-			renderAdminEvents()
-		end
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(0.2)
+		updateBoards()
 	end
 end)
 
