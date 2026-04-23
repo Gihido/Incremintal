@@ -4039,8 +4039,8 @@ end)
 duration5Button.MouseButton1Click:Connect(function() selectedAdminDuration = 300 end)
 duration15Button.MouseButton1Click:Connect(function() selectedAdminDuration = 900 end)
 duration60Button.MouseButton1Click:Connect(function() selectedAdminDuration = 3600 end)
-for eventId, btn in pairs(eventButtons) do
-	btn.MouseButton1Click:Connect(function()
+for eventId in pairs(eventButtons) do
+	eventButtons[eventId].MouseButton1Click:Connect(function()
 		selectedAdminEvent = eventId
 		adminActionEvent:FireServer("StartServerEvent", selectedAdminEvent, selectedAdminDuration)
 	end)
@@ -4227,6 +4227,11 @@ end
 				if nextValue > 0 then
 					table.insert(stillActive, ev)
 				end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)
