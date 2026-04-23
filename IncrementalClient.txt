@@ -3137,6 +3137,7 @@ local function updateBoards()
 			string.format("Rebirth=%d | S2=%s S3=%s S4=%s S5=%s S6=%s", rebirthCount.Value, tostring(secondUnlockedVisual), tostring(thirdUnlockedVisual), tostring(fourthUnlockedVisual), tostring(fifthUnlockedVisual), tostring(sixthUnlockedVisual)),
 			string.format("CoinWoodBoost lock=%s | TreeCoinBoost lock=%s", tostring(not thirdUnlockedVisual), tostring(not thirdUnlockedVisual)),
 			string.format("PaperBoard lock=%s | XP lock=%s | Rune lock=%s", tostring(not fourthUnlockedVisual), tostring(not secondUnlockedVisual), tostring(not sixthUnlockedVisual)),
+			string.format("Rune events: Luck=%s Speed=%s Bulk=%s", tostring(isAdminEventActive("RuneLuckX2")), tostring(isAdminEventActive("RuneSpeedX2")), tostring(isAdminEventActive("RuneBulkX5"))),
 			string.format("Bools raw: [%s,%s,%s,%s,%s]", tostring(secondAreaUnlocked.Value), tostring(thirdUpgradeUnlocked.Value), tostring(fourthSystemsUnlocked.Value), tostring(fifthSystemsUnlocked.Value), tostring(sixthSystemsUnlocked.Value)),
 		}
 		unlockDebugLabel.Text = table.concat(lines, "\n")
@@ -3495,6 +3496,22 @@ local function updateBoards()
 		local progress = xpBoostNextCost.Value > 0 and math.clamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
 		TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
 		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
+	end
+
+	-- Safety pass against stale visual lock states.
+	if thirdUnlockedVisual then
+		updateCard(coinWoodBoostCard, coinWoodBoostLevel.Value, coinWoodBoostCost.Value, coinWoodBoostActive.Value, 10, coins.Value, nil)
+		updateCard(treeCoinBoostCard, woodCoinBoostLevel.Value, woodCoinBoostCost.Value, woodCoinBoostActive.Value, 20, woodCurrency.Value, nil)
+	end
+	if secondUnlockedVisual and xpUpgradeCards then
+		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+	end
+	if sixthUnlockedVisual and runeUpgradeCards then
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil)
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, nil)
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil)
 	end
 
 	updateWallVisual()
