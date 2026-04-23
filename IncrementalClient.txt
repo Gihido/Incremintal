@@ -3338,7 +3338,7 @@ local function updateBoards()
 			local count = tonumber(c[runeId]) or 0
 			local info = bonuses[runeId] or bonuses.Common
 			local capMul = (info.cap or 10)
-			local eff = math.min(math.floor(((capMul - 1) / math.max(info.base, 0.0001)) + 0.5), count)
+			local eff = math.min(math.floor((capMul / math.max(info.base, 0.0001)) + 0.5), count)
 			local total = eff * info.base
 			label.Text = string.format("%s | Кол-во: %d\nЗа 1: %s | Суммарно: +%.2fx %s (cap x%.1f)", tostring(runeId), count, info.per, total, info.target, capMul)
 		end
@@ -3829,7 +3829,18 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 		updateRuneWorldDisplay()
 		triggerRuneBurst()
 	elseif payload.kind == "admin_event_state" then
-		activeAdminEvents = payload.events or {}
+		if type(payload.events) == "table" and #payload.events > 0 then
+			activeAdminEvents = payload.events
+		else
+			activeAdminEvents = {}
+			for key, remain in pairs(payload.events or {}) do
+				table.insert(activeAdminEvents, {
+					key = tostring(key),
+					timeLeft = tonumber(remain) or 0,
+					tooltip = adminEventDescs[tostring(key)] or "",
+				})
+			end
+		end
 		renderAdminEvents(activeAdminEvents)
 	else
 		showToast(payload.text or "Готово")
@@ -3937,15 +3948,28 @@ if passiveUi.hintEmoji then
 	end)
 end
 
-task.spawn(function()
+	task.spawn(function()
 	while true do
 		task.wait(1)
 		if #activeAdminEvents > 0 then
+			local stillActive = {}
 			for _, ev in ipairs(activeAdminEvents) do
-				ev.timeLeft = math.max(0, tonumber(ev.timeLeft) or 0)
+				local nextValue = math.max(0, (tonumber(ev.timeLeft) or 0) - 1)
+				ev.timeLeft = nextValue
+				if nextValue > 0 then
+					table.insert(stillActive, ev)
+				end
 			end
+			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)
 		end
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(0.2)
+		updateBoards()
 	end
 end)
 
