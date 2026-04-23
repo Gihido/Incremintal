@@ -3329,23 +3329,21 @@ updateBoards = function()
 	if passiveUi.hintGui then
 		passiveUi.hintGui.Enabled = fifthUnlockedVisual
 	end
-	if passiveUi.inventoryPanel then
-		local state = parsePassiveState()
-		passiveUi.lastState = state
-		local renderSignature = passiveStateJson.Value .. "|" .. tostring(passiveUi.selectedUid or "") .. "|" .. tostring(fifthUnlockedVisual) .. "|" .. tostring(math.floor(paperValue.Value + 0.5))
-		if passiveUi.lastRenderSignature == renderSignature then
-			goto passive_inventory_done
-		end
-		passiveUi.lastRenderSignature = renderSignature
-		local equippedName = "none"
-		for _, child in ipairs(passiveUi.slotsList:GetChildren()) do
-			if child:IsA("TextButton") then
-				child:Destroy()
-			end
-		end
-		for _, entry in ipairs(state.inventory) do
-			local def = PASSIVE_DEFS[entry.passiveId]
-			if def then
+		if passiveUi.inventoryPanel then
+			local state = parsePassiveState()
+			passiveUi.lastState = state
+			local renderSignature = passiveStateJson.Value .. "|" .. tostring(passiveUi.selectedUid or "") .. "|" .. tostring(fifthUnlockedVisual) .. "|" .. tostring(math.floor(paperValue.Value + 0.5))
+			if passiveUi.lastRenderSignature ~= renderSignature then
+				passiveUi.lastRenderSignature = renderSignature
+				local equippedName = "none"
+				for _, child in ipairs(passiveUi.slotsList:GetChildren()) do
+					if child:IsA("TextButton") then
+						child:Destroy()
+					end
+				end
+				for _, entry in ipairs(state.inventory) do
+				local def = PASSIVE_DEFS[entry.passiveId]
+				if def then
 					local b = Instance.new("TextButton")
 					local isEquipped = entry.uid == state.equippedUid
 					local isSelected = entry.uid == passiveUi.selectedUid
@@ -3451,29 +3449,29 @@ updateBoards = function()
 					equippedName = def.name
 				end
 			end
-		end
-		local selectedStillExists = false
-		for _, entry in ipairs(state.inventory) do
-			if entry.uid == passiveUi.selectedUid then
-				selectedStillExists = true
-				break
+				end
+				local selectedStillExists = false
+				for _, entry in ipairs(state.inventory) do
+					if entry.uid == passiveUi.selectedUid then
+						selectedStillExists = true
+						break
+					end
+				end
+				if not selectedStillExists then
+					passiveUi.selectedUid = ""
+					passiveUi.manageTitle.Text = "Выбери пассив"
+					passiveUi.manageInfo.Text = "Нажми слева на пассив"
+				end
+				passiveUi.emptyState.Visible = #state.inventory == 0
+				passiveUi.equippedText.Text = "Экипировано: " .. equippedName .. " | Слоты: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
+			end
+			if passiveUi.rollButton then
+				setButtonVisual(passiveUi.rollButton, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
+			end
+			if passiveUi.rollButtonInventory then
+				setButtonVisual(passiveUi.rollButtonInventory, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
 			end
 		end
-		if not selectedStillExists then
-			passiveUi.selectedUid = ""
-			passiveUi.manageTitle.Text = "Выбери пассив"
-			passiveUi.manageInfo.Text = "Нажми слева на пассив"
-		end
-		passiveUi.emptyState.Visible = #state.inventory == 0
-		passiveUi.equippedText.Text = "Экипировано: " .. equippedName .. " | Слоты: " .. tostring(#state.inventory) .. "/" .. tostring(PASSIVE_INVENTORY_CAPACITY)
-		if passiveUi.rollButton then
-			setButtonVisual(passiveUi.rollButton, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
-		end
-		if passiveUi.rollButtonInventory then
-			setButtonVisual(passiveUi.rollButtonInventory, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
-		end
-	end
-	::passive_inventory_done::
 
 	if next(runeIndexBoardRows) ~= nil then
 		local rs = parseRuneState()
@@ -4147,6 +4145,11 @@ end
 				if nextValue > 0 then
 					table.insert(stillActive, ev)
 				end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)
