@@ -1895,12 +1895,13 @@ local function createPassiveUi()
 			local b = Instance.new("TextButton")
 			b.Text = ""
 			b.Size = UDim2.new(0, 122, 0, 116)
-			b.BackgroundColor3 = Color3.fromRGB(16, 18, 24)
+				b.BackgroundColor3 = Color3.fromRGB(16, 18, 24)
+				b.BackgroundTransparency = 1
 			b.BorderSizePixel = 0
 			b.Parent = indexList
 			createCorner(b, 12)
 			local g1, g2, g3 = getPassiveStyle(passiveId, passiveDef.rarity)
-			createGradient(b, g1, g3, 35)
+				-- no default tint fill; card uses explicit image background when provided
 			local outline = createStroke(b, Color3.fromRGB(255, 255, 255), 2.2, 0.02)
 			decorateCardCorners(b)
 			createStroke(b, g2, 1.2, 0.2)
@@ -1908,7 +1909,7 @@ local function createPassiveUi()
 			customBg.Size = UDim2.new(1, 0, 1, 0)
 			customBg.BackgroundTransparency = 1
 			customBg.Image = getAssetOrEmpty(AssetSlots.PassiveIndexBackgrounds[passiveId])
-			customBg.ImageTransparency = customBg.Image == "" and 1 or 0.25
+				customBg.ImageTransparency = customBg.Image == "" and 1 or 0
 			customBg.ScaleType = Enum.ScaleType.Crop
 			customBg.Parent = b
 		if passiveDef.rarity == "Mythic" then
@@ -2757,15 +2758,20 @@ local function getClientEffectiveRuneStats()
 	local baseLuck = runeLuckLevel.Value + runeLuckXpLevel.Value
 	local baseSpeed = runeSpeedLevel.Value + runeSpeedXpLevel.Value
 	local baseBulk = runeBulkLevel.Value + runeBulkXpLevel.Value
+	local runeState = parseRuneState()
+	local runeCounts = runeState.counts or {}
+	local mythicCount = tonumber(runeCounts.Mythic) or 0
+	local mythicLuckSpeedMul = math.min(5, 1 + (mythicCount * 0.1))
+	local mythicBulkAdd = math.min(25, math.floor(mythicCount * 0.5 + 0.5))
 	local passive = getEquippedPassiveDef()
 	local passiveLuckMul = passive and (passive.runeLuckMultiplier or 1) or 1
 	local passiveSpeedMul = passive and (passive.runeSpeedMultiplier or 1) or 1
 	local passiveBulkMul = passive and (passive.runeBulkMultiplier or 1) or 1
 	local passiveGlobalMul = passive and (passive.globalMultiplier or 1) or 1
 	local passiveCommonSpeedMul = passive and (passive.speedMultiplier or 1) or 1
-	local luck = math.floor(baseLuck * passiveLuckMul * passiveGlobalMul + 0.5)
-	local speed = math.floor(baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul + 0.5)
-	local bulk = math.floor(baseBulk * passiveBulkMul * passiveGlobalMul + 0.5)
+	local luck = math.floor(baseLuck * passiveLuckMul * passiveGlobalMul * mythicLuckSpeedMul + 0.5)
+	local speed = math.floor(baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul * mythicLuckSpeedMul + 0.5)
+	local bulk = math.floor(baseBulk * passiveBulkMul * passiveGlobalMul + 0.5) + mythicBulkAdd
 	if isAdminEventActive("RuneLuckX2") then luck *= 2 end
 	if isAdminEventActive("RuneSpeedX2") then speed *= 2 end
 	if isAdminEventActive("RuneBulkX5") then bulk += 5 end
@@ -3326,6 +3332,11 @@ updateBoards = function()
 	if passiveUi.inventoryPanel then
 		local state = parsePassiveState()
 		passiveUi.lastState = state
+		local renderSignature = passiveStateJson.Value .. "|" .. tostring(passiveUi.selectedUid or "") .. "|" .. tostring(fifthUnlockedVisual) .. "|" .. tostring(math.floor(paperValue.Value + 0.5))
+		if passiveUi.lastRenderSignature == renderSignature then
+			goto passive_inventory_done
+		end
+		passiveUi.lastRenderSignature = renderSignature
 		local equippedName = "none"
 		for _, child in ipairs(passiveUi.slotsList:GetChildren()) do
 			if child:IsA("TextButton") then
@@ -3340,8 +3351,8 @@ updateBoards = function()
 					local isSelected = entry.uid == passiveUi.selectedUid
 				b.Size = UDim2.new(1, -8, 0, 112)
 				b.Text = ""
-					b.BackgroundColor3 = Color3.fromRGB(14, 16, 22)
-					b.BackgroundTransparency = isSelected and 0.05 or 0.15
+						b.BackgroundColor3 = Color3.fromRGB(14, 16, 22)
+						b.BackgroundTransparency = 1
 					b.BorderSizePixel = 0
 					b.Parent = passiveUi.slotsList
 					createCorner(b, 10)
@@ -3349,14 +3360,11 @@ updateBoards = function()
 					customBg.Size = UDim2.new(1, 0, 1, 0)
 					customBg.BackgroundTransparency = 1
 					customBg.Image = getAssetOrEmpty(AssetSlots.PassiveInventoryBackgrounds[entry.passiveId])
-					customBg.ImageTransparency = customBg.Image == "" and 1 or 0.28
+						customBg.ImageTransparency = customBg.Image == "" and 1 or 0
 					customBg.ScaleType = Enum.ScaleType.Crop
 					customBg.Parent = b
 					local c1, c2, c3 = getPassiveStyle(entry.passiveId, def.rarity)
-					local rarityGradient = Instance.new("UIGradient")
-					rarityGradient.Color = ColorSequence.new(c1, c3)
-					rarityGradient.Rotation = 35
-					rarityGradient.Parent = b
+						-- no forced default tint; visuals come from direct image background + border style
 					local edgeColor = isEquipped and Color3.fromRGB(206, 255, 192) or getRarityColor(def.rarity)
 					local edge = createStroke(b, Color3.fromRGB(255, 255, 255), isEquipped and 3 or 2.4, isSelected and 0.01 or 0.07)
 					createStroke(b, edgeColor, 1.2, 0.2)
@@ -3465,6 +3473,7 @@ updateBoards = function()
 			setButtonVisual(passiveUi.rollButtonInventory, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
 		end
 	end
+	::passive_inventory_done::
 
 	if next(runeIndexBoardRows) ~= nil then
 		local rs = parseRuneState()
@@ -4138,6 +4147,11 @@ end
 				if nextValue > 0 then
 					table.insert(stillActive, ev)
 				end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)
