@@ -404,6 +404,7 @@ local PASSIVE_DEFS = {
 	MythicPrism = {id = "MythicPrism", name = "Mythic Prism", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, weight = 0.7},
 	MythicRunelord = {id = "MythicRunelord", name = "Mythic Runelord", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, runeLuckMultiplier = 3, runeSpeedMultiplier = 3, runeBulkMultiplier = 2, weight = 0.5},
 	MythicChronicle = {id = "MythicChronicle", name = "Mythic Chronicle", rarity = "Mythic", coinMultiplier = 1.35, woodMultiplier = 1.35, globalMultiplier = 1.35, speedMultiplier = 1.1, xpMultiplier = 2, weight = 0.3},
+	SecretRunicOverlord = {id = "SecretRunicOverlord", name = "Secret Runic Overlord", rarity = "Mythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, runeLuckMultiplier = 50, runeSpeedMultiplier = 25, runeBulkMultiplier = 5, weight = 0.0001},
 }
 
 local LOCKED_PLAYER_GROUP = "LockedAreaPlayers"
@@ -478,41 +479,10 @@ local treeBaseCFrame = treeBlock.CFrame
 function getActiveAdminEventPayload(nowTime)
 	nowTime = nowTime or os.clock()
 	local payload = {}
-	for eventId, endAt in pairs(activeAdminEvents) do
-		if endAt > nowTime then
-			payload[eventId] = math.max(0, math.floor(endAt - nowTime))
-		end
-	end
-	return payload
-end
-
-function broadcastAdminEventState()
-	local payload = getActiveAdminEventPayload()
-	for _, player in ipairs(Players:GetPlayers()) do
-		notifyEvent:FireClient(player, {kind = "admin_event_state", events = payload})
-	end
-end
-
-function getServerRuneEventBoosts()
-	local now = os.clock()
-	local luckMul, speedMul, bulkAdd = 1, 1, 0
-	for eventKey, eventState in pairs(activeAdminEvents) do
-		local cfg = ACTIVE_SERVER_EVENTS[eventKey]
-		if cfg and now < (eventState.endsAt or 0) then
-			luckMul *= (cfg.runeLuckMul or 1)
-			speedMul *= (cfg.runeSpeedMul or 1)
-			bulkAdd += (cfg.runeBulkAdd or 0)
-		end
-	end
-	return luckMul, speedMul, bulkAdd
-end
-
-function getActiveAdminEventPayload(nowTime)
-	nowTime = nowTime or os.clock()
-	local payload = {}
-	for eventId, endAt in pairs(activeAdminEvents) do
-		if endAt > nowTime then
-			payload[eventId] = math.max(0, math.floor(endAt - nowTime))
+	for eventId, eventState in pairs(activeAdminEvents) do
+		local endsAt = tonumber(eventState and eventState.endsAt) or 0
+		if endsAt > nowTime then
+			payload[eventId] = math.max(0, math.floor(endsAt - nowTime))
 		end
 	end
 	return payload
@@ -2088,20 +2058,20 @@ local function isCharacterOnRuneBlock(player)
 		and math.abs(localPos.Y) <= (half.Y + tolerance.Y)
 end
 
-local function tryBuyRuneUpgrade(player, upgradeKey)
+local function tryBuyRuneUpgrade(player, upgradeKey, silent)
 	local cfg = RUNE_UPGRADES[upgradeKey]
 	local upgrades = getRuneUpgradeFolder(player)
 	if not cfg or not upgrades then return end
 	local rebirth = getRebirthFolder(player)
 	if not rebirth or not rebirth.SixthSystemsUnlocked.Value then
-		fireSimple(player, "Руны откроются на 6-м перерождении")
+		if not silent then fireSimple(player, "Руны откроются на 6-м перерождении") end
 		return
 	end
 	local levelObj = upgrades:FindFirstChild(cfg.levelName)
 	local costObj = upgrades:FindFirstChild(cfg.costName)
 	if not levelObj or not costObj then return end
 	if levelObj.Value >= cfg.maxLevel then
-		fireSimple(player, "Улучшение на максимуме")
+		if not silent then fireSimple(player, "Улучшение на максимуме") end
 		return
 	end
 	local currencyObj
@@ -2113,7 +2083,7 @@ local function tryBuyRuneUpgrade(player, upgradeKey)
 		currencyObj = getPaperCurrencyObject(player)
 	end
 	if not currencyObj or currencyObj.Value < costObj.Value then
-		fireSimple(player, "Недостаточно ресурса")
+		if not silent then fireSimple(player, "Недостаточно ресурса") end
 		return
 	end
 	if not spendCurrency(currencyObj, costObj.Value) then
@@ -2121,8 +2091,27 @@ local function tryBuyRuneUpgrade(player, upgradeKey)
 	end
 	levelObj.Value += 1
 	costObj.Value = math.floor(costObj.Value * 2 + 0.5)
-	fireSimple(player, "Улучшение рун куплено")
+	if not silent then fireSimple(player, "Улучшение рун куплено") end
 	markDirty(player)
+end
+
+local function tryBuyRuneUpgradeMax(player, upgradeKey)
+	local safety = 0
+	while safety < 200 do
+		safety += 1
+		local before = getRuneUpgradeFolder(player)
+		local cfg = RUNE_UPGRADES[upgradeKey]
+		local levelBefore = before and cfg and before:FindFirstChild(cfg.levelName) and before[cfg.levelName].Value or nil
+		tryBuyRuneUpgrade(player, upgradeKey, true)
+		local after = getRuneUpgradeFolder(player)
+		local levelAfter = after and cfg and after:FindFirstChild(cfg.levelName) and after[cfg.levelName].Value or nil
+		if levelBefore == nil or levelAfter == nil or levelAfter <= levelBefore then
+			break
+		end
+		if levelAfter >= cfg.maxLevel then
+			break
+		end
+	end
 end
 
 local function handleRuneAction(player, actionName)
@@ -2139,10 +2128,16 @@ local function handleRuneAction(player, actionName)
 		fireSimple(player, "Ролл рун теперь автоматический при стоянии на блоке")
 	elseif actionName == "UpgradeLuck" then
 		tryBuyRuneUpgrade(player, "Luck")
+	elseif actionName == "UpgradeLuckMax" then
+		tryBuyRuneUpgradeMax(player, "Luck")
 	elseif actionName == "UpgradeSpeed" then
 		tryBuyRuneUpgrade(player, "Speed")
+	elseif actionName == "UpgradeSpeedMax" then
+		tryBuyRuneUpgradeMax(player, "Speed")
 	elseif actionName == "UpgradeBulk" then
 		tryBuyRuneUpgrade(player, "Bulk")
+	elseif actionName == "UpgradeBulkMax" then
+		tryBuyRuneUpgradeMax(player, "Bulk")
 	end
 end
 
@@ -2695,30 +2690,48 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 	if player.Name ~= ADMIN_NAME then
 		return
 	end
+	local targetPlayer = player
+	if type(actionValue) == "table" and type(actionValue.targetName) == "string" then
+		local targetName = string.lower(actionValue.targetName)
+		if targetName ~= "" and targetName ~= "me" and targetName ~= "self" then
+			for _, candidate in ipairs(Players:GetPlayers()) do
+				local nameLower = string.lower(candidate.Name)
+				local displayLower = string.lower(candidate.DisplayName or "")
+				if nameLower == targetName or displayLower == targetName or string.sub(nameLower, 1, #targetName) == targetName then
+					targetPlayer = candidate
+					break
+				end
+			end
+			if not targetPlayer or targetPlayer == player and string.lower(player.Name) ~= targetName and string.lower(player.DisplayName or "") ~= targetName then
+				fireSimple(player, "Игрок не найден: " .. tostring(actionValue.targetName))
+				return
+			end
+		end
+	end
 
 	if actionName == "GiveCurrency" then
-		local amount = roundToTenth(actionValue)
+		local amount = roundToTenth(type(actionValue) == "table" and actionValue.amount or actionValue)
 		if amount <= 0 then
 			fireSimple(player, "Введи число больше нуля")
 			return
 		end
 
-		local currencyObject = getCurrencyObjectForName(player, currencyName)
+		local currencyObject = getCurrencyObjectForName(targetPlayer, currencyName)
 		if not currencyObject then
 			fireSimple(player, "Неизвестная валюта")
 			return
 		end
 
 		addCurrency(currencyObject, amount)
-		markDirty(player)
-		fireSimple(player, "Валюта выдана")
+		markDirty(targetPlayer)
+		fireSimple(player, "Валюта выдана: " .. targetPlayer.Name)
 	elseif actionName == "GivePassive" then
 		local passiveId = tostring(currencyName or "")
 		if not PASSIVE_DEFS[passiveId] then
 			fireSimple(player, "Пассив не найден")
 			return
 		end
-		local state = getPassiveState(player)
+		local state = getPassiveState(targetPlayer)
 		if #state.inventory >= PASSIVE_INVENTORY_CAPACITY then
 			fireSimple(player, "Инвентарь пассивов заполнен")
 			return
@@ -2727,18 +2740,18 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 			uid = HttpService:GenerateGUID(false),
 			passiveId = passiveId,
 		})
-		writePassiveStateValue(player)
-		markDirty(player)
-		firePassiveRoll(player, passiveId)
-		fireSimple(player, "Пассив добавлен: " .. passiveId)
+		writePassiveStateValue(targetPlayer)
+		markDirty(targetPlayer)
+		firePassiveRoll(targetPlayer, passiveId)
+		fireSimple(player, "Пассив добавлен: " .. passiveId .. " -> " .. targetPlayer.Name)
 	elseif actionName == "AdminRuneBoost" then
-		local runeUpgrades = getRuneUpgradeFolder(player)
+		local runeUpgrades = getRuneUpgradeFolder(targetPlayer)
 		if runeUpgrades then
 			runeUpgrades.RuneLuckLevel.Value = math.max(runeUpgrades.RuneLuckLevel.Value, 20)
 			runeUpgrades.RuneSpeedLevel.Value = math.max(runeUpgrades.RuneSpeedLevel.Value, 20)
 			runeUpgrades.RuneBulkLevel.Value = math.max(runeUpgrades.RuneBulkLevel.Value, 20)
-			markDirty(player)
-			fireSimple(player, "Rune boosts x20 применены")
+			markDirty(targetPlayer)
+			fireSimple(player, "Rune boosts x20 применены -> " .. targetPlayer.Name)
 		end
 	elseif actionName == "StartServerEvent" then
 		local eventId = tostring(currencyName or "")

@@ -321,6 +321,7 @@ local PASSIVE_DEFS = {
 	MythicPrism = {name = "Мифический призматик", rarity = "Mythic", currencyType = "Paper", desc = "x2 глобальная экономика без системных бонусов.", effect = "x2 Global (без rebirth/rune)", iconKey = "Rebirth", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 2, speedMultiplier = 1, chance = "0.7%"},
 	MythicRunelord = {name = "Повелитель рун", rarity = "Mythic", currencyType = "Runes", desc = "Сильный рунный трипл-буст.", effect = "x3 Luck/Speed, x2 Bulk", iconKey = "RuneLegendary", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, runeLuckMultiplier = 3, runeSpeedMultiplier = 3, runeBulkMultiplier = 2, chance = "0.5%"},
 	MythicChronicle = {name = "Хроника бесконечности", rarity = "Mythic", currencyType = "XP", desc = "Секретная синергия XP + ресурсов.", effect = "x2 XP, +35% ко всем ресурсам", iconKey = "XP", coinMultiplier = 1.35, woodMultiplier = 1.35, globalMultiplier = 1.35, speedMultiplier = 1.1, xpMultiplier = 2, chance = "0.3%"},
+	SecretRunicOverlord = {name = "Секретный Рунный Оверлорд", rarity = "Mythic", currencyType = "Runes", desc = "Ультра-редкий абсолютный рунный буст.", effect = "x50 Rune Luck, x25 Rune Speed, x5 Rune Bulk", iconKey = "RuneMythic", coinMultiplier = 1, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, runeLuckMultiplier = 50, runeSpeedMultiplier = 25, runeBulkMultiplier = 5, chance = "0.0001%"},
 }
 
 for passiveId, def in pairs(PASSIVE_DEFS) do
@@ -360,13 +361,19 @@ local function roundToTenth(value)
 end
 
 local function formatNumber(value)
-	value = roundToTenth(value)
-
-	if math.abs(value - math.floor(value)) < 0.001 then
-		return tostring(math.floor(value))
+	value = tonumber(value) or 0
+	local sign = value < 0 and "-" or ""
+	local absValue = math.abs(value)
+	local suffixes = {"", "K", "M", "B", "T", "Qd", "Qn", "Sx", "Sp"}
+	local idx = 1
+	while absValue >= 1000 and idx < #suffixes do
+		absValue /= 1000
+		idx += 1
 	end
-
-	return string.format("%.1f", value)
+	local digits = absValue >= 100 and 0 or (absValue >= 10 and 1 or 2)
+	local formatted = string.format("%." .. tostring(digits) .. "f", absValue)
+	formatted = formatted:gsub("%.?0+$", "")
+	return sign .. formatted .. suffixes[idx]
 end
 
 local function getAssetOrEmpty(assetId)
@@ -651,6 +658,17 @@ adminSectionPersonal.Parent = adminFrame
 adminSectionEvents = adminSectionCurrency:Clone()
 adminSectionEvents.Visible = false
 adminSectionEvents.Parent = adminFrame
+local adminTargetBox = Instance.new("TextBox")
+adminTargetBox.Position = UDim2.new(0, 0, 1, -28)
+adminTargetBox.Size = UDim2.new(1, 0, 0, 26)
+adminTargetBox.BackgroundColor3 = Color3.fromRGB(92, 85, 138)
+adminTargetBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+adminTargetBox.PlaceholderText = "Цель: ник игрока или me"
+adminTargetBox.Text = "me"
+adminTargetBox.Font = Enum.Font.Gotham
+adminTargetBox.TextSize = 13
+adminTargetBox.Parent = adminFrame
+createCorner(adminTargetBox, 8)
 
 local function setAdminSection(key)
 	adminSectionCurrency.Visible = key=="currency"
@@ -3148,7 +3166,7 @@ local function updateCard(card, levelValue, costValue, activeValue, maxLevel, cu
 		card.costLabel.Text = "Cost: MAX"
 		card.statusLabel.Text = "Status: MAX"
 	else
-		card.costLabel.Text = "Cost: " .. tostring(costValue)
+		card.costLabel.Text = "Cost: " .. formatNumber(costValue)
 		card.statusLabel.Text = activeValue and "Status: Active" or "Status: Inactive"
 	end
 
@@ -3270,7 +3288,7 @@ updateBoards = function()
 	if rebirthAtMax then
 		rebirthCostText.Text = "Cost: MAX"
 	else
-		rebirthCostText.Text = "Cost: " .. tostring(rebirthNextCost.Value) .. " " .. currencyLabel
+		rebirthCostText.Text = "Cost: " .. formatNumber(rebirthNextCost.Value) .. " " .. currencyLabel
 	end
 
 	setButtonVisual(rebirthButton, "REBIRTH!", rebirthCanBuy, rebirthAtMax, Color3.fromRGB(255, 218, 96), Color3.fromRGB(136, 148, 175), Color3.fromRGB(65, 46, 93))
@@ -3296,13 +3314,13 @@ updateBoards = function()
 
 	local goalFactor, goalsReached, nextTarget = computeGoalWoodFactor(coins.Value)
 	boostFactorText.Text = "x" .. formatNumber(goalFactor)
-	boostGoalsText.Text = tostring(goalsReached)
-	boostNextTargetText.Text = goalFactor >= 10 and "MAX" or tostring(nextTarget)
+	boostGoalsText.Text = formatNumber(goalsReached)
+	boostNextTargetText.Text = goalFactor >= 10 and "MAX" or formatNumber(nextTarget)
 	boostCoinText.Text = formatNumber(coins.Value)
 
 	paperText.Text = formatNumber(paperValue.Value)
-	fuelText.Text = tostring(fuelValue.Value)
-	countdownText.Text = tostring(factoryCountdown.Value) .. "s"
+	fuelText.Text = formatNumber(fuelValue.Value)
+	countdownText.Text = formatNumber(factoryCountdown.Value) .. "s"
 	factoryStatusText.Text = factoryRunning.Value and "Работает" or "Нет топлива"
 	paperProductionText.Text = "x" .. formatNumber(getPaperProductionAmount())
 	local cycleTime = getPaperCycleTime()
@@ -3491,7 +3509,7 @@ updateBoards = function()
 			local eff = math.min(math.floor((capMul / math.max(info.base, 0.0001)) + 0.5), count)
 			local total = eff * info.base
 			local chance = (RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].chance) or "?"
-			label.Text = string.format("%s | Кол-во: %d | Шанс: %s\nЗа 1: %s | Суммарно: +%.2fx %s (cap x%.1f)", tostring(runeId), count, chance, info.per, total, info.target, capMul)
+			label.Text = string.format("%s | Кол-во: %s | Шанс: %s\nЗа 1: %s | Суммарно: +%.2fx %s (cap x%.1f)", tostring(runeId), formatNumber(count), chance, info.per, total, info.target, capMul)
 		end
 	end
 
@@ -3509,12 +3527,12 @@ updateBoards = function()
 			return math.min(10, tonumber(v) or 0)
 		end
 		if runeUi.indexText then
-			runeUi.indexText.Text = "Обычная: " .. tostring(c.Common or 0) .. " (эф. " .. tostring(stacks(c.Common)) .. ")\n"
-				.. "Необычная: " .. tostring(c.Uncommon or 0) .. " (эф. " .. tostring(stacks(c.Uncommon)) .. ")\n"
-				.. "Редкая: " .. tostring(c.Rare or 0) .. " (эф. " .. tostring(stacks(c.Rare)) .. ")\n"
-				.. "Эпическая: " .. tostring(c.Epic or 0) .. " (эф. " .. tostring(stacks(c.Epic)) .. ")\n"
-				.. "Легендарная: " .. tostring(c.Legendary or 0) .. " (эф. " .. tostring(stacks(c.Legendary)) .. ")\n\n"
-				.. "Luck x" .. tostring(runeLuckLevel.Value) .. " | Speed x" .. tostring(runeSpeedLevel.Value) .. " | Bulk +" .. tostring(runeBulkLevel.Value)
+			runeUi.indexText.Text = "Обычная: " .. formatNumber(c.Common or 0) .. " (эф. " .. formatNumber(stacks(c.Common)) .. ")\n"
+				.. "Необычная: " .. formatNumber(c.Uncommon or 0) .. " (эф. " .. formatNumber(stacks(c.Uncommon)) .. ")\n"
+				.. "Редкая: " .. formatNumber(c.Rare or 0) .. " (эф. " .. formatNumber(stacks(c.Rare)) .. ")\n"
+				.. "Эпическая: " .. formatNumber(c.Epic or 0) .. " (эф. " .. formatNumber(stacks(c.Epic)) .. ")\n"
+				.. "Легендарная: " .. formatNumber(c.Legendary or 0) .. " (эф. " .. formatNumber(stacks(c.Legendary)) .. ")\n\n"
+				.. "Luck x" .. formatNumber(runeLuckLevel.Value) .. " | Speed x" .. formatNumber(runeSpeedLevel.Value) .. " | Bulk +" .. formatNumber(runeBulkLevel.Value)
 		end
 		if runeUi.openBtn then
 			setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ РУНЫ (50 дерева)", woodCurrency.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
@@ -3527,10 +3545,10 @@ updateBoards = function()
 		if runeStatsRows and runeStatsRows.luck then
 			local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
 			local speedSeconds = math.max(0.1, 10 / math.max(1, effSpeed))
-			runeStatsRows.luck.Text = "x" .. tostring(effLuck)
-			runeStatsRows.bulk.Text = "+" .. tostring(effBulk)
+			runeStatsRows.luck.Text = "x" .. formatNumber(effLuck)
+			runeStatsRows.bulk.Text = "+" .. formatNumber(effBulk)
 			runeStatsRows.speed.Text = string.format("1 rune / %.2fs", speedSeconds)
-			runeStatsRows.total.Text = "Luck x" .. tostring(effLuck) .. " | Speed x" .. tostring(effSpeed) .. " | Bulk +" .. tostring(effBulk)
+			runeStatsRows.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulk)
 		end
 	end
 
@@ -3559,8 +3577,8 @@ updateBoards = function()
 
 	if xpProgressUi then
 		local boostValue = 1 + xpBoostLevel.Value
-		xpProgressUi.valueText.Text = "x" .. tostring(boostValue)
-		xpProgressUi.costText.Text = xpBoostNextCost.Value <= 0 and "MAX" or tostring(math.floor(xpBoostNextCost.Value + 0.5))
+		xpProgressUi.valueText.Text = "x" .. formatNumber(boostValue)
+		xpProgressUi.costText.Text = xpBoostNextCost.Value <= 0 and "MAX" or formatNumber(math.floor(xpBoostNextCost.Value + 0.5))
 		local progress = xpBoostNextCost.Value > 0 and math.clamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
 		TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
 		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
@@ -3797,7 +3815,7 @@ if runeUpgradeCards then
 	end)
 	runeUpgradeCards.luck.maxButton.MouseButton1Click:Connect(function()
 		if not isButtonPurchasable(runeUpgradeCards.luck.maxButton) then return end
-		runeActionEvent:FireServer("UpgradeLuck")
+		runeActionEvent:FireServer("UpgradeLuckMax")
 	end)
 	runeUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
 		if not isButtonPurchasable(runeUpgradeCards.speed.buyButton) then return end
@@ -3805,7 +3823,7 @@ if runeUpgradeCards then
 	end)
 	runeUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
 		if not isButtonPurchasable(runeUpgradeCards.speed.maxButton) then return end
-		runeActionEvent:FireServer("UpgradeSpeed")
+		runeActionEvent:FireServer("UpgradeSpeedMax")
 	end)
 	runeUpgradeCards.bulk.buyButton.MouseButton1Click:Connect(function()
 		if not isButtonPurchasable(runeUpgradeCards.bulk.buyButton) then return end
@@ -3813,7 +3831,7 @@ if runeUpgradeCards then
 	end)
 	runeUpgradeCards.bulk.maxButton.MouseButton1Click:Connect(function()
 		if not isButtonPurchasable(runeUpgradeCards.bulk.maxButton) then return end
-		runeActionEvent:FireServer("UpgradeBulk")
+		runeActionEvent:FireServer("UpgradeBulkMax")
 	end)
 end
 
@@ -3926,8 +3944,9 @@ end
 
 giveCurrencyButton.MouseButton1Click:Connect(function()
 	local amount = tonumber(adminAmountBox.Text)
+	local targetName = tostring(adminTargetBox.Text or "me")
 	if amount then
-		adminActionEvent:FireServer("GiveCurrency", selectedAdminCurrency, amount)
+		adminActionEvent:FireServer("GiveCurrency", selectedAdminCurrency, {amount = amount, targetName = targetName})
 	else
 		showToast("Введи число")
 	end
@@ -3943,11 +3962,11 @@ givePassiveButton.MouseButton1Click:Connect(function()
 		showToast("Укажи passive id")
 		return
 	end
-	adminActionEvent:FireServer("GivePassive", passiveId, 0)
+	adminActionEvent:FireServer("GivePassive", passiveId, {targetName = tostring(adminTargetBox.Text or "me")})
 end)
 
 adminRuneBoostButton.MouseButton1Click:Connect(function()
-	adminActionEvent:FireServer("AdminRuneBoost", "", 0)
+	adminActionEvent:FireServer("AdminRuneBoost", "", {targetName = tostring(adminTargetBox.Text or "me")})
 end)
 
 startAllEventsButton.MouseButton1Click:Connect(function()
@@ -4145,6 +4164,11 @@ end
 				if nextValue > 0 then
 					table.insert(stillActive, ev)
 				end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)
