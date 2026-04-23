@@ -326,6 +326,7 @@ for passiveId, def in pairs(PASSIVE_DEFS) do
 end
 
 local selectedAdminCurrency = "Coins"
+local selectedAdminEvent = "StatsX2"
 local ROLL_ANIMATION_CONFIG = {
 	duration = 3,
 	totalCoins = 45,
@@ -1036,7 +1037,7 @@ local function createHorizontalScroller(parent, positionY, height)
 	scrolling.ScrollingDirection = Enum.ScrollingDirection.X
 	scrolling.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
 	scrolling.ScrollingEnabled = true
-	scrolling.AutomaticCanvasSize = Enum.AutomaticSize.None
+	scrolling.AutomaticCanvasSize = Enum.AutomaticSize.X
 	scrolling.HorizontalScrollBarInset = Enum.ScrollBarInset.Always
 	scrolling.VerticalScrollBarInset = Enum.ScrollBarInset.Always
 	scrolling.Parent = parent
@@ -1467,6 +1468,7 @@ end
 local paperUpgradeCards, paperUpgradeLockedOverlay = createPaperUpgradeUi()
 
 local runeUpgradeCards = nil
+local runeUpgradeLockedOverlay = nil
 if runeUpgradeDoska then
 	local _, runeUpgradeBoard = createWorldBoard("RuneUpgradeBoardSurfaceGui", runeUpgradeDoska, Enum.NormalId.Front, 78)
 	createHeader(runeUpgradeBoard, "RUNE UPGRADES", "Luck / Speed / Bulk")
@@ -1481,9 +1483,11 @@ if runeUpgradeDoska then
 		card1 = Color3.fromRGB(214, 163, 255), card2 = Color3.fromRGB(152, 103, 210), inner1 = Color3.fromRGB(235, 203, 255), inner2 = Color3.fromRGB(185, 138, 235), icon1 = Color3.fromRGB(255, 220, 255), icon2 = Color3.fromRGB(223, 173, 255),
 	})
 	runeUpgradeCards = {luck = runeLuckCard, speed = runeSpeedCard, bulk = runeBulkCard}
+	runeUpgradeLockedOverlay = createLockedOverlay(runeUpgradeBoard, "Откроется на 6-м перерождении")
 end
 
 local xpUpgradeCards = nil
+local xpUpgradeLockedOverlay = nil
 if xpUpgradeDoska then
 	local _, xpUpgradeBoard = createWorldBoard("XPUpgradeBoardSurfaceGui", xpUpgradeDoska, Enum.NormalId.Front, 78)
 	createHeader(xpUpgradeBoard, "XP UPGRADES", "Мультипликаторы и руны")
@@ -1497,9 +1501,11 @@ if xpUpgradeDoska then
 		runeBulk = createUpgradeCard(xpScroll, "Rune Bulk XP", "+1 bulk", "+1", AssetSlots.UpgradeIcons.RuneBulkXP, "R", {card1=Color3.fromRGB(168,220,255), card2=Color3.fromRGB(104,153,223), inner1=Color3.fromRGB(206,236,255), inner2=Color3.fromRGB(138,185,238), icon1=Color3.fromRGB(229,245,255), icon2=Color3.fromRGB(176,212,255)}),
 		runeSpeed = createUpgradeCard(xpScroll, "Rune Speed XP", "+1 speed", "+1", AssetSlots.UpgradeIcons.RuneSpeedXP, "R", {card1=Color3.fromRGB(255,171,206), card2=Color3.fromRGB(214,101,159), inner1=Color3.fromRGB(255,206,228), inner2=Color3.fromRGB(235,137,186), icon1=Color3.fromRGB(255,233,244), icon2=Color3.fromRGB(255,186,220)}),
 	}
+	xpUpgradeLockedOverlay = createLockedOverlay(xpUpgradeBoard, "Откроется на 2-м перерождении")
 end
 
 local xpProgressUi = nil
+local xpProgressLockedOverlay = nil
 if xpProgressDoska then
 	local _, xpProgressBoard = createWorldBoard("XPProgressBoardSurfaceGui", xpProgressDoska, Enum.NormalId.Front, 78)
 	createHeader(xpProgressBoard, "XP BOOST CORE", "Центральный прогресс XP")
@@ -1531,6 +1537,7 @@ if xpProgressDoska then
 	createCorner(buyBtn, 12)
 	addScaleHover(buyBtn)
 	xpProgressUi = {valueText = valueRow, costText = costRow, barFill = barFill, buyButton = buyBtn}
+	xpProgressLockedOverlay = createLockedOverlay(xpProgressBoard, "Откроется на 2-м перерождении")
 end
 
 local runeIndexBoardRows = {}
@@ -1834,6 +1841,21 @@ local function createPassiveUi()
 	closeInvBtn.Parent = ui.inventoryPanel
 	closeInvBtn.BorderSizePixel = 0
 	createCorner(closeInvBtn, 999)
+
+	local closeInventoryButton = Instance.new("TextButton")
+	closeInventoryButton.Size = UDim2.new(0, 36, 0, 36)
+	closeInventoryButton.Position = UDim2.new(1, -44, 0, 8)
+	closeInventoryButton.Text = "✕"
+	closeInventoryButton.BackgroundColor3 = Color3.fromRGB(255, 121, 121)
+	closeInventoryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeInventoryButton.Font = Enum.Font.GothamBlack
+	closeInventoryButton.TextScaled = true
+	closeInventoryButton.Parent = ui.inventoryPanel
+	createCorner(closeInventoryButton, 10)
+	addScaleHover(closeInventoryButton)
+	closeInventoryButton.MouseButton1Click:Connect(function()
+		ui.inventoryPanel.Visible = false
+	end)
 
 	ui.rollButtonInventory = Instance.new("TextButton")
 	ui.rollButtonInventory.Size = UDim2.new(0.5, -12, 0, 40)
@@ -2625,13 +2647,13 @@ local function showPickup(iconKey, amount)
 	local holder = Instance.new("Frame")
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
 	holder.Position = UDim2.new(0.5 + math.random(-12, 12) / 100, 0, 0.72, 0)
-	holder.Size = UDim2.new(0, 170, 0, 64)
+	holder.Size = UDim2.new(0, 146, 0, 52)
 	holder.BackgroundTransparency = 1
 	holder.Parent = pickupLayer
 
 	local icon = Instance.new("ImageLabel")
-	icon.Size = UDim2.new(0, 48, 0, 48)
-	icon.Position = UDim2.new(0, 0, 0.5, -24)
+	icon.Size = UDim2.new(0, 38, 0, 38)
+	icon.Position = UDim2.new(0, 0, 0.5, -19)
 	icon.BackgroundTransparency = 1
 	icon.ScaleType = Enum.ScaleType.Fit
 	local notifyIcon = AssetSlots.NotificationIcons[iconKey] or AssetSlots.NotificationIcons.Coin
@@ -2640,8 +2662,8 @@ local function showPickup(iconKey, amount)
 
 	local text = Instance.new("TextLabel")
 	text.BackgroundTransparency = 1
-	text.Position = UDim2.new(0, 56, 0, 7)
-	text.Size = UDim2.new(0, 114, 0, 50)
+	text.Position = UDim2.new(0, 44, 0, 4)
+	text.Size = UDim2.new(0, 100, 0, 44)
 	text.Text = "+" .. formatNumber(amount)
 	text.TextColor3 = iconKey == "Tree" and Color3.fromRGB(207, 255, 183) or iconKey == "Paper" and Color3.fromRGB(230, 235, 255) or Color3.fromRGB(255, 239, 126)
 	text.Font = Enum.Font.GothamBlack
@@ -2657,6 +2679,46 @@ local function showPickup(iconKey, amount)
 	task.delay(1, function()
 		holder:Destroy()
 	end)
+end
+
+local function renderAdminEvents(events)
+	for _, ch in ipairs(adminEventsHud:GetChildren()) do
+		if ch:IsA("Frame") then
+			ch:Destroy()
+		end
+	end
+	for _, ev in ipairs(events or {}) do
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, 0, 0, 30)
+		row.BackgroundColor3 = Color3.fromRGB(43, 58, 92)
+		row.BackgroundTransparency = 0.1
+		row.BorderSizePixel = 0
+		row.Parent = adminEventsHud
+		createCorner(row, 10)
+		local icon = Instance.new("ImageLabel")
+		icon.Size = UDim2.new(0, 22, 0, 22)
+		icon.Position = UDim2.new(0, 4, 0, 4)
+		icon.BackgroundTransparency = 1
+		icon.Image = getAssetOrEmpty(AssetSlots.AdminEventIcons[ev.key] or "")
+		icon.Parent = row
+		local txt = Instance.new("TextLabel")
+		txt.Size = UDim2.new(1, -34, 1, 0)
+		txt.Position = UDim2.new(0, 30, 0, 0)
+		txt.BackgroundTransparency = 1
+		txt.TextXAlignment = Enum.TextXAlignment.Left
+		txt.Text = tostring(ev.key) .. "  (" .. tostring(ev.timeLeft or 0) .. "s)"
+		txt.TextColor3 = Color3.fromRGB(237, 244, 255)
+		txt.Font = Enum.Font.GothamBold
+		txt.TextScaled = true
+		txt.Parent = row
+		row:SetAttribute("Tooltip", ev.tooltip or "")
+		row.MouseEnter:Connect(function()
+			local tip = row:GetAttribute("Tooltip")
+			if tip and tip ~= "" then
+				showToast(tip)
+			end
+		end)
+	end
 end
 
 local function setButtonVisual(button, text, canBuy, atMax, activeColor, disabledColor, textColor, locked)
@@ -3084,6 +3146,15 @@ local function updateBoards()
 						mythicGradient.Parent = edge
 					end
 					addScaleHover(b)
+					local spark = Instance.new("TextLabel")
+					spark.BackgroundTransparency = 1
+					spark.Size = UDim2.new(0, 28, 0, 18)
+					spark.Position = UDim2.new(1, -30, 0, 4)
+					spark.Text = def.rarity == "Mythic" and "✦✦" or (def.rarity == "Legendary" and "✦" or "")
+					spark.TextColor3 = getRarityColor(def.rarity)
+					spark.TextScaled = true
+					spark.Font = Enum.Font.GothamBlack
+					spark.Parent = b
 					local icon = Instance.new("ImageLabel")
 					icon.Size = UDim2.new(0, 72, 0, 72)
 					icon.Position = UDim2.new(0, 8, 0, 8)
@@ -3223,6 +3294,9 @@ local function updateBoards()
 		updateCard(xpUpgradeCards.runeLuck, runeLuckXpLevel.Value, math.floor(runeLuckXpCost.Value + 0.5), true, 3, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
 		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
 		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
+		if xpUpgradeLockedOverlay then
+			xpUpgradeLockedOverlay.Visible = not xpUnlocked
+		end
 	end
 
 	if xpProgressUi then
@@ -3262,6 +3336,17 @@ for _, p in ipairs(passiveEffectParts) do
 		l.Brightness = 2.6
 		l.Color = Color3.fromRGB(181, 219, 255)
 		l.Parent = p
+	end
+	if not p:FindFirstChild("PassiveFxHighlight") then
+		local h = Instance.new("Highlight")
+		h.Name = "PassiveFxHighlight"
+		h.Adornee = p
+		h.FillColor = p == runeRollBlock and Color3.fromRGB(122, 255, 220) or Color3.fromRGB(168, 199, 255)
+		h.OutlineColor = p == runeRollBlock and Color3.fromRGB(224, 255, 244) or Color3.fromRGB(245, 249, 255)
+		h.FillTransparency = 0.7
+		h.OutlineTransparency = 0.02
+		h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		h.Parent = p
 	end
 	if not p:FindFirstChild("PassiveFxParticles") then
 		local emitter = Instance.new("ParticleEmitter")
