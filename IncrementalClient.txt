@@ -3790,11 +3790,11 @@ local function triggerRuneBurst()
 	end)
 end
 
-local function isButtonPurchasable(button)
+function isButtonPurchasable(button)
 	return button and button.Active and button.Selectable and button.Text ~= "LOCKED" and button.Text ~= "MAX"
 end
 
-local function bindUpgradeCard(card, family, key)
+function bindUpgradeCard(card, family, key)
 	if not card then return end
 	card.buyButton.MouseButton1Click:Connect(function()
 		if not isButtonPurchasable(card.buyButton) then return end
@@ -3806,7 +3806,7 @@ local function bindUpgradeCard(card, family, key)
 	end)
 end
 
-local function bindRuneUpgradeCard(card, buyAction, maxAction)
+function bindRuneUpgradeCard(card, buyAction, maxAction)
 	if not card then return end
 	card.buyButton.MouseButton1Click:Connect(function()
 		if not isButtonPurchasable(card.buyButton) then return end
@@ -3818,7 +3818,7 @@ local function bindRuneUpgradeCard(card, buyAction, maxAction)
 	end)
 end
 
-local function bindAdminCurrencySelectors()
+function bindAdminCurrencySelectors()
 	selectCoinsButton.MouseButton1Click:Connect(function()
 		selectedAdminCurrency = "Coins"
 		refreshAdminCurrencyButtons()
@@ -3837,7 +3837,7 @@ local function bindAdminCurrencySelectors()
 	end)
 end
 
-local function bindUpgradeBoards()
+function bindUpgradeBoards()
 	local upgrades = {
 		{coinGainCard, "Coin", "CoinValue"},
 		{coinMultiCard, "Coin", "Multiplier"},
@@ -3888,7 +3888,7 @@ local function bindUpgradeBoards()
 	end
 end
 
-local function bindPassiveAndRuneButtons()
+function bindPassiveAndRuneButtons()
 	rebirthButton.MouseButton1Click:Connect(function() purchaseRebirthEvent:FireServer() end)
 	addFuelButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelOnce") end)
 	addFuelMaxButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelMax") end)
@@ -3945,7 +3945,7 @@ local function bindPassiveAndRuneButtons()
 	if runeUi.bulkBtn then runeUi.bulkBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeBulk") end) end
 end
 
-local function bindAdminPanelActions()
+function bindAdminPanelActions()
 	giveCurrencyButton.MouseButton1Click:Connect(function()
 		local amount = tonumber(adminAmountBox.Text)
 		local targetName = tostring(adminTargetBox.Text or "me")
@@ -3992,7 +3992,7 @@ local function bindAdminPanelActions()
 	end)
 end
 
-local function registerNotifyEventListeners()
+function registerNotifyEventListeners()
 	notifyEvent.OnClientEvent:Connect(function(payload)
 		if typeof(payload) ~= "table" then
 			showToast(tostring(payload))
@@ -4037,7 +4037,7 @@ local function registerNotifyEventListeners()
 	end)
 end
 
-local function registerWorldInputBindings()
+function registerWorldInputBindings()
 	mouse.Button1Down:Connect(function()
 		if UserInputService:GetFocusedTextBox() then return end
 
@@ -4084,7 +4084,7 @@ local function registerWorldInputBindings()
 	end)
 end
 
-local function registerWatchedValueUpdates()
+function registerWatchedValueUpdates()
 	local watchedValues = {
 		coins,
 		coinValueLevel, coinMultiplierLevel, coinSpawnLevel, coinWoodBoostLevel,
@@ -4111,7 +4111,7 @@ local function registerWatchedValueUpdates()
 	end
 end
 
-local function startRuntimeUiUpdates()
+function startRuntimeUiUpdates()
 	if passiveUi.hintEmoji then
 		RunService.RenderStepped:Connect(function()
 			local t = os.clock()
@@ -4177,7 +4177,7 @@ local function startRuntimeUiUpdates()
 	end
 end
 
-local function initializeClientBindingsAndRuntime()
+function initializeClientBindingsAndRuntime()
 	bindAdminCurrencySelectors()
 	bindUpgradeBoards()
 	bindPassiveAndRuneButtons()
