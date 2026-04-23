@@ -4151,6 +4151,18 @@ end
 			if updateBoards then
 				updateBoards()
 			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
 		end
 	end
 end)
