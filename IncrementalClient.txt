@@ -2696,6 +2696,32 @@ local function getWoodCooldown()
 	return roundToTenth(value / math.max(1, passiveSpeed))
 end
 
+local function isAdminEventActive(eventKey)
+	for _, ev in ipairs(activeAdminEvents or {}) do
+		if ev.key == eventKey and (tonumber(ev.timeLeft) or 0) > 0 then
+			return true
+		end
+	end
+	return false
+end
+
+local function getClientEffectiveRuneStats()
+	local baseLuck = runeLuckLevel.Value + runeLuckXpLevel.Value
+	local baseSpeed = runeSpeedLevel.Value + runeSpeedXpLevel.Value
+	local baseBulk = runeBulkLevel.Value + runeBulkXpLevel.Value
+	local passive = getEquippedPassiveDef()
+	local passiveLuckMul = passive and (passive.runeLuckMultiplier or 1) or 1
+	local passiveSpeedMul = passive and (passive.runeSpeedMultiplier or 1) or 1
+	local passiveBulkMul = passive and (passive.runeBulkMultiplier or 1) or 1
+	local luck = math.floor(baseLuck * passiveLuckMul + 0.5)
+	local speed = math.floor(baseSpeed * passiveSpeedMul + 0.5)
+	local bulk = math.floor(baseBulk * passiveBulkMul + 0.5)
+	if isAdminEventActive("RuneLuckX2") then luck *= 2 end
+	if isAdminEventActive("RuneSpeedX2") then speed *= 2 end
+	if isAdminEventActive("RuneBulkX5") then bulk += 5 end
+	return luck, speed, bulk
+end
+
 local function showToast(text)
 	local toast = Instance.new("Frame")
 	toast.AnchorPoint = Vector2.new(0.5, 0)
@@ -3430,11 +3456,12 @@ local function updateBoards()
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
 		if runeStatsRows and runeStatsRows.luck then
-			local speedSeconds = math.max(0.1, 10 / math.max(1, runeSpeedLevel.Value))
-			runeStatsRows.luck.Text = "x" .. tostring(runeLuckLevel.Value)
-			runeStatsRows.bulk.Text = "+" .. tostring(runeBulkLevel.Value)
+			local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+			local speedSeconds = math.max(0.1, 10 / math.max(1, effSpeed))
+			runeStatsRows.luck.Text = "x" .. tostring(effLuck)
+			runeStatsRows.bulk.Text = "+" .. tostring(effBulk)
 			runeStatsRows.speed.Text = string.format("1 rune / %.2fs", speedSeconds)
-			runeStatsRows.total.Text = "Luck x" .. tostring(runeLuckLevel.Value) .. " | Bulk +" .. tostring(runeBulkLevel.Value)
+			runeStatsRows.total.Text = "Luck x" .. tostring(effLuck) .. " | Speed x" .. tostring(effSpeed) .. " | Bulk +" .. tostring(effBulk)
 		end
 	end
 
@@ -3442,6 +3469,9 @@ local function updateBoards()
 		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
 		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
 		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
+		if runeUpgradeLockedOverlay then
+			runeUpgradeLockedOverlay.Visible = not sixthUnlockedVisual
+		end
 	end
 
 	if xpUpgradeCards then
