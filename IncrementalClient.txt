@@ -591,13 +591,13 @@ adminTitle.Font = Enum.Font.GothamBlack
 adminTitle.TextSize = 20
 adminTitle.Parent = adminFrame
 
-local adminTabs = Instance.new("Frame")
+adminTabs = Instance.new("Frame")
 adminTabs.Position = UDim2.new(0,0,0,28)
 adminTabs.Size = UDim2.new(1,0,0,32)
 adminTabs.BackgroundTransparency = 1
 adminTabs.Parent = adminFrame
 
-local tabCurrency = Instance.new("TextButton")
+tabCurrency = Instance.new("TextButton")
 tabCurrency.Size = UDim2.new(0.32,0,1,0)
 tabCurrency.Text = "Валюта"
 tabCurrency.Font = Enum.Font.GothamBold
@@ -606,24 +606,24 @@ tabCurrency.BackgroundColor3 = Color3.fromRGB(120,132,182)
 tabCurrency.TextColor3 = Color3.fromRGB(255,255,255)
 tabCurrency.Parent = adminTabs
 createCorner(tabCurrency,10)
-local tabPersonal = tabCurrency:Clone()
+tabPersonal = tabCurrency:Clone()
 tabPersonal.Position = UDim2.new(0.34,0,0,0)
 tabPersonal.Text = "Личные"
 tabPersonal.Parent = adminTabs
-local tabEvents = tabCurrency:Clone()
+tabEvents = tabCurrency:Clone()
 tabEvents.Position = UDim2.new(0.68,0,0,0)
 tabEvents.Text = "События"
 tabEvents.Parent = adminTabs
 
-local adminSectionCurrency = Instance.new("Frame")
+adminSectionCurrency = Instance.new("Frame")
 adminSectionCurrency.BackgroundTransparency = 1
 adminSectionCurrency.Position = UDim2.new(0,0,0,64)
 adminSectionCurrency.Size = UDim2.new(1,0,1,-64)
 adminSectionCurrency.Parent = adminFrame
-local adminSectionPersonal = adminSectionCurrency:Clone()
+adminSectionPersonal = adminSectionCurrency:Clone()
 adminSectionPersonal.Visible = false
 adminSectionPersonal.Parent = adminFrame
-local adminSectionEvents = adminSectionCurrency:Clone()
+adminSectionEvents = adminSectionCurrency:Clone()
 adminSectionEvents.Visible = false
 adminSectionEvents.Parent = adminFrame
 
@@ -781,22 +781,22 @@ startAllEventsButton.BorderSizePixel = 0
 createCorner(startAllEventsButton, 10)
 
 
-local duration5Button = Instance.new("TextButton")
+duration5Button = Instance.new("TextButton")
 duration5Button.Position = UDim2.new(0,0,0,42)
 duration5Button.Size = UDim2.new(0.32,0,0,24)
 duration5Button.Text = "5m"
 duration5Button.Parent = adminSectionEvents
 createCorner(duration5Button,8)
-local duration15Button = duration5Button:Clone()
+duration15Button = duration5Button:Clone()
 duration15Button.Position = UDim2.new(0.34,0,0,42)
 duration15Button.Text = "15m"
 duration15Button.Parent = adminSectionEvents
-local duration60Button = duration5Button:Clone()
+duration60Button = duration5Button:Clone()
 duration60Button.Position = UDim2.new(0.68,0,0,42)
 duration60Button.Text = "1h"
 duration60Button.Parent = adminSectionEvents
 
-local eventButtons = {}
+eventButtons = {}
 local function mkEventBtn(id,text,y)
 	local b = Instance.new("TextButton")
 	b.Position = UDim2.new(0,0,0,y)
@@ -1669,7 +1669,7 @@ if runeIndexBlock then
 end
 
 
-local runeStatsRows = {}
+runeStatsRows = {}
 if runeStatsIndexBlock then
 	local _, runeStatsBoard = createWorldBoard("RuneStatsIndexBoardSurfaceGui", runeStatsIndexBlock, Enum.NormalId.Front, 72)
 	createHeader(runeStatsBoard, "RUNE STATS", "Luck / Bulk / Speed")
