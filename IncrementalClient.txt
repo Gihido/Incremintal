@@ -603,6 +603,25 @@ adminEventTooltip.ZIndex = 120
 adminEventTooltip.Parent = screenGui
 createCorner(adminEventTooltip, 10)
 
+local unlockDebugLabel = Instance.new("TextLabel")
+unlockDebugLabel.Name = "UnlockDebugLabel"
+unlockDebugLabel.AnchorPoint = Vector2.new(0, 1)
+unlockDebugLabel.Position = UDim2.new(0, 12, 1, -126)
+unlockDebugLabel.Size = UDim2.new(0, 420, 0, 112)
+unlockDebugLabel.BackgroundColor3 = Color3.fromRGB(20, 28, 44)
+unlockDebugLabel.BackgroundTransparency = 0.15
+unlockDebugLabel.TextColor3 = Color3.fromRGB(199, 232, 255)
+unlockDebugLabel.TextXAlignment = Enum.TextXAlignment.Left
+unlockDebugLabel.TextYAlignment = Enum.TextYAlignment.Top
+unlockDebugLabel.TextWrapped = true
+unlockDebugLabel.Font = Enum.Font.Code
+unlockDebugLabel.TextSize = 13
+unlockDebugLabel.Text = "unlock debug..."
+unlockDebugLabel.BorderSizePixel = 0
+unlockDebugLabel.Parent = screenGui
+createCorner(unlockDebugLabel, 10)
+createStroke(unlockDebugLabel, Color3.fromRGB(128, 168, 255), 1, 0.45)
+
 local adminFrame = Instance.new("Frame")
 adminFrame.AnchorPoint = Vector2.new(1, 0)
 adminFrame.Position = UDim2.new(1, -18, 0, 18)
@@ -3260,6 +3279,16 @@ updateBoards = function()
 	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
 	local fifthUnlockedVisual = fifthSystemsUnlocked.Value or rebirthCount.Value >= 5
 	local sixthUnlockedVisual = sixthSystemsUnlocked.Value or rebirthCount.Value >= 6
+	local function updateUnlockDebug()
+		local lines = {
+			string.format("Rebirth=%d | S2=%s S3=%s S4=%s S5=%s S6=%s", rebirthCount.Value, tostring(secondUnlockedVisual), tostring(thirdUnlockedVisual), tostring(fourthUnlockedVisual), tostring(fifthUnlockedVisual), tostring(sixthUnlockedVisual)),
+			string.format("CoinWoodBoost lock=%s | TreeCoinBoost lock=%s", tostring(not thirdUnlockedVisual), tostring(not thirdUnlockedVisual)),
+			string.format("PaperBoard lock=%s | XP lock=%s | Rune lock=%s", tostring(not fourthUnlockedVisual), tostring(not secondUnlockedVisual), tostring(not sixthUnlockedVisual)),
+			string.format("Rune events: Luck=%s Speed=%s Bulk=%s", tostring(isAdminEventActive("RuneLuckX2")), tostring(isAdminEventActive("RuneSpeedX2")), tostring(isAdminEventActive("RuneBulkX5"))),
+			string.format("Bools raw: [%s,%s,%s,%s,%s]", tostring(secondAreaUnlocked.Value), tostring(thirdUpgradeUnlocked.Value), tostring(fourthSystemsUnlocked.Value), tostring(fifthSystemsUnlocked.Value), tostring(sixthSystemsUnlocked.Value)),
+		}
+		unlockDebugLabel.Text = table.concat(lines, "\n")
+	end
 
 	coinValueLabel.Text = formatNumber(coins.Value)
 	coinRewardLabel.Text = formatNumber(getCoinReward())
@@ -3643,6 +3672,7 @@ updateBoards = function()
 
 	updateWallVisual()
 	refreshAdminCurrencyButtons()
+	updateUnlockDebug()
 end
 
 local passiveEffectParts = {}
@@ -4102,6 +4132,28 @@ if passiveUi.hintEmoji then
 			end
 		end
 	end)
+end
+
+local function tickActiveAdminEvents()
+	if #activeAdminEvents <= 0 then
+		return
+	end
+	local stillActive = {}
+	local idx = 1
+	while idx <= #activeAdminEvents do
+		local ev = activeAdminEvents[idx]
+		local nextValue = math.max(0, (tonumber(ev.timeLeft) or 0) - 1)
+		ev.timeLeft = nextValue
+		if nextValue > 0 then
+			stillActive[#stillActive + 1] = ev
+		end
+		idx += 1
+	end
+	activeAdminEvents = stillActive
+	renderAdminEvents(activeAdminEvents)
+	if updateBoards then
+		updateBoards()
+	end
 end
 
 task.spawn(function()
