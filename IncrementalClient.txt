@@ -563,6 +563,25 @@ adminEventTooltip.ZIndex = 120
 adminEventTooltip.Parent = screenGui
 createCorner(adminEventTooltip, 10)
 
+local unlockDebugLabel = Instance.new("TextLabel")
+unlockDebugLabel.Name = "UnlockDebugLabel"
+unlockDebugLabel.AnchorPoint = Vector2.new(0, 1)
+unlockDebugLabel.Position = UDim2.new(0, 12, 1, -126)
+unlockDebugLabel.Size = UDim2.new(0, 420, 0, 112)
+unlockDebugLabel.BackgroundColor3 = Color3.fromRGB(20, 28, 44)
+unlockDebugLabel.BackgroundTransparency = 0.15
+unlockDebugLabel.TextColor3 = Color3.fromRGB(199, 232, 255)
+unlockDebugLabel.TextXAlignment = Enum.TextXAlignment.Left
+unlockDebugLabel.TextYAlignment = Enum.TextYAlignment.Top
+unlockDebugLabel.TextWrapped = true
+unlockDebugLabel.Font = Enum.Font.Code
+unlockDebugLabel.TextSize = 13
+unlockDebugLabel.Text = "unlock debug..."
+unlockDebugLabel.BorderSizePixel = 0
+unlockDebugLabel.Parent = screenGui
+createCorner(unlockDebugLabel, 10)
+createStroke(unlockDebugLabel, Color3.fromRGB(128, 168, 255), 1, 0.45)
+
 local adminFrame = Instance.new("Frame")
 adminFrame.AnchorPoint = Vector2.new(1, 0)
 adminFrame.Position = UDim2.new(1, -18, 0, 18)
@@ -3087,6 +3106,15 @@ local function updateBoards()
 	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
 	local fifthUnlockedVisual = fifthSystemsUnlocked.Value or rebirthCount.Value >= 5
 	local sixthUnlockedVisual = sixthSystemsUnlocked.Value or rebirthCount.Value >= 6
+	local function updateUnlockDebug()
+		local lines = {
+			string.format("Rebirth=%d | S2=%s S3=%s S4=%s S5=%s S6=%s", rebirthCount.Value, tostring(secondUnlockedVisual), tostring(thirdUnlockedVisual), tostring(fourthUnlockedVisual), tostring(fifthUnlockedVisual), tostring(sixthUnlockedVisual)),
+			string.format("CoinWoodBoost lock=%s | TreeCoinBoost lock=%s", tostring(not thirdUnlockedVisual), tostring(not thirdUnlockedVisual)),
+			string.format("PaperBoard lock=%s | XP lock=%s | Rune lock=%s", tostring(not fourthUnlockedVisual), tostring(not secondUnlockedVisual), tostring(not sixthUnlockedVisual)),
+			string.format("Bools raw: [%s,%s,%s,%s,%s]", tostring(secondAreaUnlocked.Value), tostring(thirdUpgradeUnlocked.Value), tostring(fourthSystemsUnlocked.Value), tostring(fifthSystemsUnlocked.Value), tostring(sixthSystemsUnlocked.Value)),
+		}
+		unlockDebugLabel.Text = table.concat(lines, "\n")
+	end
 
 	coinValueLabel.Text = formatNumber(coins.Value)
 	coinRewardLabel.Text = formatNumber(getCoinReward())
@@ -3222,13 +3250,29 @@ local function updateBoards()
 				local isSelected = entry.uid == passiveUi.selectedUid
 				b.Size = UDim2.new(1, -8, 0, 112)
 				b.Text = ""
-				b.BackgroundColor3 = Color3.fromRGB(14, 16, 22)
-				b.BackgroundTransparency = isSelected and 0.05 or 0.15
-				b.BorderSizePixel = 0
-				b.Parent = passiveUi.slotsList
-				createCorner(b, 10)
-				local edgeColor = isEquipped and Color3.fromRGB(206, 255, 192) or getRarityColor(def.rarity)
-				local edge = createStroke(b, edgeColor, isEquipped and 3 or 2, isSelected and 0.05 or 0.2)
+					b.BackgroundColor3 = Color3.fromRGB(14, 16, 22)
+					b.BackgroundTransparency = isSelected and 0.05 or 0.15
+					b.BorderSizePixel = 0
+					b.Parent = passiveUi.slotsList
+					createCorner(b, 10)
+					local rarityGradient = Instance.new("UIGradient")
+					if def.rarity == "Mythic" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(255, 120, 211), Color3.fromRGB(113, 173, 255))
+					elseif def.rarity == "Legendary" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(255, 210, 110), Color3.fromRGB(173, 121, 41))
+					elseif def.rarity == "Epic" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(195, 126, 255), Color3.fromRGB(92, 65, 165))
+					elseif def.rarity == "Rare" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(121, 186, 255), Color3.fromRGB(54, 90, 158))
+					elseif def.rarity == "Uncommon" then
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(136, 221, 151), Color3.fromRGB(53, 121, 72))
+					else
+						rarityGradient.Color = ColorSequence.new(Color3.fromRGB(180, 188, 206), Color3.fromRGB(87, 95, 121))
+					end
+					rarityGradient.Rotation = 35
+					rarityGradient.Parent = b
+					local edgeColor = isEquipped and Color3.fromRGB(206, 255, 192) or getRarityColor(def.rarity)
+					local edge = createStroke(b, edgeColor, isEquipped and 3 or 2, isSelected and 0.05 or 0.2)
 				if def.rarity == "Mythic" then
 					local mythicGradient = Instance.new("UIGradient")
 					mythicGradient.Color = ColorSequence.new({
@@ -3284,10 +3328,21 @@ local function updateBoards()
 				status.TextXAlignment = Enum.TextXAlignment.Left
 				status.TextScaled = true
 				status.Font = Enum.Font.GothamBold
-				status.TextColor3 = isEquipped and Color3.fromRGB(198, 255, 190) or Color3.fromRGB(225, 235, 255)
-				status.Text = isEquipped and "Экипировано" or "Не экипировано"
-				status.Parent = b
-				b.MouseButton1Click:Connect(function()
+					status.TextColor3 = isEquipped and Color3.fromRGB(198, 255, 190) or Color3.fromRGB(225, 235, 255)
+					status.Text = isEquipped and "Экипировано" or "Не экипировано"
+					status.Parent = b
+					local effectBadge = Instance.new("TextLabel")
+					effectBadge.Size = UDim2.new(0, 180, 0, 20)
+					effectBadge.Position = UDim2.new(1, -186, 1, -24)
+					effectBadge.BackgroundColor3 = Color3.fromRGB(23, 28, 40)
+					effectBadge.TextColor3 = edgeColor
+					effectBadge.BorderSizePixel = 0
+					effectBadge.Font = Enum.Font.GothamBold
+					effectBadge.TextScaled = true
+					effectBadge.Text = tostring(def.effect or "")
+					effectBadge.Parent = b
+					createCorner(effectBadge, 8)
+					b.MouseButton1Click:Connect(function()
 					passiveUi.selectedUid = entry.uid
 					passiveUi.manageTitle.Text = def.name
 					passiveUi.manageInfo.Text = "Тип: " .. tostring(def.currencyType or "Coins")
@@ -3340,13 +3395,14 @@ local function updateBoards()
 			local capMul = (info.cap or 10)
 			local eff = math.min(math.floor((capMul / math.max(info.base, 0.0001)) + 0.5), count)
 			local total = eff * info.base
-			label.Text = string.format("%s | Кол-во: %d\nЗа 1: %s | Суммарно: +%.2fx %s (cap x%.1f)", tostring(runeId), count, info.per, total, info.target, capMul)
+			local chance = (RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].chance) or "?"
+			label.Text = string.format("%s | Кол-во: %d | Шанс: %s\nЗа 1: %s | Суммарно: +%.2fx %s (cap x%.1f)", tostring(runeId), count, chance, info.per, total, info.target, capMul)
 		end
 	end
 
-	if runeUi.panel then
+	do
 		local runeUnlocked = sixthUnlockedVisual
-		if runeUi.panel.Visible and not runeUnlocked then
+		if runeUi.panel and runeUi.panel.Visible and not runeUnlocked then
 			runeUi.panel.Visible = false
 		end
 		if runeUi.sessionPanel then
@@ -3357,19 +3413,23 @@ local function updateBoards()
 		local function stacks(v)
 			return math.min(10, tonumber(v) or 0)
 		end
-		runeUi.indexText.Text = "Обычная: " .. tostring(c.Common or 0) .. " (эф. " .. tostring(stacks(c.Common)) .. ")\n"
-			.. "Необычная: " .. tostring(c.Uncommon or 0) .. " (эф. " .. tostring(stacks(c.Uncommon)) .. ")\n"
-			.. "Редкая: " .. tostring(c.Rare or 0) .. " (эф. " .. tostring(stacks(c.Rare)) .. ")\n"
-			.. "Эпическая: " .. tostring(c.Epic or 0) .. " (эф. " .. tostring(stacks(c.Epic)) .. ")\n"
-			.. "Легендарная: " .. tostring(c.Legendary or 0) .. " (эф. " .. tostring(stacks(c.Legendary)) .. ")\n\n"
-			.. "Luck x" .. tostring(runeLuckLevel.Value) .. " | Speed x" .. tostring(runeSpeedLevel.Value) .. " | Bulk +" .. tostring(runeBulkLevel.Value)
-		setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ РУНЫ (50 дерева)", woodCurrency.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
-		runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)"
-		runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)"
-		runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)"
+		if runeUi.indexText then
+			runeUi.indexText.Text = "Обычная: " .. tostring(c.Common or 0) .. " (эф. " .. tostring(stacks(c.Common)) .. ")\n"
+				.. "Необычная: " .. tostring(c.Uncommon or 0) .. " (эф. " .. tostring(stacks(c.Uncommon)) .. ")\n"
+				.. "Редкая: " .. tostring(c.Rare or 0) .. " (эф. " .. tostring(stacks(c.Rare)) .. ")\n"
+				.. "Эпическая: " .. tostring(c.Epic or 0) .. " (эф. " .. tostring(stacks(c.Epic)) .. ")\n"
+				.. "Легендарная: " .. tostring(c.Legendary or 0) .. " (эф. " .. tostring(stacks(c.Legendary)) .. ")\n\n"
+				.. "Luck x" .. tostring(runeLuckLevel.Value) .. " | Speed x" .. tostring(runeSpeedLevel.Value) .. " | Bulk +" .. tostring(runeBulkLevel.Value)
+		end
+		if runeUi.openBtn then
+			setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ РУНЫ (50 дерева)", woodCurrency.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
+		end
+		if runeUi.luckBtn then runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)" end
+		if runeUi.speedBtn then runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)" end
+		if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
-		if runeStatsRows.luck then
+		if runeStatsRows and runeStatsRows.luck then
 			local speedSeconds = math.max(0.1, 10 / math.max(1, runeSpeedLevel.Value))
 			runeStatsRows.luck.Text = "x" .. tostring(runeLuckLevel.Value)
 			runeStatsRows.bulk.Text = "+" .. tostring(runeBulkLevel.Value)
@@ -3409,6 +3469,7 @@ local function updateBoards()
 
 	updateWallVisual()
 	refreshAdminCurrencyButtons()
+	updateUnlockDebug()
 end
 
 local passiveEffectParts = {}
