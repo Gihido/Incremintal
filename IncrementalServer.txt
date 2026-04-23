@@ -59,12 +59,12 @@ local RUNE_OPEN_BASE_TIME = 10
 local RUNE_MAX_EFFECTIVE_STACKS = 10
 
 local RUNE_TYPES = {
-	Common = {displayName = "Обычная", rarity = "Common", weight = 1/1, coinBonus = 0.10, woodBonus = 0, paperBonus = 0, xpBonus = 0, maxStacks = 15},
-	Uncommon = {displayName = "Необычная", rarity = "Uncommon", weight = 1/5, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0.01, maxStacks = 200},
-	Rare = {displayName = "Редкая", rarity = "Rare", weight = 1/25, coinBonus = 0, woodBonus = 0.15, paperBonus = 0, xpBonus = 0, maxStacks = 34},
-	Epic = {displayName = "Эпическая", rarity = "Epic", weight = 1/100, coinBonus = 0, woodBonus = 0, paperBonus = 0.10, xpBonus = 0, maxStacks = 50},
-	Legendary = {displayName = "Легендарная", rarity = "Legendary", weight = 1/1000, coinBonus = 0, woodBonus = 0, paperBonus = 0.05, xpBonus = 0, maxStacks = 100},
-	Mythic = {displayName = "Мифическая", rarity = "Mythic", weight = 1/2000, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0, maxStacks = 0},
+	Common = {displayName = "Обычная", rarity = "Common", weight = 1/1, coinBonus = 0.10, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 90},
+	Uncommon = {displayName = "Необычная", rarity = "Uncommon", weight = 1/5, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0.10, capStacks = 90},
+	Rare = {displayName = "Редкая", rarity = "Rare", weight = 1/25, coinBonus = 0, woodBonus = 0.15, paperBonus = 0, xpBonus = 0, capStacks = 60},
+	Epic = {displayName = "Эпическая", rarity = "Epic", weight = 1/100, coinBonus = 0, woodBonus = 0, paperBonus = 0.10, xpBonus = 0, capStacks = 40},
+	Legendary = {displayName = "Легендарная", rarity = "Legendary", weight = 1/1000, coinBonus = 0, woodBonus = 0, paperBonus = 0.05, xpBonus = 0, capStacks = 130},
+	Mythic = {displayName = "Мифическая", rarity = "Mythic", weight = 1/2000, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 40},
 }
 
 local RUNE_UPGRADES = {
@@ -461,12 +461,15 @@ local passiveRollCooldowns = {}
 local runeStates = {}
 local runeOpenCooldowns = {}
 local runeRollingSessions = {}
-local activeAdminEvents = {
-	RuneLuckEvent = 0,
-	RuneBulkEvent = 0,
-	RuneSpeedEvent = 0,
-}
+local activeAdminEvents = {}
 local ADMIN_EVENT_DURATION = 300
+local ACTIVE_SERVER_EVENTS = {
+	StatsX2 = {coinMul = 2, woodMul = 2, paperMul = 2, xpMul = 2, tooltip = "x2 ко всем статам"},
+	RuneBulkX5 = {runeBulkAdd = 5, tooltip = "+5 Rune Bulk"},
+	RuneSpeedX2 = {runeSpeedMul = 2, tooltip = "x2 Rune Speed"},
+	RuneLuckX2 = {runeLuckMul = 2, tooltip = "x2 Rune Luck"},
+	PassiveLuckX3 = {passiveLuckMul = 3, tooltip = "x3 Passive Luck"},
+}
 local isClosing = false
 
 local treeBaseSize = treeBlock.Size
@@ -491,10 +494,16 @@ local function broadcastAdminEventState()
 end
 
 local function getServerRuneEventBoosts()
-	local nowTime = os.clock()
-	local luckMul = activeAdminEvents.RuneLuckEvent > nowTime and 2 or 1
-	local bulkAdd = activeAdminEvents.RuneBulkEvent > nowTime and 5 or 0
-	local speedMul = activeAdminEvents.RuneSpeedEvent > nowTime and 1.5 or 1
+	local now = os.clock()
+	local luckMul, speedMul, bulkAdd = 1, 1, 0
+	for eventKey, eventState in pairs(activeAdminEvents) do
+		local cfg = ACTIVE_SERVER_EVENTS[eventKey]
+		if cfg and now < (eventState.endsAt or 0) then
+			luckMul *= (cfg.runeLuckMul or 1)
+			speedMul *= (cfg.runeSpeedMul or 1)
+			bulkAdd += (cfg.runeBulkAdd or 0)
+		end
+	end
 	return luckMul, speedMul, bulkAdd
 end
 
@@ -517,10 +526,16 @@ local function broadcastAdminEventState()
 end
 
 local function getServerRuneEventBoosts()
-	local nowTime = os.clock()
-	local luckMul = activeAdminEvents.RuneLuckEvent > nowTime and 2 or 1
-	local bulkAdd = activeAdminEvents.RuneBulkEvent > nowTime and 5 or 0
-	local speedMul = activeAdminEvents.RuneSpeedEvent > nowTime and 1.5 or 1
+	local now = os.clock()
+	local luckMul, speedMul, bulkAdd = 1, 1, 0
+	for eventKey, eventState in pairs(activeAdminEvents) do
+		local cfg = ACTIVE_SERVER_EVENTS[eventKey]
+		if cfg and now < (eventState.endsAt or 0) then
+			luckMul *= (cfg.runeLuckMul or 1)
+			speedMul *= (cfg.runeSpeedMul or 1)
+			bulkAdd += (cfg.runeBulkAdd or 0)
+		end
+	end
 	return luckMul, speedMul, bulkAdd
 end
 
@@ -948,7 +963,7 @@ end
 
 local function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
 	}
 end
 
@@ -1010,7 +1025,7 @@ local function getRuneBonusMultipliers(player)
 		if state.counts then
 			count = tonumber(state.counts[runeId]) or 0
 		end
-		local stacks = math.clamp(count, 0, RUNE_MAX_EFFECTIVE_STACKS)
+		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or RUNE_MAX_EFFECTIVE_STACKS)
 		coinMul += (runeDef.coinBonus or 0) * stacks
 		woodMul += (runeDef.woodBonus or 0) * stacks
 		paperMul += (runeDef.paperBonus or 0) * stacks
@@ -1020,7 +1035,7 @@ end
 
 local function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
 	}
 end
 
@@ -1082,7 +1097,7 @@ local function getRuneBonusMultipliers(player)
 		if state.counts then
 			count = tonumber(state.counts[runeId]) or 0
 		end
-		local stacks = math.clamp(count, 0, RUNE_MAX_EFFECTIVE_STACKS)
+		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or RUNE_MAX_EFFECTIVE_STACKS)
 		coinMul += (runeDef.coinBonus or 0) * stacks
 		woodMul += (runeDef.woodBonus or 0) * stacks
 		paperMul += (runeDef.paperBonus or 0) * stacks
@@ -1092,7 +1107,7 @@ end
 
 local function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
 	}
 end
 
@@ -1153,7 +1168,7 @@ local function getRuneBonusMultipliers(player)
 		if state.counts then
 			count = tonumber(state.counts[runeId]) or 0
 		end
-		local stacks = math.clamp(count, 0, RUNE_MAX_EFFECTIVE_STACKS)
+		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or RUNE_MAX_EFFECTIVE_STACKS)
 		coinMul += (runeDef.coinBonus or 0) * stacks
 		woodMul += (runeDef.woodBonus or 0) * stacks
 		paperMul += (runeDef.paperBonus or 0) * stacks
@@ -2726,19 +2741,23 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 		end
 	elseif actionName == "StartServerEvent" then
 		local eventId = tostring(currencyName or "")
+		local duration = tonumber(actionValue) or ADMIN_EVENT_DURATION
+		if duration <= 0 then duration = ADMIN_EVENT_DURATION end
 		local nowTime = os.clock()
 		if eventId == "All" then
-			activeAdminEvents.RuneLuckEvent = nowTime + ADMIN_EVENT_DURATION
-			activeAdminEvents.RuneBulkEvent = nowTime + ADMIN_EVENT_DURATION
-			activeAdminEvents.RuneSpeedEvent = nowTime + ADMIN_EVENT_DURATION
-		elseif activeAdminEvents[eventId] ~= nil then
-			activeAdminEvents[eventId] = nowTime + ADMIN_EVENT_DURATION
+			for key in pairs(ACTIVE_SERVER_EVENTS) do
+				local current = activeAdminEvents[key] and activeAdminEvents[key].endsAt or nowTime
+				activeAdminEvents[key] = {endsAt = math.max(current, nowTime) + duration}
+			end
+		elseif ACTIVE_SERVER_EVENTS[eventId] then
+			local current = activeAdminEvents[eventId] and activeAdminEvents[eventId].endsAt or nowTime
+			activeAdminEvents[eventId] = {endsAt = math.max(current, nowTime) + duration}
 		else
 			fireSimple(player, "Неизвестный event id")
 			return
 		end
 		broadcastAdminEventState()
-		fireSimple(player, "Server event запущен на 5 минут")
+		fireSimple(player, "Server event запущен")
 	elseif actionName == "ResetSelf" then
 		resetAllPlayerData(player)
 		fireSimple(player, "Данные сброшены")
@@ -2747,7 +2766,7 @@ end)
 
 Players.PlayerAdded:Connect(function(player)
 	setupPlayer(player)
-	notifyEvent:FireClient(player, {kind = "admin_event_state", events = getActiveAdminEventPayload()})
+	broadcastAdminEventState()
 end)
 
 for _, player in ipairs(Players:GetPlayers()) do
