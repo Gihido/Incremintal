@@ -3575,6 +3575,26 @@ local function updateBoards()
 		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil)
 	end
 
+	-- Safety pass against stale visual lock states.
+	if thirdUnlockedVisual then
+		updateCard(coinWoodBoostCard, coinWoodBoostLevel.Value, coinWoodBoostCost.Value, coinWoodBoostActive.Value, 10, coins.Value, nil)
+		updateCard(treeCoinBoostCard, woodCoinBoostLevel.Value, woodCoinBoostCost.Value, woodCoinBoostActive.Value, 20, woodCurrency.Value, nil)
+	end
+	if secondUnlockedVisual and xpUpgradeCards then
+		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.xpMul, xpMultiplierLevel.Value, math.floor(xpMultiplierCost.Value + 0.5), true, 5, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.runeLuck, runeLuckXpLevel.Value, math.floor(runeLuckXpCost.Value + 0.5), true, 3, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, nil)
+	end
+	if sixthUnlockedVisual and runeUpgradeCards then
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil)
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, nil)
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil)
+	end
+
 	updateWallVisual()
 	refreshAdminCurrencyButtons()
 	updateUnlockDebug()
