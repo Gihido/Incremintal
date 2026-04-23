@@ -2810,6 +2810,8 @@ local function isAdminEventActive(eventKey)
 	return false
 end
 
+local getActiveAdminEventUpgrades
+
 local function getClientEffectiveRuneStats()
 	local baseLuck = 1 + runeLuckLevel.Value + runeLuckXpLevel.Value
 	local baseSpeed = 1 + runeSpeedLevel.Value + runeSpeedXpLevel.Value
@@ -2894,7 +2896,7 @@ local adminEventDescs = {
 	PassiveLuckX3 = "Утрояет шанс редких пассивов.",
 }
 
-local function getActiveAdminEventUpgrades()
+getActiveAdminEventUpgrades = function()
 	local luckMul, speedMul, bulkMul, bulkAdd = 1, 1, 1, 0
 	for _, ev in ipairs(activeAdminEvents or {}) do
 		if (tonumber(ev.timeLeft) or 0) > 0 then
