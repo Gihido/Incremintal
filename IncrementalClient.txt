@@ -2669,7 +2669,7 @@ local function updateRuneSessionGui()
 	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
 		local label = runeUi.sessionRows and runeUi.sessionRows[runeId]
 		if label then
-			label.Text = "+" .. tostring(runeSessionCounts[runeId] or 0)
+			label.Text = "+" .. formatNumber(runeSessionCounts[runeId] or 0)
 		end
 	end
 end
@@ -2681,7 +2681,7 @@ local function updateRuneSummaryGui()
 		local label = runeUi.summaryRows and runeUi.summaryRows[runeId]
 		if label then
 			local count = tonumber(counts[runeId]) or 0
-			label.Text = tostring(count)
+			label.Text = formatNumber(count)
 		end
 	end
 end
@@ -2825,12 +2825,17 @@ local function getClientEffectiveRuneStats()
 	local passiveBulkMul = passive and (passive.runeBulkMultiplier or 1) or 1
 	local passiveGlobalMul = passive and (passive.globalMultiplier or 1) or 1
 	local passiveCommonSpeedMul = passive and (passive.speedMultiplier or 1) or 1
-	local luck = math.floor(baseLuck * passiveLuckMul * passiveGlobalMul * mythicLuckSpeedMul + 0.5)
-	local speed = math.floor(baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul * mythicLuckSpeedMul + 0.5)
-	local bulk = math.floor(baseBulk * passiveBulkMul * passiveGlobalMul + 0.5) + mythicBulkAdd
-	if isAdminEventActive("RuneLuckX2") then luck *= 2 end
-	if isAdminEventActive("RuneSpeedX2") then speed *= 2 end
-	if isAdminEventActive("RuneBulkX5") then bulk *= 5 end
+	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = 1, 1, 1, 0
+	for _, ev in ipairs(activeAdminEvents or {}) do
+		if (tonumber(ev.timeLeft) or 0) > 0 then
+			if ev.key == "RuneLuckX2" then eventLuckMul *= 2 end
+			if ev.key == "RuneSpeedX2" then eventSpeedMul *= 2 end
+			if ev.key == "RuneBulkX5" then eventBulkMul *= 5 end
+		end
+	end
+	local luck = math.floor(baseLuck * passiveLuckMul * passiveGlobalMul * mythicLuckSpeedMul * eventLuckMul + 0.5)
+	local speed = math.floor(baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul * mythicLuckSpeedMul * eventSpeedMul + 0.5)
+	local bulk = math.floor(baseBulk * passiveBulkMul * passiveGlobalMul * eventBulkMul + 0.5) + mythicBulkAdd + eventBulkAdd
 	return luck, speed, bulk
 end
 
@@ -3582,7 +3587,7 @@ updateBoards = function()
 		updateRuneWorldDisplay()
 		if runeStatsRows and runeStatsRows.luck then
 			local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
-			local speedSeconds = math.max(0.1, 10 / math.max(1, effSpeed))
+			local speedSeconds = math.max(0.01, 10 / math.max(1, effSpeed))
 			runeStatsRows.luck.Text = "x" .. formatNumber(effLuck)
 			runeStatsRows.bulk.Text = "+" .. formatNumber(effBulk)
 			runeStatsRows.speed.Text = string.format("1 rune / %.2fs", speedSeconds)
@@ -4202,6 +4207,11 @@ end
 				if nextValue > 0 then
 					table.insert(stillActive, ev)
 				end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)

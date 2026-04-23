@@ -1996,7 +1996,7 @@ local function getRuneRollInterval(player)
 	local baseInterval = 1.0
 	local _, speed = getEffectiveRuneStats(player)
 	local interval = baseInterval / (1 + (speed * 0.5))
-	return math.max(0.2, interval)
+	return math.max(0.01, interval)
 end
 
 local function rollRuneForPlayer(player)
