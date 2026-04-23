@@ -4217,72 +4217,32 @@ if passiveUi.hintEmoji then
 	end)
 end
 
-	task.spawn(function()
+local function tickActiveAdminEvents()
+	if #activeAdminEvents <= 0 then
+		return
+	end
+	local stillActive = {}
+	local idx = 1
+	while idx <= #activeAdminEvents do
+		local ev = activeAdminEvents[idx]
+		local nextValue = math.max(0, (tonumber(ev.timeLeft) or 0) - 1)
+		ev.timeLeft = nextValue
+		if nextValue > 0 then
+			stillActive[#stillActive + 1] = ev
+		end
+		idx += 1
+	end
+	activeAdminEvents = stillActive
+	renderAdminEvents(activeAdminEvents)
+	if updateBoards then
+		updateBoards()
+	end
+end
+
+task.spawn(function()
 	while true do
 		task.wait(1)
-			if #activeAdminEvents > 0 then
-				local stillActive = {}
-				for i = 1, #activeAdminEvents do
-					local ev = activeAdminEvents[i]
-					local nextValue = math.max(0, (tonumber(ev.timeLeft) or 0) - 1)
-					ev.timeLeft = nextValue
-					if nextValue > 0 then
-						table.insert(stillActive, ev)
-					end
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-			if updateBoards then
-				updateBoards()
-			end
-			activeAdminEvents = stillActive
-			renderAdminEvents(activeAdminEvents)
-		end
+		tickActiveAdminEvents()
 	end
 end)
 
