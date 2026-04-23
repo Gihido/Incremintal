@@ -59,12 +59,12 @@ local RUNE_OPEN_BASE_TIME = 10
 local RUNE_MAX_EFFECTIVE_STACKS = 10
 
 local RUNE_TYPES = {
-	Common = {displayName = "Обычная", rarity = "Common", weight = 1/1, coinBonus = 0.10, woodBonus = 0, paperBonus = 0, xpBonus = 0, maxStacks = 15},
-	Uncommon = {displayName = "Необычная", rarity = "Uncommon", weight = 1/5, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0.01, maxStacks = 200},
-	Rare = {displayName = "Редкая", rarity = "Rare", weight = 1/25, coinBonus = 0, woodBonus = 0.15, paperBonus = 0, xpBonus = 0, maxStacks = 34},
-	Epic = {displayName = "Эпическая", rarity = "Epic", weight = 1/100, coinBonus = 0, woodBonus = 0, paperBonus = 0.10, xpBonus = 0, maxStacks = 50},
-	Legendary = {displayName = "Легендарная", rarity = "Legendary", weight = 1/1000, coinBonus = 0, woodBonus = 0, paperBonus = 0.05, xpBonus = 0, maxStacks = 100},
-	Mythic = {displayName = "Мифическая", rarity = "Mythic", weight = 1/2000, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0, maxStacks = 0},
+	Common = {displayName = "Обычная", rarity = "Common", weight = 1/1, coinBonus = 0.10, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 90},
+	Uncommon = {displayName = "Необычная", rarity = "Uncommon", weight = 1/5, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0.10, capStacks = 90},
+	Rare = {displayName = "Редкая", rarity = "Rare", weight = 1/25, coinBonus = 0, woodBonus = 0.15, paperBonus = 0, xpBonus = 0, capStacks = 60},
+	Epic = {displayName = "Эпическая", rarity = "Epic", weight = 1/100, coinBonus = 0, woodBonus = 0, paperBonus = 0.10, xpBonus = 0, capStacks = 40},
+	Legendary = {displayName = "Легендарная", rarity = "Legendary", weight = 1/1000, coinBonus = 0, woodBonus = 0, paperBonus = 0.05, xpBonus = 0, capStacks = 130},
+	Mythic = {displayName = "Мифическая", rarity = "Mythic", weight = 1/2000, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 40},
 }
 
 local RUNE_UPGRADES = {
@@ -461,18 +461,21 @@ local passiveRollCooldowns = {}
 local runeStates = {}
 local runeOpenCooldowns = {}
 local runeRollingSessions = {}
-local activeAdminEvents = {
-	RuneLuckEvent = 0,
-	RuneBulkEvent = 0,
-	RuneSpeedEvent = 0,
-}
+local activeAdminEvents = {}
 local ADMIN_EVENT_DURATION = 300
+local ACTIVE_SERVER_EVENTS = {
+	StatsX2 = {coinMul = 2, woodMul = 2, paperMul = 2, xpMul = 2, tooltip = "x2 ко всем статам"},
+	RuneBulkX5 = {runeBulkAdd = 5, tooltip = "+5 Rune Bulk"},
+	RuneSpeedX2 = {runeSpeedMul = 2, tooltip = "x2 Rune Speed"},
+	RuneLuckX2 = {runeLuckMul = 2, tooltip = "x2 Rune Luck"},
+	PassiveLuckX3 = {passiveLuckMul = 3, tooltip = "x3 Passive Luck"},
+}
 local isClosing = false
 
 local treeBaseSize = treeBlock.Size
 local treeBaseCFrame = treeBlock.CFrame
 
-local function getActiveAdminEventPayload(nowTime)
+function getActiveAdminEventPayload(nowTime)
 	nowTime = nowTime or os.clock()
 	local payload = {}
 	for eventId, endAt in pairs(activeAdminEvents) do
@@ -483,22 +486,28 @@ local function getActiveAdminEventPayload(nowTime)
 	return payload
 end
 
-local function broadcastAdminEventState()
+function broadcastAdminEventState()
 	local payload = getActiveAdminEventPayload()
 	for _, player in ipairs(Players:GetPlayers()) do
 		notifyEvent:FireClient(player, {kind = "admin_event_state", events = payload})
 	end
 end
 
-local function getServerRuneEventBoosts()
-	local nowTime = os.clock()
-	local luckMul = activeAdminEvents.RuneLuckEvent > nowTime and 2 or 1
-	local bulkAdd = activeAdminEvents.RuneBulkEvent > nowTime and 5 or 0
-	local speedMul = activeAdminEvents.RuneSpeedEvent > nowTime and 1.5 or 1
+function getServerRuneEventBoosts()
+	local now = os.clock()
+	local luckMul, speedMul, bulkAdd = 1, 1, 0
+	for eventKey, eventState in pairs(activeAdminEvents) do
+		local cfg = ACTIVE_SERVER_EVENTS[eventKey]
+		if cfg and now < (eventState.endsAt or 0) then
+			luckMul *= (cfg.runeLuckMul or 1)
+			speedMul *= (cfg.runeSpeedMul or 1)
+			bulkAdd += (cfg.runeBulkAdd or 0)
+		end
+	end
 	return luckMul, speedMul, bulkAdd
 end
 
-local function getActiveAdminEventPayload(nowTime)
+function getActiveAdminEventPayload(nowTime)
 	nowTime = nowTime or os.clock()
 	local payload = {}
 	for eventId, endAt in pairs(activeAdminEvents) do
@@ -509,18 +518,24 @@ local function getActiveAdminEventPayload(nowTime)
 	return payload
 end
 
-local function broadcastAdminEventState()
+function broadcastAdminEventState()
 	local payload = getActiveAdminEventPayload()
 	for _, player in ipairs(Players:GetPlayers()) do
 		notifyEvent:FireClient(player, {kind = "admin_event_state", events = payload})
 	end
 end
 
-local function getServerRuneEventBoosts()
-	local nowTime = os.clock()
-	local luckMul = activeAdminEvents.RuneLuckEvent > nowTime and 2 or 1
-	local bulkAdd = activeAdminEvents.RuneBulkEvent > nowTime and 5 or 0
-	local speedMul = activeAdminEvents.RuneSpeedEvent > nowTime and 1.5 or 1
+function getServerRuneEventBoosts()
+	local now = os.clock()
+	local luckMul, speedMul, bulkAdd = 1, 1, 0
+	for eventKey, eventState in pairs(activeAdminEvents) do
+		local cfg = ACTIVE_SERVER_EVENTS[eventKey]
+		if cfg and now < (eventState.endsAt or 0) then
+			luckMul *= (cfg.runeLuckMul or 1)
+			speedMul *= (cfg.runeSpeedMul or 1)
+			bulkAdd += (cfg.runeBulkAdd or 0)
+		end
+	end
 	return luckMul, speedMul, bulkAdd
 end
 
@@ -679,7 +694,7 @@ local function getServerEventMultipliers()
 	return coinMul, woodMul, paperMul, xpMul
 end
 
-local function broadcastAdminEventState()
+function broadcastAdminEventState()
 	local now = os.clock()
 	local events = {}
 	for eventKey, eventState in pairs(activeAdminEvents) do
@@ -698,42 +713,42 @@ local function broadcastAdminEventState()
 	end
 end
 
-local function getXPFolder(player)
+function getXPFolder(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("XP") or nil
 end
 
-local function getXPCurrencyObject(player)
+function getXPCurrencyObject(player)
 	local xpFolder = getXPFolder(player)
 	return xpFolder and xpFolder:FindFirstChild("XPValue") or nil
 end
 
-local function getXPUpgradesFolder(player)
+function getXPUpgradesFolder(player)
 	local xpFolder = getXPFolder(player)
 	return xpFolder and xpFolder:FindFirstChild("XPUpgrades") or nil
 end
 
-local function getXPBoostFolder(player)
+function getXPBoostFolder(player)
 	local xpFolder = getXPFolder(player)
 	return xpFolder and xpFolder:FindFirstChild("XPBoost") or nil
 end
 
-local function getXPFolder(player)
+function getXPFolder(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("XP") or nil
 end
 
-local function getXPCurrencyObject(player)
+function getXPCurrencyObject(player)
 	local xpFolder = getXPFolder(player)
 	return xpFolder and xpFolder:FindFirstChild("XPValue") or nil
 end
 
-local function getXPUpgradesFolder(player)
+function getXPUpgradesFolder(player)
 	local xpFolder = getXPFolder(player)
 	return xpFolder and xpFolder:FindFirstChild("XPUpgrades") or nil
 end
 
-local function getXPBoostFolder(player)
+function getXPBoostFolder(player)
 	local xpFolder = getXPFolder(player)
 	return xpFolder and xpFolder:FindFirstChild("XPBoost") or nil
 end
@@ -843,25 +858,25 @@ local function getPassiveSpecialBoosts(player)
 	return passiveDef.runeLuckMultiplier or 1, passiveDef.runeSpeedMultiplier or 1, passiveDef.runeBulkMultiplier or 1, passiveDef.xpMultiplier or 1
 end
 
-local function emptyRuneState()
+function emptyRuneState()
 	return {
 		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
 	}
 end
 
-local function getRuneFolder(player)
+function getRuneFolder(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("Runes") or nil
 end
 
-local function getRuneState(player)
+function getRuneState(player)
 	if not runeStates[player] then
 		runeStates[player] = emptyRuneState()
 	end
 	return runeStates[player]
 end
 
-local function writeRuneStateValue(player)
+function writeRuneStateValue(player)
 	local folder = getRuneFolder(player)
 	if not folder then return end
 	local jsonValue = folder:FindFirstChild("StateJson")
@@ -870,12 +885,12 @@ local function writeRuneStateValue(player)
 	end
 end
 
-local function getRuneUpgradeFolder(player)
+function getRuneUpgradeFolder(player)
 	local folder = getRuneFolder(player)
 	return folder and folder:FindFirstChild("Upgrades") or nil
 end
 
-local function chooseRuneType(luckLevel)
+function chooseRuneType(luckLevel)
 	local luckPoints = math.max(0, luckLevel or 0) * 10
 	local luckFactor = 1 + (luckPoints * 0.01)
 	local weighted = {}
@@ -899,7 +914,7 @@ local function chooseRuneType(luckLevel)
 	return "Common"
 end
 
-local function getRuneBonusMultipliers(player)
+function getRuneBonusMultipliers(player)
 	local state = getRuneState(player)
 	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
 	for runeId, runeDef in pairs(RUNE_TYPES) do
@@ -946,25 +961,25 @@ local function getEffectiveRuneStats(player)
 	return luck, speed, bulk
 end
 
-local function emptyRuneState()
+function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
 	}
 end
 
-local function getRuneFolder(player)
+function getRuneFolder(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("Runes") or nil
 end
 
-local function getRuneState(player)
+function getRuneState(player)
 	if not runeStates[player] then
 		runeStates[player] = emptyRuneState()
 	end
 	return runeStates[player]
 end
 
-local function writeRuneStateValue(player)
+function writeRuneStateValue(player)
 	local folder = getRuneFolder(player)
 	if not folder then return end
 	local jsonValue = folder:FindFirstChild("StateJson")
@@ -973,12 +988,12 @@ local function writeRuneStateValue(player)
 	end
 end
 
-local function getRuneUpgradeFolder(player)
+function getRuneUpgradeFolder(player)
 	local folder = getRuneFolder(player)
 	return folder and folder:FindFirstChild("Upgrades") or nil
 end
 
-local function chooseRuneType(luckLevel)
+function chooseRuneType(luckLevel)
 	local luckPoints = math.max(0, luckLevel or 0) * 10
 	local luckFactor = 1 + (luckPoints * 0.01)
 	local weighted = {}
@@ -1002,7 +1017,7 @@ local function chooseRuneType(luckLevel)
 	return "Common"
 end
 
-local function getRuneBonusMultipliers(player)
+function getRuneBonusMultipliers(player)
 	local state = getRuneState(player)
 	local coinMul, woodMul, paperMul = 1, 1, 1
 	for runeId, runeDef in pairs(RUNE_TYPES) do
@@ -1010,7 +1025,7 @@ local function getRuneBonusMultipliers(player)
 		if state.counts then
 			count = tonumber(state.counts[runeId]) or 0
 		end
-		local stacks = math.clamp(count, 0, RUNE_MAX_EFFECTIVE_STACKS)
+		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or RUNE_MAX_EFFECTIVE_STACKS)
 		coinMul += (runeDef.coinBonus or 0) * stacks
 		woodMul += (runeDef.woodBonus or 0) * stacks
 		paperMul += (runeDef.paperBonus or 0) * stacks
@@ -1018,25 +1033,25 @@ local function getRuneBonusMultipliers(player)
 	return coinMul, woodMul, paperMul
 end
 
-local function emptyRuneState()
+function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
 	}
 end
 
-local function getRuneFolder(player)
+function getRuneFolder(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("Runes") or nil
 end
 
-local function getRuneState(player)
+function getRuneState(player)
 	if not runeStates[player] then
 		runeStates[player] = emptyRuneState()
 	end
 	return runeStates[player]
 end
 
-local function writeRuneStateValue(player)
+function writeRuneStateValue(player)
 	local folder = getRuneFolder(player)
 	if not folder then return end
 	local jsonValue = folder:FindFirstChild("StateJson")
@@ -1045,12 +1060,12 @@ local function writeRuneStateValue(player)
 	end
 end
 
-local function getRuneUpgradeFolder(player)
+function getRuneUpgradeFolder(player)
 	local folder = getRuneFolder(player)
 	return folder and folder:FindFirstChild("Upgrades") or nil
 end
 
-local function chooseRuneType(luckLevel)
+function chooseRuneType(luckLevel)
 	local luckPoints = math.max(0, luckLevel or 0) * 10
 	local luckFactor = 1 + (luckPoints * 0.01)
 	local weighted = {}
@@ -1074,7 +1089,7 @@ local function chooseRuneType(luckLevel)
 	return "Common"
 end
 
-local function getRuneBonusMultipliers(player)
+function getRuneBonusMultipliers(player)
 	local state = getRuneState(player)
 	local coinMul, woodMul, paperMul = 1, 1, 1
 	for runeId, runeDef in pairs(RUNE_TYPES) do
@@ -1082,7 +1097,7 @@ local function getRuneBonusMultipliers(player)
 		if state.counts then
 			count = tonumber(state.counts[runeId]) or 0
 		end
-		local stacks = math.clamp(count, 0, RUNE_MAX_EFFECTIVE_STACKS)
+		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or RUNE_MAX_EFFECTIVE_STACKS)
 		coinMul += (runeDef.coinBonus or 0) * stacks
 		woodMul += (runeDef.woodBonus or 0) * stacks
 		paperMul += (runeDef.paperBonus or 0) * stacks
@@ -1090,25 +1105,25 @@ local function getRuneBonusMultipliers(player)
 	return coinMul, woodMul, paperMul
 end
 
-local function emptyRuneState()
+function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
 	}
 end
 
-local function getRuneFolder(player)
+function getRuneFolder(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("Runes") or nil
 end
 
-local function getRuneState(player)
+function getRuneState(player)
 	if not runeStates[player] then
 		runeStates[player] = emptyRuneState()
 	end
 	return runeStates[player]
 end
 
-local function writeRuneStateValue(player)
+function writeRuneStateValue(player)
 	local folder = getRuneFolder(player)
 	if not folder then return end
 	local jsonValue = folder:FindFirstChild("StateJson")
@@ -1117,12 +1132,12 @@ local function writeRuneStateValue(player)
 	end
 end
 
-local function getRuneUpgradeFolder(player)
+function getRuneUpgradeFolder(player)
 	local folder = getRuneFolder(player)
 	return folder and folder:FindFirstChild("Upgrades") or nil
 end
 
-local function chooseRuneType(luckLevel)
+function chooseRuneType(luckLevel)
 	local luckFactor = 1 + (math.max(0, luckLevel or 0) * 0.12)
 	local weighted = {}
 	local total = 0
@@ -1145,7 +1160,7 @@ local function chooseRuneType(luckLevel)
 	return "Common"
 end
 
-local function getRuneBonusMultipliers(player)
+function getRuneBonusMultipliers(player)
 	local state = getRuneState(player)
 	local coinMul, woodMul, paperMul = 1, 1, 1
 	for runeId, runeDef in pairs(RUNE_TYPES) do
@@ -1153,7 +1168,7 @@ local function getRuneBonusMultipliers(player)
 		if state.counts then
 			count = tonumber(state.counts[runeId]) or 0
 		end
-		local stacks = math.clamp(count, 0, RUNE_MAX_EFFECTIVE_STACKS)
+		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or RUNE_MAX_EFFECTIVE_STACKS)
 		coinMul += (runeDef.coinBonus or 0) * stacks
 		woodMul += (runeDef.woodBonus or 0) * stacks
 		paperMul += (runeDef.paperBonus or 0) * stacks
@@ -2726,19 +2741,23 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 		end
 	elseif actionName == "StartServerEvent" then
 		local eventId = tostring(currencyName or "")
+		local duration = tonumber(actionValue) or ADMIN_EVENT_DURATION
+		if duration <= 0 then duration = ADMIN_EVENT_DURATION end
 		local nowTime = os.clock()
 		if eventId == "All" then
-			activeAdminEvents.RuneLuckEvent = nowTime + ADMIN_EVENT_DURATION
-			activeAdminEvents.RuneBulkEvent = nowTime + ADMIN_EVENT_DURATION
-			activeAdminEvents.RuneSpeedEvent = nowTime + ADMIN_EVENT_DURATION
-		elseif activeAdminEvents[eventId] ~= nil then
-			activeAdminEvents[eventId] = nowTime + ADMIN_EVENT_DURATION
+			for key in pairs(ACTIVE_SERVER_EVENTS) do
+				local current = activeAdminEvents[key] and activeAdminEvents[key].endsAt or nowTime
+				activeAdminEvents[key] = {endsAt = math.max(current, nowTime) + duration}
+			end
+		elseif ACTIVE_SERVER_EVENTS[eventId] then
+			local current = activeAdminEvents[eventId] and activeAdminEvents[eventId].endsAt or nowTime
+			activeAdminEvents[eventId] = {endsAt = math.max(current, nowTime) + duration}
 		else
 			fireSimple(player, "Неизвестный event id")
 			return
 		end
 		broadcastAdminEventState()
-		fireSimple(player, "Server event запущен на 5 минут")
+		fireSimple(player, "Server event запущен")
 	elseif actionName == "ResetSelf" then
 		resetAllPlayerData(player)
 		fireSimple(player, "Данные сброшены")
@@ -2747,7 +2766,7 @@ end)
 
 Players.PlayerAdded:Connect(function(player)
 	setupPlayer(player)
-	notifyEvent:FireClient(player, {kind = "admin_event_state", events = getActiveAdminEventPayload()})
+	broadcastAdminEventState()
 end)
 
 for _, player in ipairs(Players:GetPlayers()) do
@@ -2791,12 +2810,13 @@ task.spawn(function()
 
 		local now = os.clock()
 		local eventsChanged = false
-		for eventId, endAt in pairs(activeAdminEvents) do
-			if endAt > 0 and endAt <= now then
-				activeAdminEvents[eventId] = 0
-				eventsChanged = true
+			for eventId, eventState in pairs(activeAdminEvents) do
+				local endAt = type(eventState) == "table" and (eventState.endsAt or 0) or tonumber(eventState) or 0
+				if endAt > 0 and endAt <= now then
+					activeAdminEvents[eventId] = nil
+					eventsChanged = true
+				end
 			end
-		end
 		if eventsChanged then
 			broadcastAdminEventState()
 		end
