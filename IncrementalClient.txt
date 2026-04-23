@@ -274,6 +274,8 @@ local AssetSlots = {
 	PassiveIcons = {},
 	PassiveCardImages = {},
 	IndexCardImages = {},
+	PassiveIndexBackgrounds = {},
+	PassiveInventoryBackgrounds = {},
 	WorldPanelIcons = {
 		RuneRollBlock = ICON_ASSET_IDS.WorldRuneRollBlock,
 		RuneIndexBlock = ICON_ASSET_IDS.WorldRuneIndexBlock,
@@ -326,6 +328,8 @@ for passiveId, def in pairs(PASSIVE_DEFS) do
 	AssetSlots.PassiveIcons[passiveId] = ICON_ASSET_IDS["Passive" .. passiveId] or ICON_ASSET_IDS.PassiveCardDefault
 	AssetSlots.PassiveCardImages[passiveId] = AssetSlots.PassiveIcons[passiveId]
 	AssetSlots.IndexCardImages[passiveId] = AssetSlots.PassiveIcons[passiveId]
+	AssetSlots.PassiveIndexBackgrounds[passiveId] = ""
+	AssetSlots.PassiveInventoryBackgrounds[passiveId] = ""
 end
 
 local selectedAdminCurrency = "Coins"
@@ -1895,6 +1899,13 @@ local function createPassiveUi()
 			local outline = createStroke(b, Color3.fromRGB(255, 255, 255), 2.2, 0.02)
 			decorateCardCorners(b)
 			createStroke(b, g2, 1.2, 0.2)
+			local customBg = Instance.new("ImageLabel")
+			customBg.Size = UDim2.new(1, 0, 1, 0)
+			customBg.BackgroundTransparency = 1
+			customBg.Image = getAssetOrEmpty(AssetSlots.PassiveIndexBackgrounds[passiveId])
+			customBg.ImageTransparency = customBg.Image == "" and 1 or 0.25
+			customBg.ScaleType = Enum.ScaleType.Crop
+			customBg.Parent = b
 		if passiveDef.rarity == "Mythic" then
 			local rainbow = Instance.new("UIGradient")
 			rainbow.Color = ColorSequence.new({
@@ -2472,7 +2483,7 @@ local function createRuneOverlays()
 	local function createRuneSessionScreen()
 		local panel = Instance.new("Frame")
 		panel.Name = "RuneSessionPanel"
-		panel.Size = UDim2.new(0, 238, 0, 300)
+		panel.Size = UDim2.new(0, 210, 0, 262)
 		panel.AnchorPoint = Vector2.new(1, 1)
 		panel.Position = UDim2.new(1, -14, 1, -14)
 		panel.BackgroundColor3 = Color3.fromRGB(22, 80, 20)
@@ -2492,7 +2503,7 @@ local function createRuneOverlays()
 		bgImage.Parent = panel
 
 		local header = Instance.new("Frame")
-		header.Size = UDim2.new(1, -14, 0, 34)
+		header.Size = UDim2.new(1, -12, 0, 30)
 		header.Position = UDim2.new(0, 7, 0, 6)
 		header.BackgroundColor3 = Color3.fromRGB(35, 110, 34)
 		header.BorderSizePixel = 0
@@ -2509,8 +2520,8 @@ local function createRuneOverlays()
 		headerText.Parent = header
 
 		local listHolder = Instance.new("ScrollingFrame")
-		listHolder.Size = UDim2.new(1, -12, 1, -48)
-		listHolder.Position = UDim2.new(0, 6, 0, 42)
+		listHolder.Size = UDim2.new(1, -10, 1, -42)
+		listHolder.Position = UDim2.new(0, 5, 0, 36)
 		listHolder.BackgroundTransparency = 1
 		listHolder.BorderSizePixel = 0
 		listHolder.ScrollBarThickness = 8
@@ -2531,7 +2542,7 @@ local function createRuneOverlays()
 			local visual = RUNE_VISUALS[runeId]
 			local row = Instance.new("Frame")
 			row.Name = runeId .. "SessionRow"
-			row.Size = UDim2.new(1, 0, 0, 40)
+			row.Size = UDim2.new(1, 0, 0, 34)
 			row.BackgroundColor3 = visual.rowColor
 			row.BorderSizePixel = 0
 			row.Parent = listHolder
@@ -2540,8 +2551,8 @@ local function createRuneOverlays()
 
 			-- Rune icon
 			local iconFrame = Instance.new("Frame")
-			iconFrame.Size = UDim2.new(0, 30, 0, 30)
-			iconFrame.Position = UDim2.new(0, 5, 0.5, -15)
+			iconFrame.Size = UDim2.new(0, 24, 0, 24)
+			iconFrame.Position = UDim2.new(0, 4, 0.5, -12)
 			iconFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 24)
 			iconFrame.BackgroundTransparency = 0.1
 			iconFrame.BorderSizePixel = 0
@@ -2559,8 +2570,8 @@ local function createRuneOverlays()
 
 			-- Name label
 			local nameLabel = Instance.new("TextLabel")
-			nameLabel.Size = UDim2.new(1, -92, 1, 0)
-			nameLabel.Position = UDim2.new(0, 42, 0, 0)
+			nameLabel.Size = UDim2.new(1, -82, 1, 0)
+			nameLabel.Position = UDim2.new(0, 34, 0, 0)
 			nameLabel.BackgroundTransparency = 1
 			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 			nameLabel.Text = visual.name
@@ -2572,8 +2583,8 @@ local function createRuneOverlays()
 			-- Gain label: "+1-99" style, right side
 			local gain = Instance.new("TextLabel")
 			gain.Name = "Gain"
-			gain.Size = UDim2.new(0, 48, 1, 0)
-			gain.Position = UDim2.new(1, -52, 0, 0)
+			gain.Size = UDim2.new(0, 42, 1, 0)
+			gain.Position = UDim2.new(1, -46, 0, 0)
 			gain.BackgroundTransparency = 1
 			gain.TextXAlignment = Enum.TextXAlignment.Right
 			gain.Text = "+0"
@@ -3327,6 +3338,13 @@ local function updateBoards()
 					b.BorderSizePixel = 0
 					b.Parent = passiveUi.slotsList
 					createCorner(b, 10)
+					local customBg = Instance.new("ImageLabel")
+					customBg.Size = UDim2.new(1, 0, 1, 0)
+					customBg.BackgroundTransparency = 1
+					customBg.Image = getAssetOrEmpty(AssetSlots.PassiveInventoryBackgrounds[entry.passiveId])
+					customBg.ImageTransparency = customBg.Image == "" and 1 or 0.28
+					customBg.ScaleType = Enum.ScaleType.Crop
+					customBg.Parent = b
 					local c1, c2, c3 = getPassiveStyle(entry.passiveId, def.rarity)
 					local rarityGradient = Instance.new("UIGradient")
 					rarityGradient.Color = ColorSequence.new(c1, c3)
@@ -3346,7 +3364,7 @@ local function updateBoards()
 					})
 					mythicGradient.Parent = edge
 				end
-				addScaleHover(b)
+					-- Stable hover/click: no scale teleporting.
 				local spark = Instance.new("TextLabel")
 				spark.BackgroundTransparency = 1
 				spark.Size = UDim2.new(0, 28, 0, 18)
@@ -3373,7 +3391,7 @@ local function updateBoards()
 				title.Text = def.name
 				title.Parent = b
 				local info = Instance.new("TextLabel")
-				info.Size = UDim2.new(1, -90, 0, 44)
+					info.Size = UDim2.new(1, -90, 0, 40)
 				info.Position = UDim2.new(0, 84, 0, 34)
 				info.BackgroundTransparency = 1
 				info.TextXAlignment = Enum.TextXAlignment.Left
@@ -3385,8 +3403,8 @@ local function updateBoards()
 				info.Text = tostring(def.effect or "") .. " | " .. tostring(def.currencyType or "") .. " | " .. tostring(def.rarity or "")
 				info.Parent = b
 				local status = Instance.new("TextLabel")
-				status.Size = UDim2.new(1, -90, 0, 18)
-				status.Position = UDim2.new(0, 84, 1, -24)
+					status.Size = UDim2.new(1, -90, 0, 20)
+					status.Position = UDim2.new(0, 84, 1, -46)
 				status.BackgroundTransparency = 1
 				status.TextXAlignment = Enum.TextXAlignment.Left
 				status.TextScaled = true
@@ -3532,6 +3550,29 @@ local function updateBoards()
 		local progress = xpBoostNextCost.Value > 0 and math.clamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
 		TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
 		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
+		if xpProgressLockedOverlay then
+			xpProgressLockedOverlay.Visible = not secondUnlockedVisual
+		end
+	end
+
+	-- Safety pass against stale visual lock states.
+	if thirdUnlockedVisual then
+		updateCard(coinWoodBoostCard, coinWoodBoostLevel.Value, coinWoodBoostCost.Value, coinWoodBoostActive.Value, 10, coins.Value, nil)
+		updateCard(treeCoinBoostCard, woodCoinBoostLevel.Value, woodCoinBoostCost.Value, woodCoinBoostActive.Value, 20, woodCurrency.Value, nil)
+	end
+	if secondUnlockedVisual and xpUpgradeCards then
+		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.xpMul, xpMultiplierLevel.Value, math.floor(xpMultiplierCost.Value + 0.5), true, 5, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.runeLuck, runeLuckXpLevel.Value, math.floor(runeLuckXpCost.Value + 0.5), true, 3, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, nil)
+	end
+	if sixthUnlockedVisual and runeUpgradeCards then
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil)
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, nil)
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil)
 	end
 
 	-- Safety pass against stale visual lock states.
