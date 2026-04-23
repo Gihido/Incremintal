@@ -4241,13 +4241,6 @@ end
 
 task.spawn(function()
 	while true do
-		task.wait(1)
-		tickActiveAdminEvents()
-	end
-end)
-
-task.spawn(function()
-	while true do
 		task.wait(0.2)
 		updateBoards()
 	end
