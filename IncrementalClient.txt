@@ -1735,20 +1735,24 @@ local function getPassiveStyle(passiveId, rarity)
 end
 
 local function decorateCardCorners(parent)
-	for _, p in ipairs({
-		UDim2.new(0, 2, 0, 2),
-		UDim2.new(1, -10, 0, 2),
-		UDim2.new(0, 2, 1, -10),
-		UDim2.new(1, -10, 1, -10),
-	}) do
-		local dot = Instance.new("Frame")
-		dot.Size = UDim2.new(0, 8, 0, 8)
-		dot.Position = p
-		dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		dot.BorderSizePixel = 0
-		dot.Parent = parent
-		createCorner(dot, 3)
-	end
+	local top = Instance.new("Frame")
+	top.Size = UDim2.new(1, -8, 0, 2)
+	top.Position = UDim2.new(0, 4, 0, 4)
+	top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	top.BorderSizePixel = 0
+	top.Parent = parent
+	local bottom = top:Clone()
+	bottom.Position = UDim2.new(0, 4, 1, -6)
+	bottom.Parent = parent
+	local left = Instance.new("Frame")
+	left.Size = UDim2.new(0, 2, 1, -8)
+	left.Position = UDim2.new(0, 4, 0, 4)
+	left.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	left.BorderSizePixel = 0
+	left.Parent = parent
+	local right = left:Clone()
+	right.Position = UDim2.new(1, -6, 0, 4)
+	right.Parent = parent
 end
 
 local function getCurrencyColor(currencyType)
@@ -2756,9 +2760,11 @@ local function getClientEffectiveRuneStats()
 	local passiveLuckMul = passive and (passive.runeLuckMultiplier or 1) or 1
 	local passiveSpeedMul = passive and (passive.runeSpeedMultiplier or 1) or 1
 	local passiveBulkMul = passive and (passive.runeBulkMultiplier or 1) or 1
-	local luck = math.floor(baseLuck * passiveLuckMul + 0.5)
-	local speed = math.floor(baseSpeed * passiveSpeedMul + 0.5)
-	local bulk = math.floor(baseBulk * passiveBulkMul + 0.5)
+	local passiveGlobalMul = passive and (passive.globalMultiplier or 1) or 1
+	local passiveCommonSpeedMul = passive and (passive.speedMultiplier or 1) or 1
+	local luck = math.floor(baseLuck * passiveLuckMul * passiveGlobalMul + 0.5)
+	local speed = math.floor(baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul + 0.5)
+	local bulk = math.floor(baseBulk * passiveBulkMul * passiveGlobalMul + 0.5)
 	if isAdminEventActive("RuneLuckX2") then luck *= 2 end
 	if isAdminEventActive("RuneSpeedX2") then speed *= 2 end
 	if isAdminEventActive("RuneBulkX5") then bulk += 5 end
@@ -3553,26 +3559,6 @@ local function updateBoards()
 		if xpProgressLockedOverlay then
 			xpProgressLockedOverlay.Visible = not secondUnlockedVisual
 		end
-	end
-
-	-- Safety pass against stale visual lock states.
-	if thirdUnlockedVisual then
-		updateCard(coinWoodBoostCard, coinWoodBoostLevel.Value, coinWoodBoostCost.Value, coinWoodBoostActive.Value, 10, coins.Value, nil)
-		updateCard(treeCoinBoostCard, woodCoinBoostLevel.Value, woodCoinBoostCost.Value, woodCoinBoostActive.Value, 20, woodCurrency.Value, nil)
-	end
-	if secondUnlockedVisual and xpUpgradeCards then
-		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
-		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
-		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
-		updateCard(xpUpgradeCards.xpMul, xpMultiplierLevel.Value, math.floor(xpMultiplierCost.Value + 0.5), true, 5, xpValue.Value, nil)
-		updateCard(xpUpgradeCards.runeLuck, runeLuckXpLevel.Value, math.floor(runeLuckXpCost.Value + 0.5), true, 3, xpValue.Value, nil)
-		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, nil)
-		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, nil)
-	end
-	if sixthUnlockedVisual and runeUpgradeCards then
-		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil)
-		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, nil)
-		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil)
 	end
 
 	-- Safety pass against stale visual lock states.
