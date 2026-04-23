@@ -335,6 +335,7 @@ end
 local selectedAdminCurrency = "Coins"
 local selectedAdminEvent = "StatsX2"
 local selectedAdminDuration = 300
+local updateBoards
 local ROLL_ANIMATION_CONFIG = {
 	duration = 3,
 	totalCoins = 45,
@@ -3188,7 +3189,7 @@ local function updateWallVisual()
 	end
 end
 
-local function updateBoards()
+updateBoards = function()
 	local secondUnlockedVisual = secondAreaUnlocked.Value or rebirthCount.Value >= 2
 	local thirdUnlockedVisual = thirdUpgradeUnlocked.Value or rebirthCount.Value >= 3
 	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
@@ -4017,6 +4018,9 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 			end
 		end
 		renderAdminEvents(activeAdminEvents)
+		if updateBoards then
+			updateBoards()
+		end
 	else
 		showToast(payload.text or "Готово")
 	end
@@ -4134,6 +4138,11 @@ end
 				if nextValue > 0 then
 					table.insert(stillActive, ev)
 				end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)
