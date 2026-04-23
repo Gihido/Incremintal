@@ -376,6 +376,33 @@ local function formatNumber(value)
 	return sign .. formatted .. suffixes[idx]
 end
 
+local function getPassiveBonusLines(def)
+	local lines = {}
+	local function addMul(label, value)
+		if tonumber(value) and math.abs((tonumber(value) or 1) - 1) > 0.0001 then
+			table.insert(lines, string.format("• %s x%s", label, formatNumber(value)))
+		end
+	end
+	local function addAdd(label, value)
+		if tonumber(value) and math.abs(tonumber(value)) > 0.0001 then
+			table.insert(lines, string.format("• %s +%s", label, formatNumber(value)))
+		end
+	end
+	addMul("Coins", def.coinMultiplier)
+	addMul("Wood", def.woodMultiplier)
+	addMul("Global", def.globalMultiplier)
+	addMul("Speed", def.speedMultiplier)
+	addMul("XP", def.xpMultiplier)
+	addMul("Rune Luck", def.runeLuckMultiplier)
+	addMul("Rune Speed", def.runeSpeedMultiplier)
+	addMul("Rune Bulk", def.runeBulkMultiplier)
+	addAdd("Rune Bulk", def.runeBulkAdd)
+	if #lines == 0 then
+		table.insert(lines, "• Без доп. бонусов")
+	end
+	return lines
+end
+
 local function getAssetOrEmpty(assetId)
 	if assetId and assetId ~= "" and not string.find(assetId, "PASTE") then
 		return assetId
@@ -1978,30 +2005,34 @@ local function createPassiveUi()
 	end
 
 	ui.indexDetail = Instance.new("Frame")
-	ui.indexDetail.Size = UDim2.new(0, 360, 0, 260)
+	ui.indexDetail.Size = UDim2.new(0, 420, 0, 300)
 	ui.indexDetail.AnchorPoint = Vector2.new(0.5, 0.5)
 	ui.indexDetail.Position = UDim2.new(0.5, 0, 0.5, 0)
-	ui.indexDetail.BackgroundColor3 = Color3.fromRGB(52, 70, 118)
+	ui.indexDetail.BackgroundColor3 = Color3.fromRGB(41, 56, 97)
 	ui.indexDetail.BorderSizePixel = 0
 	ui.indexDetail.Visible = false
 	ui.indexDetail.Parent = ui.indexPanel
 	createCorner(ui.indexDetail, 16)
-	createStroke(ui.indexDetail, Color3.fromRGB(255, 255, 255), 2, 0.14)
+	createStroke(ui.indexDetail, Color3.fromRGB(189, 222, 255), 2.2, 0.08)
+	createGradient(ui.indexDetail, Color3.fromRGB(82, 116, 191), Color3.fromRGB(36, 54, 96), 90)
 	ui.indexDetail.Name = "Detail"
 	local detailText = Instance.new("TextLabel")
 	detailText.Name = "Text"
-	detailText.Size = UDim2.new(1, -16, 1, -56)
-	detailText.Position = UDim2.new(0, 8, 0, 8)
+	detailText.Size = UDim2.new(1, -20, 1, -132)
+	detailText.Position = UDim2.new(0, 10, 0, 98)
 	detailText.BackgroundTransparency = 1
 	detailText.TextWrapped = true
-	detailText.TextScaled = true
+	detailText.TextScaled = false
+	detailText.TextSize = 18
+	detailText.TextXAlignment = Enum.TextXAlignment.Left
+	detailText.TextYAlignment = Enum.TextYAlignment.Top
 	detailText.Font = Enum.Font.GothamBold
 	detailText.TextColor3 = Color3.fromRGB(245, 250, 255)
 	detailText.Parent = ui.indexDetail
 	local closeDetail = Instance.new("TextButton")
-	closeDetail.Size = UDim2.new(1, -16, 0, 36)
-	closeDetail.Position = UDim2.new(0, 8, 1, -44)
-	closeDetail.Text = "X"
+	closeDetail.Size = UDim2.new(1, -16, 0, 34)
+	closeDetail.Position = UDim2.new(0, 8, 1, -42)
+	closeDetail.Text = "Закрыть"
 	closeDetail.BackgroundColor3 = Color3.fromRGB(255, 121, 121)
 	closeDetail.TextColor3 = Color3.fromRGB(255, 255, 255)
 	closeDetail.Font = Enum.Font.GothamBlack
@@ -2241,11 +2272,14 @@ local function createPassiveUi()
 			if not def then
 				return
 			end
-			detailText.Text = def.name .. "\nRarity: " .. def.rarity .. "\nChance: " .. tostring(def.chance or "?")
-				.. "\nCoin x" .. tostring(def.coinMultiplier or 1)
-				.. "\nWood x" .. tostring(def.woodMultiplier or 1)
-				.. "\nGlobal x" .. tostring(def.globalMultiplier or 1)
-				.. "\nSpeed x" .. tostring(def.speedMultiplier or 1)
+			local bonusLines = getPassiveBonusLines(def)
+			detailText.Text = table.concat({
+				def.name .. " [" .. tostring(def.rarity) .. "]",
+				"Шанс: " .. tostring(def.chance or "?"),
+				"",
+				"Бонусы:",
+				table.concat(bonusLines, "\n"),
+			}, "\n")
 			ui.indexDetail.Visible = true
 		end)
 	end
@@ -2276,12 +2310,16 @@ local function openPassiveIndexCard(passiveId)
 	icon.Image = getAssetOrEmpty(AssetSlots.PassiveCardImages[passiveId] or ICON_ASSET_IDS.PassiveCardDefault)
 	local detailText = passiveUi.indexDetail:FindFirstChild("Text")
 	if detailText and detailText:IsA("TextLabel") then
-		detailText.Position = UDim2.new(0, 8, 0, 100)
-		detailText.Size = UDim2.new(1, -16, 1, -148)
-		detailText.Text = def.name .. "\nРедкость: " .. tostring(def.rarity)
-			.. "\nТип: " .. tostring(def.currencyType or "Coins")
-			.. "\nЭффект: " .. tostring(def.effect or "—")
-			.. "\n\n" .. tostring(def.desc or "")
+		local bonusLines = getPassiveBonusLines(def)
+		detailText.Position = UDim2.new(0, 10, 0, 100)
+		detailText.Size = UDim2.new(1, -20, 1, -148)
+		detailText.Text = table.concat({
+			def.name .. " [" .. tostring(def.rarity) .. "]",
+			"Шанс: " .. tostring(def.chance or "?"),
+			"",
+			"Бонусы:",
+			table.concat(bonusLines, "\n"),
+		}, "\n")
 	end
 	passiveUi.indexDetail.Visible = true
 end
@@ -2773,9 +2811,9 @@ local function isAdminEventActive(eventKey)
 end
 
 local function getClientEffectiveRuneStats()
-	local baseLuck = runeLuckLevel.Value + runeLuckXpLevel.Value
-	local baseSpeed = runeSpeedLevel.Value + runeSpeedXpLevel.Value
-	local baseBulk = runeBulkLevel.Value + runeBulkXpLevel.Value
+	local baseLuck = 1 + runeLuckLevel.Value + runeLuckXpLevel.Value
+	local baseSpeed = 1 + runeSpeedLevel.Value + runeSpeedXpLevel.Value
+	local baseBulk = 1 + runeBulkLevel.Value + runeBulkXpLevel.Value
 	local runeState = parseRuneState()
 	local runeCounts = runeState.counts or {}
 	local mythicCount = tonumber(runeCounts.Mythic) or 0
@@ -2792,7 +2830,7 @@ local function getClientEffectiveRuneStats()
 	local bulk = math.floor(baseBulk * passiveBulkMul * passiveGlobalMul + 0.5) + mythicBulkAdd
 	if isAdminEventActive("RuneLuckX2") then luck *= 2 end
 	if isAdminEventActive("RuneSpeedX2") then speed *= 2 end
-	if isAdminEventActive("RuneBulkX5") then bulk += 5 end
+	if isAdminEventActive("RuneBulkX5") then bulk *= 5 end
 	return luck, speed, bulk
 end
 
@@ -2845,7 +2883,7 @@ local adminEventTitles = {
 }
 local adminEventDescs = {
 	StatsX2 = "Удваивает Coins/Wood/Paper/XP доход.",
-	RuneBulkX5 = "Добавляет +5 к Rune Bulk.",
+	RuneBulkX5 = "Умножает Rune Bulk на x5.",
 	RuneSpeedX2 = "Удваивает скорость открытия рун.",
 	RuneLuckX2 = "Удваивает Rune Luck.",
 	PassiveLuckX3 = "Утрояет шанс редких пассивов.",
@@ -4164,6 +4202,11 @@ end
 				if nextValue > 0 then
 					table.insert(stillActive, ev)
 				end
+			end
+			activeAdminEvents = stillActive
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then
+				updateBoards()
 			end
 			activeAdminEvents = stillActive
 			renderAdminEvents(activeAdminEvents)

@@ -466,7 +466,7 @@ local activeAdminEvents = {}
 local ADMIN_EVENT_DURATION = 300
 local ACTIVE_SERVER_EVENTS = {
 	StatsX2 = {coinMul = 2, woodMul = 2, paperMul = 2, xpMul = 2, tooltip = "x2 ко всем статам"},
-	RuneBulkX5 = {runeBulkAdd = 5, tooltip = "+5 Rune Bulk"},
+	RuneBulkX5 = {runeBulkMul = 5, tooltip = "x5 Rune Bulk"},
 	RuneSpeedX2 = {runeSpeedMul = 2, tooltip = "x2 Rune Speed"},
 	RuneLuckX2 = {runeLuckMul = 2, tooltip = "x2 Rune Luck"},
 	PassiveLuckX3 = {passiveLuckMul = 3, tooltip = "x3 Passive Luck"},
@@ -497,16 +497,17 @@ end
 
 function getServerRuneEventBoosts()
 	local now = os.clock()
-	local luckMul, speedMul, bulkAdd = 1, 1, 0
+	local luckMul, speedMul, bulkMul, bulkAdd = 1, 1, 1, 0
 	for eventKey, eventState in pairs(activeAdminEvents) do
 		local cfg = ACTIVE_SERVER_EVENTS[eventKey]
 		if cfg and now < (eventState.endsAt or 0) then
 			luckMul *= (cfg.runeLuckMul or 1)
 			speedMul *= (cfg.runeSpeedMul or 1)
+			bulkMul *= (cfg.runeBulkMul or 1)
 			bulkAdd += (cfg.runeBulkAdd or 0)
 		end
 	end
-	return luckMul, speedMul, bulkAdd
+	return luckMul, speedMul, bulkMul, bulkAdd
 end
 
 local function roundToTenth(value)
@@ -915,18 +916,19 @@ local function getEffectiveRuneStats(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local runeState = getRuneState(player)
 	if not runeUpgrades then
-		return 0, 0, 0
+		return 1, 1, 1
 	end
-	local luck = runeUpgrades.RuneLuckLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneLuckXPLevel") and xpUpgrades.RuneLuckXPLevel.Value or 0))
-	local speed = runeUpgrades.RuneSpeedLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneSpeedXPLevel") and xpUpgrades.RuneSpeedXPLevel.Value or 0))
-	local bulk = runeUpgrades.RuneBulkLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneBulkXPLevel") and xpUpgrades.RuneBulkXPLevel.Value or 0))
+	local luck = 1 + runeUpgrades.RuneLuckLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneLuckXPLevel") and xpUpgrades.RuneLuckXPLevel.Value or 0))
+	local speed = 1 + runeUpgrades.RuneSpeedLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneSpeedXPLevel") and xpUpgrades.RuneSpeedXPLevel.Value or 0))
+	local bulk = 1 + runeUpgrades.RuneBulkLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneBulkXPLevel") and xpUpgrades.RuneBulkXPLevel.Value or 0))
 	local passiveLuckMul, passiveSpeedMul, passiveBulkMul = getPassiveSpecialBoosts(player)
 	luck = math.floor(luck * passiveLuckMul + 0.5)
 	speed = math.floor(speed * passiveSpeedMul + 0.5)
 	bulk = math.floor(bulk * passiveBulkMul + 0.5)
-	local eventLuckMul, eventSpeedMul, eventBulkAdd = getServerRuneEventBoosts()
+	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = getServerRuneEventBoosts()
 	luck = math.floor(luck * eventLuckMul + 0.5)
 	speed = math.floor(speed * eventSpeedMul + 0.5)
+	bulk = math.floor(bulk * eventBulkMul + 0.5)
 	bulk += eventBulkAdd
 	return luck, speed, bulk
 end
