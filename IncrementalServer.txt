@@ -498,6 +498,32 @@ local function getServerRuneEventBoosts()
 	return luckMul, speedMul, bulkAdd
 end
 
+local function getActiveAdminEventPayload(nowTime)
+	nowTime = nowTime or os.clock()
+	local payload = {}
+	for eventId, endAt in pairs(activeAdminEvents) do
+		if endAt > nowTime then
+			payload[eventId] = math.max(0, math.floor(endAt - nowTime))
+		end
+	end
+	return payload
+end
+
+local function broadcastAdminEventState()
+	local payload = getActiveAdminEventPayload()
+	for _, player in ipairs(Players:GetPlayers()) do
+		notifyEvent:FireClient(player, {kind = "admin_event_state", events = payload})
+	end
+end
+
+local function getServerRuneEventBoosts()
+	local nowTime = os.clock()
+	local luckMul = activeAdminEvents.RuneLuckEvent > nowTime and 2 or 1
+	local bulkAdd = activeAdminEvents.RuneBulkEvent > nowTime and 5 or 0
+	local speedMul = activeAdminEvents.RuneSpeedEvent > nowTime and 1.5 or 1
+	return luckMul, speedMul, bulkAdd
+end
+
 local function roundToTenth(value)
 	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
 end
@@ -634,6 +660,64 @@ local function getPaperCurrencyObject(player)
 	return paperFactory and paperFactory:FindFirstChild("Paper") or nil
 end
 
+local function getServerEventMultipliers()
+	local now = os.clock()
+	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
+	for eventKey, eventState in pairs(activeAdminEvents) do
+		if now >= (eventState.endsAt or 0) then
+			activeAdminEvents[eventKey] = nil
+		else
+			local cfg = ACTIVE_SERVER_EVENTS[eventKey]
+			if cfg then
+				coinMul *= (cfg.coinMul or 1)
+				woodMul *= (cfg.woodMul or 1)
+				paperMul *= (cfg.paperMul or 1)
+				xpMul *= (cfg.xpMul or 1)
+			end
+		end
+	end
+	return coinMul, woodMul, paperMul, xpMul
+end
+
+local function broadcastAdminEventState()
+	local now = os.clock()
+	local events = {}
+	for eventKey, eventState in pairs(activeAdminEvents) do
+		local cfg = ACTIVE_SERVER_EVENTS[eventKey]
+		if cfg and now < (eventState.endsAt or 0) then
+			table.insert(events, {
+				key = eventKey,
+				icon = cfg.icon,
+				tooltip = cfg.tooltip,
+				timeLeft = math.max(0, math.floor(eventState.endsAt - now)),
+			})
+		end
+	end
+	for _, player in ipairs(Players:GetPlayers()) do
+		notifyEvent:FireClient(player, {kind = "admin_event_state", events = events})
+	end
+end
+
+local function getXPFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("XP") or nil
+end
+
+local function getXPCurrencyObject(player)
+	local xpFolder = getXPFolder(player)
+	return xpFolder and xpFolder:FindFirstChild("XPValue") or nil
+end
+
+local function getXPUpgradesFolder(player)
+	local xpFolder = getXPFolder(player)
+	return xpFolder and xpFolder:FindFirstChild("XPUpgrades") or nil
+end
+
+local function getXPBoostFolder(player)
+	local xpFolder = getXPFolder(player)
+	return xpFolder and xpFolder:FindFirstChild("XPBoost") or nil
+end
+
 local function getXPFolder(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("XP") or nil
@@ -751,9 +835,17 @@ local function getPassiveSpecialBoosts(player)
 	return passiveDef.runeLuckMultiplier or 1, passiveDef.runeSpeedMultiplier or 1, passiveDef.runeBulkMultiplier or 1, passiveDef.xpMultiplier or 1
 end
 
+local function getPassiveSpecialBoosts(player)
+	local passiveDef = getEquippedPassiveDef(player)
+	if not passiveDef then
+		return 1, 1, 1, 1
+	end
+	return passiveDef.runeLuckMultiplier or 1, passiveDef.runeSpeedMultiplier or 1, passiveDef.runeBulkMultiplier or 1, passiveDef.xpMultiplier or 1
+end
+
 local function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
 	}
 end
 
@@ -809,18 +901,19 @@ end
 
 local function getRuneBonusMultipliers(player)
 	local state = getRuneState(player)
-	local coinMul, woodMul, paperMul = 1, 1, 1
+	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local count = 0
 		if state.counts then
 			count = tonumber(state.counts[runeId]) or 0
 		end
-		local stacks = math.clamp(count, 0, RUNE_MAX_EFFECTIVE_STACKS)
+		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or 999999)
 		coinMul += (runeDef.coinBonus or 0) * stacks
 		woodMul += (runeDef.woodBonus or 0) * stacks
 		paperMul += (runeDef.paperBonus or 0) * stacks
+		xpMul += (runeDef.xpBonus or 0) * stacks
 	end
-	return coinMul, woodMul, paperMul
+	return coinMul, woodMul, paperMul, xpMul
 end
 
 local function getXPBoostMultiplier(player)
@@ -835,6 +928,7 @@ end
 local function getEffectiveRuneStats(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
+	local runeState = getRuneState(player)
 	if not runeUpgrades then
 		return 0, 0, 0
 	end
@@ -1132,6 +1226,17 @@ local function setupPlayerDataObjects(player)
 	createValue(xpBoost, "IntValue", XP_BOOST_CONFIG.levelName, 0)
 	createValue(xpBoost, "NumberValue", XP_BOOST_CONFIG.costName, XP_BOOST_CONFIG.startCost)
 
+	local xpFolder = ensureFolder(playerData, "XP")
+	createValue(xpFolder, "NumberValue", "XPValue", 0)
+	local xpUpgrades = ensureFolder(xpFolder, "XPUpgrades")
+	for _, cfg in pairs(XP_UPGRADES) do
+		createValue(xpUpgrades, "IntValue", cfg.levelName, 0)
+		createValue(xpUpgrades, "NumberValue", cfg.costName, cfg.startCost)
+	end
+	local xpBoost = ensureFolder(xpFolder, "XPBoost")
+	createValue(xpBoost, "IntValue", XP_BOOST_CONFIG.levelName, 0)
+	createValue(xpBoost, "NumberValue", XP_BOOST_CONFIG.costName, XP_BOOST_CONFIG.startCost)
+
 	local rebirthFolder = ensureFolder(playerData, "Rebirth")
 	createValue(rebirthFolder, "IntValue", "Count", 0)
 	createValue(rebirthFolder, "IntValue", "NextCost", REBIRTH_STAGES[1].cost)
@@ -1373,6 +1478,31 @@ local function resetXPProgress(player)
 	end
 end
 
+local function resetXPProgress(player)
+	local xp = getXPCurrencyObject(player)
+	local xpUpgrades = getXPUpgradesFolder(player)
+	local xpBoost = getXPBoostFolder(player)
+	if xp then
+		xp.Value = 0
+	end
+	if xpUpgrades then
+		for _, cfg in pairs(XP_UPGRADES) do
+			local lvl = xpUpgrades:FindFirstChild(cfg.levelName)
+			local cost = xpUpgrades:FindFirstChild(cfg.costName)
+			if lvl then lvl.Value = 0 end
+			if cost then cost.Value = cfg.startCost end
+		end
+	end
+	if xpBoost then
+		if xpBoost:FindFirstChild(XP_BOOST_CONFIG.levelName) then
+			xpBoost[XP_BOOST_CONFIG.levelName].Value = 0
+		end
+		if xpBoost:FindFirstChild(XP_BOOST_CONFIG.costName) then
+			xpBoost[XP_BOOST_CONFIG.costName].Value = XP_BOOST_CONFIG.startCost
+		end
+	end
+end
+
 local function resetAllPlayerData(player)
 	resetCoinProgress(player)
 	resetWoodProgress(player)
@@ -1418,8 +1548,8 @@ local function getCoinReward(player)
 	local woodCoinBoostMultiplier = 1.1 ^ woodUpgrades.CoinBoostLevel.Value
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
-
-	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul)
+	local eventCoinMul = getServerEventMultipliers()
+	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
 end
 
 local function getCoinRespawnDelay(player)
@@ -1466,7 +1596,8 @@ local function getWoodReward(player)
 
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("WoodXPLevel") and xpUpgrades.WoodXPLevel.Value or 0) * 0.2)
-	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier * passiveGlobalMultiplier * runeWoodMultiplier * xpMul)
+	local _, eventWoodMul = getServerEventMultipliers()
+	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier * passiveGlobalMultiplier * runeWoodMultiplier * xpMul * eventWoodMul)
 end
 
 local function getWoodCooldown(player)
@@ -1497,7 +1628,8 @@ local function getPaperProductionAmount(player)
 
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("PaperXPLevel") and xpUpgrades.PaperXPLevel.Value or 0) * 0.2)
-	return roundToTenth(baseValue * multiplier * runePaperMultiplier * xpMul)
+	local _, _, eventPaperMul = getServerEventMultipliers()
+	return roundToTenth(baseValue * multiplier * runePaperMultiplier * xpMul * eventPaperMul)
 end
 
 local function getPaperCycleTime(player)
@@ -2206,9 +2338,6 @@ local function buildSaveData(player)
 	local paperUpgrades = getPaperUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
-	local xp = getXPCurrencyObject(player)
-	local xpUpgrades = getXPUpgradesFolder(player)
-	local xpBoost = getXPBoostFolder(player)
 	local xp = getXPCurrencyObject(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpBoost = getXPBoostFolder(player)
