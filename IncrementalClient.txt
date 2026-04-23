@@ -563,6 +563,10 @@ screenGui.Name = "IncrementalMainGui"
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 20
 screenGui.Parent = playerGui
+local staleDebug = screenGui:FindFirstChild("UnlockDebugLabel")
+if staleDebug then
+	staleDebug:Destroy()
+end
 
 local pickupLayer = Instance.new("Frame")
 pickupLayer.Size = UDim2.new(1, 0, 1, 0)
@@ -2957,6 +2961,42 @@ local function renderAdminEvents(events)
 	end
 end
 
+local function normalizeAdminEvents(rawEvents)
+	local normalized = {}
+	if type(rawEvents) ~= "table" then
+		return normalized
+	end
+	if #rawEvents > 0 then
+		for idx = 1, #rawEvents do
+			local ev = rawEvents[idx]
+			if type(ev) == "table" then
+				local key = tostring(ev.key or ev.eventId or "")
+				local left = tonumber(ev.timeLeft or ev.remaining or ev.left) or 0
+				if key ~= "" and left > 0 then
+					normalized[#normalized + 1] = {
+						key = key,
+						timeLeft = left,
+						tooltip = adminEventDescs[key] or tostring(ev.tooltip or ""),
+					}
+				end
+			end
+		end
+	else
+		for key, remain in pairs(rawEvents) do
+			local left = tonumber(remain) or 0
+			local keyText = tostring(key)
+			if keyText ~= "" and left > 0 then
+				normalized[#normalized + 1] = {
+					key = keyText,
+					timeLeft = left,
+					tooltip = adminEventDescs[keyText] or "",
+				}
+			end
+		end
+	end
+	return normalized
+end
+
 local function showPickup(iconKey, amount)
 	local holder = Instance.new("Frame")
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -4011,18 +4051,7 @@ notifyEvent.OnClientEvent:Connect(function(payload)
 		updateRuneWorldDisplay()
 		triggerRuneBurst()
 	elseif payload.kind == "admin_event_state" then
-		if type(payload.events) == "table" and #payload.events > 0 then
-			activeAdminEvents = payload.events
-		else
-			activeAdminEvents = {}
-			for key, remain in pairs(payload.events or {}) do
-				table.insert(activeAdminEvents, {
-					key = tostring(key),
-					timeLeft = tonumber(remain) or 0,
-					tooltip = adminEventDescs[tostring(key)] or "",
-				})
-			end
-		end
+		activeAdminEvents = normalizeAdminEvents(payload.events)
 		renderAdminEvents(activeAdminEvents)
 		if updateBoards then
 			updateBoards()
