@@ -3750,6 +3750,7 @@ local function triggerRuneBurst()
 	end)
 end
 
+local function initializeClientBindingsAndRuntime()
 selectCoinsButton.MouseButton1Click:Connect(function()
 	selectedAdminCurrency = "Coins"
 	refreshAdminCurrencyButtons()
@@ -3773,147 +3774,63 @@ local function isButtonPurchasable(button)
 	return button and button.Active and button.Selectable and button.Text ~= "LOCKED" and button.Text ~= "MAX"
 end
 
-coinGainCard.buyButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(coinGainCard.buyButton) then return end
-	purchaseUpgradeEvent:FireServer("Coin", "CoinValue", "Buy")
-end)
-coinGainCard.maxButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(coinGainCard.maxButton) then return end
-	purchaseUpgradeEvent:FireServer("Coin", "CoinValue", "Max")
-end)
+local function bindUpgradeCard(card, family, key)
+	if not card then return end
+	card.buyButton.MouseButton1Click:Connect(function()
+		if not isButtonPurchasable(card.buyButton) then return end
+		purchaseUpgradeEvent:FireServer(family, key, "Buy")
+	end)
+	card.maxButton.MouseButton1Click:Connect(function()
+		if not isButtonPurchasable(card.maxButton) then return end
+		purchaseUpgradeEvent:FireServer(family, key, "Max")
+	end)
+end
 
-coinMultiCard.buyButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(coinMultiCard.buyButton) then return end
-	purchaseUpgradeEvent:FireServer("Coin", "Multiplier", "Buy")
-end)
-coinMultiCard.maxButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(coinMultiCard.maxButton) then return end
-	purchaseUpgradeEvent:FireServer("Coin", "Multiplier", "Max")
-end)
-
-coinSpawnCard.buyButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(coinSpawnCard.buyButton) then return end
-	purchaseUpgradeEvent:FireServer("Coin", "SpawnSpeed", "Buy")
-end)
-coinSpawnCard.maxButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(coinSpawnCard.maxButton) then return end
-	purchaseUpgradeEvent:FireServer("Coin", "SpawnSpeed", "Max")
-end)
-
-coinWoodBoostCard.buyButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(coinWoodBoostCard.buyButton) then return end
-	purchaseUpgradeEvent:FireServer("Coin", "WoodBoost", "Buy")
-end)
-coinWoodBoostCard.maxButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(coinWoodBoostCard.maxButton) then return end
-	purchaseUpgradeEvent:FireServer("Coin", "WoodBoost", "Max")
-end)
-
-treeGainCard.buyButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(treeGainCard.buyButton) then return end
-	purchaseUpgradeEvent:FireServer("Wood", "WoodValue", "Buy")
-end)
-treeGainCard.maxButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(treeGainCard.maxButton) then return end
-	purchaseUpgradeEvent:FireServer("Wood", "WoodValue", "Max")
-end)
-
-treeMultiCard.buyButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(treeMultiCard.buyButton) then return end
-	purchaseUpgradeEvent:FireServer("Wood", "WoodMultiplier", "Buy")
-end)
-treeMultiCard.maxButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(treeMultiCard.maxButton) then return end
-	purchaseUpgradeEvent:FireServer("Wood", "WoodMultiplier", "Max")
-end)
-
-treeSpeedCard.buyButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(treeSpeedCard.buyButton) then return end
-	purchaseUpgradeEvent:FireServer("Wood", "WoodSpeed", "Buy")
-end)
-treeSpeedCard.maxButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(treeSpeedCard.maxButton) then return end
-	purchaseUpgradeEvent:FireServer("Wood", "WoodSpeed", "Max")
-end)
-
-treeCoinBoostCard.buyButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(treeCoinBoostCard.buyButton) then return end
-	purchaseUpgradeEvent:FireServer("Wood", "CoinBoost", "Buy")
-end)
-treeCoinBoostCard.maxButton.MouseButton1Click:Connect(function()
-	if not isButtonPurchasable(treeCoinBoostCard.maxButton) then return end
-	purchaseUpgradeEvent:FireServer("Wood", "CoinBoost", "Max")
-end)
+bindUpgradeCard(coinGainCard, "Coin", "CoinValue")
+bindUpgradeCard(coinMultiCard, "Coin", "Multiplier")
+bindUpgradeCard(coinSpawnCard, "Coin", "SpawnSpeed")
+bindUpgradeCard(coinWoodBoostCard, "Coin", "WoodBoost")
+bindUpgradeCard(treeGainCard, "Wood", "WoodValue")
+bindUpgradeCard(treeMultiCard, "Wood", "WoodMultiplier")
+bindUpgradeCard(treeSpeedCard, "Wood", "WoodSpeed")
+bindUpgradeCard(treeCoinBoostCard, "Wood", "CoinBoost")
 
 if paperUpgradeCards then
-	paperUpgradeCards.gain.buyButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(paperUpgradeCards.gain.buyButton) then return end
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Buy")
-	end)
-	paperUpgradeCards.gain.maxButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(paperUpgradeCards.gain.maxButton) then return end
-		purchaseUpgradeEvent:FireServer("Paper", "PaperValue", "Max")
-	end)
-	paperUpgradeCards.multi.buyButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(paperUpgradeCards.multi.buyButton) then return end
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Buy")
-	end)
-	paperUpgradeCards.multi.maxButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(paperUpgradeCards.multi.maxButton) then return end
-		purchaseUpgradeEvent:FireServer("Paper", "PaperMultiplier", "Max")
-	end)
-	paperUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(paperUpgradeCards.speed.buyButton) then return end
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Buy")
-	end)
-	paperUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(paperUpgradeCards.speed.maxButton) then return end
-		purchaseUpgradeEvent:FireServer("Paper", "PaperSpeed", "Max")
-	end)
+	bindUpgradeCard(paperUpgradeCards.gain, "Paper", "PaperValue")
+	bindUpgradeCard(paperUpgradeCards.multi, "Paper", "PaperMultiplier")
+	bindUpgradeCard(paperUpgradeCards.speed, "Paper", "PaperSpeed")
 end
 
 if runeUpgradeCards then
-	runeUpgradeCards.luck.buyButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(runeUpgradeCards.luck.buyButton) then return end
-		runeActionEvent:FireServer("UpgradeLuck")
-	end)
-	runeUpgradeCards.luck.maxButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(runeUpgradeCards.luck.maxButton) then return end
-		runeActionEvent:FireServer("UpgradeLuckMax")
-	end)
-	runeUpgradeCards.speed.buyButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(runeUpgradeCards.speed.buyButton) then return end
-		runeActionEvent:FireServer("UpgradeSpeed")
-	end)
-	runeUpgradeCards.speed.maxButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(runeUpgradeCards.speed.maxButton) then return end
-		runeActionEvent:FireServer("UpgradeSpeedMax")
-	end)
-	runeUpgradeCards.bulk.buyButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(runeUpgradeCards.bulk.buyButton) then return end
-		runeActionEvent:FireServer("UpgradeBulk")
-	end)
-	runeUpgradeCards.bulk.maxButton.MouseButton1Click:Connect(function()
-		if not isButtonPurchasable(runeUpgradeCards.bulk.maxButton) then return end
-		runeActionEvent:FireServer("UpgradeBulkMax")
-	end)
+	local function bindRuneCard(card, buyAction, maxAction)
+		card.buyButton.MouseButton1Click:Connect(function()
+			if not isButtonPurchasable(card.buyButton) then return end
+			runeActionEvent:FireServer(buyAction)
+		end)
+		card.maxButton.MouseButton1Click:Connect(function()
+			if not isButtonPurchasable(card.maxButton) then return end
+			runeActionEvent:FireServer(maxAction)
+		end)
+	end
+	bindRuneCard(runeUpgradeCards.luck, "UpgradeLuck", "UpgradeLuckMax")
+	bindRuneCard(runeUpgradeCards.speed, "UpgradeSpeed", "UpgradeSpeedMax")
+	bindRuneCard(runeUpgradeCards.bulk, "UpgradeBulk", "UpgradeBulkMax")
 end
 
 if xpUpgradeCards then
-	xpUpgradeCards.coin.buyButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "CoinXP", "Buy") end)
-	xpUpgradeCards.coin.maxButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "CoinXP", "Max") end)
-	xpUpgradeCards.wood.buyButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "WoodXP", "Buy") end)
-	xpUpgradeCards.wood.maxButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "WoodXP", "Max") end)
-	xpUpgradeCards.paper.buyButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "PaperXP", "Buy") end)
-	xpUpgradeCards.paper.maxButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "PaperXP", "Max") end)
-	xpUpgradeCards.xpMul.buyButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "XPMultiplier", "Buy") end)
-	xpUpgradeCards.xpMul.maxButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "XPMultiplier", "Max") end)
-	xpUpgradeCards.runeLuck.buyButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "RuneLuckXP", "Buy") end)
-	xpUpgradeCards.runeLuck.maxButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "RuneLuckXP", "Max") end)
-	xpUpgradeCards.runeBulk.buyButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "RuneBulkXP", "Buy") end)
-	xpUpgradeCards.runeBulk.maxButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "RuneBulkXP", "Max") end)
-	xpUpgradeCards.runeSpeed.buyButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "RuneSpeedXP", "Buy") end)
-	xpUpgradeCards.runeSpeed.maxButton.MouseButton1Click:Connect(function() purchaseUpgradeEvent:FireServer("XP", "RuneSpeedXP", "Max") end)
+	local xpBindings = {
+		{card = xpUpgradeCards.coin, key = "CoinXP"},
+		{card = xpUpgradeCards.wood, key = "WoodXP"},
+		{card = xpUpgradeCards.paper, key = "PaperXP"},
+		{card = xpUpgradeCards.xpMul, key = "XPMultiplier"},
+		{card = xpUpgradeCards.runeLuck, key = "RuneLuckXP"},
+		{card = xpUpgradeCards.runeBulk, key = "RuneBulkXP"},
+		{card = xpUpgradeCards.runeSpeed, key = "RuneSpeedXP"},
+	}
+	for idx = 1, #xpBindings do
+		local binding = xpBindings[idx]
+		bindUpgradeCard(binding.card, "XP", binding.key)
+	end
 end
 
 if xpProgressUi and xpProgressUi.buyButton then
@@ -4260,4 +4177,7 @@ if #passiveEffectParts > 0 then
 	end)
 end
 
+end
+
+initializeClientBindingsAndRuntime()
 updateBoards()
