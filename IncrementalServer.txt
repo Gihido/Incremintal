@@ -2810,12 +2810,13 @@ task.spawn(function()
 
 		local now = os.clock()
 		local eventsChanged = false
-		for eventId, endAt in pairs(activeAdminEvents) do
-			if endAt > 0 and endAt <= now then
-				activeAdminEvents[eventId] = 0
-				eventsChanged = true
+			for eventId, eventState in pairs(activeAdminEvents) do
+				local endAt = type(eventState) == "table" and (eventState.endsAt or 0) or tonumber(eventState) or 0
+				if endAt > 0 and endAt <= now then
+					activeAdminEvents[eventId] = nil
+					eventsChanged = true
+				end
 			end
-		end
 		if eventsChanged then
 			broadcastAdminEventState()
 		end

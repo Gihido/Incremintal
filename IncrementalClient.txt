@@ -3066,6 +3066,15 @@ for _, obj in ipairs(rebirthWall:GetDescendants()) do
 	end
 end
 
+local function isSystemUnlocked(stage)
+	if stage == 2 then return secondAreaUnlocked.Value or rebirthCount.Value >= 2 end
+	if stage == 3 then return thirdUpgradeUnlocked.Value or rebirthCount.Value >= 3 end
+	if stage == 4 then return fourthSystemsUnlocked.Value or rebirthCount.Value >= 4 end
+	if stage == 5 then return fifthSystemsUnlocked.Value or rebirthCount.Value >= 5 end
+	if stage == 6 then return sixthSystemsUnlocked.Value or rebirthCount.Value >= 6 end
+	return false
+end
+
 local function updateWallVisual()
 	for _, part in ipairs(wallParts) do
 		part.LocalTransparencyModifier = secondAreaUnlocked.Value and 0.78 or 0
@@ -3832,7 +3841,7 @@ mouse.Button1Down:Connect(function()
 		return
 	end
 
-	if not secondAreaUnlocked.Value then
+	if not isSystemUnlocked(2) then
 		if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
 			passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
 		elseif passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
@@ -3847,7 +3856,7 @@ mouse.Button1Down:Connect(function()
 	end
 
 	if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
-		if fifthSystemsUnlocked.Value then
+		if isSystemUnlocked(5) then
 			passiveUi.inventoryPanel.Visible = false
 			passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
 		else
@@ -3857,7 +3866,7 @@ mouse.Button1Down:Connect(function()
 	end
 
 	if passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
-		if fifthSystemsUnlocked.Value then
+		if isSystemUnlocked(5) then
 			passiveUi.indexPanel.Visible = false
 			passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
 		else
@@ -3867,7 +3876,7 @@ mouse.Button1Down:Connect(function()
 	end
 
 	if mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock then
-		if not sixthSystemsUnlocked.Value then
+		if not isSystemUnlocked(6) then
 			showToast("Руны откроются на 6-м перерождении")
 		end
 		return
