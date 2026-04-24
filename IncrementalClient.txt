@@ -258,6 +258,8 @@ ICON_ASSET_IDS = {
 		ForestRune_Brevno = "rbxassetid://6031079152",
 		ForestRune_Poleno = "rbxassetid://6031079152",
 		ForestRune_ObgorevshiyPen = "rbxassetid://6031079152",
+		ForestRuneIndexBackground = "rbxassetid://6031079152",
+		ForestRuneSessionBackground = "rbxassetid://6031079152",
 		NatureRuneBlock = "rbxassetid://6031079152",
 		NatureRuneIndexBoard = "rbxassetid://6031079152",
 		NatureRuneStatsBoard = "rbxassetid://6031079152",
@@ -267,6 +269,8 @@ ICON_ASSET_IDS = {
 		NatureRune_Flower = "rbxassetid://6031079152",
 		NatureRune_Violet = "rbxassetid://6031079152",
 		NatureRune_Rose = "rbxassetid://6031079152",
+		NatureRuneIndexBackground = "rbxassetid://6031079152",
+		NatureRuneSessionBackground = "rbxassetid://6031079152",
 		ForestRuneGrass = "rbxassetid://6031079152",
 		ForestRuneDarkGrass = "rbxassetid://6031079152",
 		ForestRuneDandelion = "rbxassetid://6031079152",
@@ -313,12 +317,18 @@ AssetSlots = {
 		RebirthUpgrade = ICON_ASSET_IDS.UpgradeRebirth,
 	},
 	RuneIcons = {
-		Grass = ICON_ASSET_IDS.ForestRuneGrass,
-		DarkGrass = ICON_ASSET_IDS.ForestRuneDarkGrass,
-		Dandelion = ICON_ASSET_IDS.ForestRuneDandelion,
-		Flower = ICON_ASSET_IDS.ForestRuneFlower,
-		Violet = ICON_ASSET_IDS.ForestRuneViolet,
-		Rose = ICON_ASSET_IDS.ForestRuneRose,
+		Grass = ICON_ASSET_IDS.NatureRune_Grass,
+		DarkGrass = ICON_ASSET_IDS.NatureRune_DarkGrass,
+		Dandelion = ICON_ASSET_IDS.NatureRune_Dandelion,
+		Flower = ICON_ASSET_IDS.NatureRune_Flower,
+		Violet = ICON_ASSET_IDS.NatureRune_Violet,
+		Rose = ICON_ASSET_IDS.NatureRune_Rose,
+		Palka = ICON_ASSET_IDS.ForestRune_Palka,
+		ObrublennyKonec = ICON_ASSET_IDS.ForestRune_ObrublennyKonec,
+		VetvDereva = ICON_ASSET_IDS.ForestRune_VetvDereva,
+		Brevno = ICON_ASSET_IDS.ForestRune_Brevno,
+		Poleno = ICON_ASSET_IDS.ForestRune_Poleno,
+		ObgorevshiyPen = ICON_ASSET_IDS.ForestRune_ObgorevshiyPen,
 	},
 	NotificationIcons = {
 		Coin = ICON_ASSET_IDS.CurrencyCoin,
@@ -347,8 +357,10 @@ AssetSlots = {
 	},
 	UiBackgrounds = {
 		RuneSession = "",
-		ForestRuneSession = "",
-		NatureRuneSession = "",
+		ForestRuneSession = ICON_ASSET_IDS.ForestRuneSessionBackground,
+		NatureRuneSession = ICON_ASSET_IDS.NatureRuneSessionBackground,
+		ForestRuneIndexBackground = ICON_ASSET_IDS.ForestRuneIndexBackground,
+		NatureRuneIndexBackground = ICON_ASSET_IDS.NatureRuneIndexBackground,
 	},
 	AdminEventIcons = {
 		StatsX2 = "rbxassetid://6031260785",
@@ -1815,6 +1827,13 @@ function createRuneIndexBoard(runeSystemConfig)
 	if not runeSystemConfig.partIndex then return nil end
 	local _, board = createWorldBoard(runeSystemConfig.indexGuiName, runeSystemConfig.partIndex, Enum.NormalId.Front, 72)
 	createHeader(board, runeSystemConfig.id .. " RUNE INDEX", "Выбери руну для деталей")
+	local bg = Instance.new("ImageLabel")
+	bg.Size = UDim2.new(1, 0, 1, 0)
+	bg.BackgroundTransparency = 1
+	bg.Image = getAssetOrEmpty(runeSystemConfig.id == "Forest" and AssetSlots.UiBackgrounds.ForestRuneIndexBackground or AssetSlots.UiBackgrounds.NatureRuneIndexBackground)
+	bg.ImageTransparency = bg.Image == "" and 1 or 0.35
+	bg.ScaleType = Enum.ScaleType.Crop
+	bg.Parent = board
 	local list = Instance.new("ScrollingFrame")
 	list.Size = UDim2.new(0.45, 0, 1, -66)
 	list.Position = UDim2.new(0, 0, 0, 66)
@@ -1834,7 +1853,7 @@ function createRuneIndexBoard(runeSystemConfig)
 	details.BackgroundColor3 = Color3.fromRGB(34, 55, 82)
 	details.TextColor3 = Color3.fromRGB(236, 245, 255)
 	details.Font = Enum.Font.GothamSemibold
-	details.TextSize = 12
+	details.TextSize = 14
 	details.TextWrapped = true
 	details.TextXAlignment = Enum.TextXAlignment.Left
 	details.TextYAlignment = Enum.TextYAlignment.Top
@@ -1871,7 +1890,7 @@ function createRuneIndexBoard(runeSystemConfig)
 		text.TextYAlignment = Enum.TextYAlignment.Top
 		text.TextWrapped = true
 		text.Font = Enum.Font.GothamBold
-		text.TextSize = 13
+			text.TextSize = 15
 		text.TextColor3 = Color3.fromRGB(236, 245, 255)
 		text.Text = runeSystemConfig.names[runeId] or runeId
 		text.Parent = row
@@ -1900,7 +1919,7 @@ function createRuneStatsBoard(runeSystemConfig)
 		luck = createStatRow(body, "Rune Luck"),
 		bulk = createStatRow(body, "Rune Bulk"),
 		speed = createStatRow(body, "Rune Speed"),
-		passive = createStatRow(body, "Passive Luck"),
+		passive = runeSystemConfig.id == "Forest" and nil or createStatRow(body, "Passive Luck"),
 		total = createStatRow(body, "Итог"),
 	}
 end
@@ -1932,33 +1951,44 @@ hayUpgradeRows = {}
 if hayUpgradeBoardPart then
 	local _, hayUpgradeBoard = createWorldBoard("HayUpgradeBoardSurfaceGui", hayUpgradeBoardPart, Enum.NormalId.Front, 72)
 	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
-	local body = Instance.new("Frame")
-	body.Size = UDim2.new(1, 0, 1, -66)
-	body.Position = UDim2.new(0, 0, 0, 66)
-	body.BackgroundTransparency = 1
-	body.Parent = hayUpgradeBoard
+	local cards = Instance.new("Frame")
+	cards.Size = UDim2.new(1, 0, 1, -66)
+	cards.Position = UDim2.new(0, 0, 0, 66)
+	cards.BackgroundTransparency = 1
+	cards.Parent = hayUpgradeBoard
 	local list = Instance.new("UIListLayout")
-	list.Padding = UDim.new(0, 6)
-	list.Parent = body
-	local function makeHayUpgradeRow(name, iconKey)
-		local row = Instance.new("TextButton")
-		row.Size = UDim2.new(1, 0, 0, 74)
-		row.AutoButtonColor = false
-		row.BackgroundColor3 = Color3.fromRGB(61, 84, 40)
-		row.Text = ""
-		row.Parent = body
-		createCorner(row, 10)
+	list.FillDirection = Enum.FillDirection.Horizontal
+	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	list.Padding = UDim.new(0, 8)
+	list.Parent = cards
+	local function makeHayUpgradeRow(name, iconKey, c1, c2)
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(0.32, 0, 1, 0)
+		row.BackgroundColor3 = c1
+		row.BorderSizePixel = 0
+		row.Parent = cards
+		createCorner(row, 12)
+		createGradient(row, c1, c2, 90)
+		createStroke(row, Color3.fromRGB(222, 240, 255), 2, 0.15)
+		local iconWrap = Instance.new("Frame")
+		iconWrap.Size = UDim2.new(0, 48, 0, 48)
+		iconWrap.Position = UDim2.new(0.5, -24, 0, 8)
+		iconWrap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		iconWrap.BackgroundTransparency = 0.78
+		iconWrap.BorderSizePixel = 0
+		iconWrap.Parent = row
+		createCorner(iconWrap, 999)
 		local icon = Instance.new("ImageLabel")
-		icon.Size = UDim2.new(0, 32, 0, 32)
-		icon.Position = UDim2.new(0, 8, 0.5, -16)
+		icon.Size = UDim2.new(1, -10, 1, -10)
+		icon.Position = UDim2.new(0, 5, 0, 5)
 		icon.BackgroundTransparency = 1
 		icon.Image = getAssetOrEmpty(ICON_ASSET_IDS[iconKey])
-		icon.Parent = row
+		icon.Parent = iconWrap
 		local text = Instance.new("TextLabel")
-		text.Size = UDim2.new(1, -48, 1, -8)
-		text.Position = UDim2.new(0, 44, 0, 4)
+		text.Size = UDim2.new(1, -8, 0, 120)
+		text.Position = UDim2.new(0, 4, 0, 60)
 		text.BackgroundTransparency = 1
-		text.TextXAlignment = Enum.TextXAlignment.Left
+		text.TextXAlignment = Enum.TextXAlignment.Center
 		text.TextYAlignment = Enum.TextYAlignment.Top
 		text.TextWrapped = true
 		text.TextColor3 = Color3.fromRGB(245, 246, 210)
@@ -1967,30 +1997,19 @@ if hayUpgradeBoardPart then
 		text.Text = name
 		text.Parent = row
 		local buyBtn = Instance.new("TextButton")
-		buyBtn.Size = UDim2.new(0, 48, 0, 24)
-		buyBtn.Position = UDim2.new(1, -104, 1, -28)
-		buyBtn.Text = "BUY"
-		buyBtn.TextScaled = true
-		buyBtn.Font = Enum.Font.GothamBlack
-		buyBtn.BackgroundColor3 = Color3.fromRGB(111, 217, 126)
-		buyBtn.TextColor3 = Color3.fromRGB(22, 45, 24)
+		buyBtn.Size = UDim2.new(0.48, -6, 0, 28)
+		buyBtn.Position = UDim2.new(0, 4, 1, -32)
 		buyBtn.Parent = row
-		createCorner(buyBtn, 8)
 		local maxBtn = Instance.new("TextButton")
-		maxBtn.Size = UDim2.new(0, 48, 0, 24)
-		maxBtn.Position = UDim2.new(1, -52, 1, -28)
-		maxBtn.Text = "MAX"
-		maxBtn.TextScaled = true
-		maxBtn.Font = Enum.Font.GothamBlack
-		maxBtn.BackgroundColor3 = Color3.fromRGB(187, 148, 246)
-		maxBtn.TextColor3 = Color3.fromRGB(36, 25, 56)
+		maxBtn.Size = UDim2.new(0.48, -6, 0, 28)
+		maxBtn.Position = UDim2.new(0.52, 2, 1, -32)
 		maxBtn.Parent = row
-		createCorner(maxBtn, 8)
-		return {button = row, text = text, buyButton = buyBtn, maxButton = maxBtn}
+		createCorner(buyBtn, 8); createCorner(maxBtn, 8)
+		return {card = row, text = text, buyButton = buyBtn, maxButton = maxBtn}
 	end
-	hayUpgradeRows.HayAmount = makeHayUpgradeRow("Hay Amount", "HayAmountUpgradeIcon")
-	hayUpgradeRows.HayMultiplier = makeHayUpgradeRow("Hay Multiplier", "HayMultiplierUpgradeIcon")
-	hayUpgradeRows.HayCooldown = makeHayUpgradeRow("Hay Cooldown", "HayCooldownUpgradeIcon")
+	hayUpgradeRows.HayAmount = makeHayUpgradeRow("Hay Amount", "HayAmountUpgradeIcon", Color3.fromRGB(121, 215, 158), Color3.fromRGB(73, 175, 120))
+	hayUpgradeRows.HayMultiplier = makeHayUpgradeRow("Hay Multiplier", "HayMultiplierUpgradeIcon", Color3.fromRGB(98, 161, 236), Color3.fromRGB(71, 123, 196))
+	hayUpgradeRows.HayCooldown = makeHayUpgradeRow("Hay Cooldown", "HayCooldownUpgradeIcon", Color3.fromRGB(182, 140, 236), Color3.fromRGB(146, 97, 213))
 end
 treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
@@ -2799,7 +2818,7 @@ function createRuneOverlays()
 		local bgImage = Instance.new("ImageLabel")
 		bgImage.Size = UDim2.new(1, 0, 1, 0)
 		bgImage.BackgroundTransparency = 1
-		bgImage.Image = getAssetOrEmpty(AssetSlots.UiBackgrounds.RuneSession)
+		bgImage.Image = getAssetOrEmpty(AssetSlots.UiBackgrounds.NatureRuneSession or AssetSlots.UiBackgrounds.RuneSession)
 		bgImage.ImageTransparency = bgImage.Image == "" and 1 or 0
 		bgImage.ScaleType = Enum.ScaleType.Stretch
 		bgImage.Parent = panel
@@ -2919,6 +2938,13 @@ do
 	panel.Parent = screenGui
 	createCorner(panel, 14)
 	createStroke(panel, Color3.fromRGB(205, 174, 118), 3, 0)
+	local bg = Instance.new("ImageLabel")
+	bg.Size = UDim2.new(1, 0, 1, 0)
+	bg.BackgroundTransparency = 1
+	bg.Image = getAssetOrEmpty(AssetSlots.UiBackgrounds.ForestRuneSession)
+	bg.ImageTransparency = bg.Image == "" and 1 or 0
+	bg.ScaleType = Enum.ScaleType.Stretch
+	bg.Parent = panel
 	local listHolder = Instance.new("ScrollingFrame")
 	listHolder.Size = UDim2.new(1, -10, 1, -42)
 	listHolder.Position = UDim2.new(0, 5, 0, 36)
@@ -4115,11 +4141,13 @@ updateBoards = function()
 				bundle.stats.luck.Text = "x" .. formatNumber(effLuck)
 				bundle.stats.bulk.Text = "+" .. formatNumber(effBulkBonus)
 				bundle.stats.speed.Text = string.format("%.2fs/roll | Overflow Bulk +%s", speedSeconds, formatNumber(speedOverflowBulk))
-				local roseStacks = math.min(20, tonumber(counts.Rose) or 0)
-				local obgPenStacks = math.min(20, tonumber(counts.ObgorevshiyPen) or 0)
-				local runePassive = 1 + roseStacks * 0.1 + obgPenStacks * 0.1
-				local eventPassive = (activeAdminEvents and activeAdminEvents.PassiveLuckX3) and 3 or 1
-				bundle.stats.passive.Text = "x" .. formatNumber(runePassive * eventPassive) .. string.format(" (Rune x%s, Event x%s)", formatNumber(runePassive), formatNumber(eventPassive))
+				if bundle.stats.passive then
+					local roseStacks = math.min(20, tonumber(counts.Rose) or 0)
+					local obgPenStacks = math.min(20, tonumber(counts.ObgorevshiyPen) or 0)
+					local runePassive = 1 + roseStacks * 0.1 + obgPenStacks * 0.1
+					local eventPassive = (activeAdminEvents and activeAdminEvents.PassiveLuckX3) and 3 or 1
+					bundle.stats.passive.Text = "x" .. formatNumber(runePassive * eventPassive) .. string.format(" (Rune x%s, Event x%s)", formatNumber(runePassive), formatNumber(eventPassive))
+				end
 				bundle.stats.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulkBonus)
 			end
 		end
@@ -4502,7 +4530,11 @@ function bindUpgradeBoards()
 end
 
 function bindPassiveAndRuneButtons()
-	rebirthButton.MouseButton1Click:Connect(function() purchaseRebirthEvent:FireServer() end)
+	rebirthButton.MouseButton1Click:Connect(function()
+		purchaseRebirthEvent:FireServer()
+		task.delay(0.1, refreshClientUnlockVisibility)
+		task.delay(0.5, refreshClientUnlockVisibility)
+	end)
 	addFuelButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelOnce") end)
 	addFuelMaxButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelMax") end)
 
@@ -4772,6 +4804,12 @@ function registerWatchedValueUpdates()
 	end
 end
 
+function refreshClientUnlockVisibility()
+	if updateBoards then
+		updateBoards()
+	end
+end
+
 function startRuntimeUiUpdates()
 	if passiveUi.hintEmoji then
 		RunService.RenderStepped:Connect(function()
@@ -4846,8 +4884,12 @@ function initializeClientBindingsAndRuntime()
 	registerNotifyEventListeners()
 	registerWorldInputBindings()
 	registerWatchedValueUpdates()
+	rebirthCount:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
+	secondAreaUnlocked:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
+	fourthSystemsUnlocked:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
+	sixthSystemsUnlocked:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
 	startRuntimeUiUpdates()
 end
 
 initializeClientBindingsAndRuntime()
-updateBoards()
+refreshClientUnlockVisibility()
