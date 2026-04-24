@@ -3036,16 +3036,37 @@ do
 	title.TextColor3 = Color3.fromRGB(255, 244, 220)
 	title.Parent = panel
 	for _, runeId in ipairs({"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}) do
-		local row = Instance.new("TextLabel")
+		local row = Instance.new("Frame")
 		row.Size = UDim2.new(1, 0, 0, 32)
-		row.BackgroundTransparency = 0.2
 		row.BackgroundColor3 = Color3.fromRGB(48, 36, 22)
-		row.TextColor3 = Color3.fromRGB(255, 234, 194)
-		row.Font = Enum.Font.GothamBold
-		row.TextScaled = true
-		row.Text = "🌲 " .. (RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId) .. ": +0"
+		row.BackgroundTransparency = 0.2
+		row.BorderSizePixel = 0
 		row.Parent = listHolder
-		forestRuneSessionRows[runeId] = row
+		createCorner(row, 8)
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(1, -64, 1, 0)
+		nameLabel.Position = UDim2.new(0, 8, 0, 0)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+		nameLabel.TextColor3 = Color3.fromRGB(255, 234, 194)
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.TextSize = 14
+		nameLabel.Text = tostring(RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId)
+		nameLabel.Parent = row
+
+		local gainLabel = Instance.new("TextLabel")
+		gainLabel.Size = UDim2.new(0, 54, 1, 0)
+		gainLabel.Position = UDim2.new(1, -58, 0, 0)
+		gainLabel.BackgroundTransparency = 1
+		gainLabel.TextXAlignment = Enum.TextXAlignment.Right
+		gainLabel.TextColor3 = Color3.fromRGB(255, 234, 194)
+		gainLabel.Font = Enum.Font.GothamBlack
+		gainLabel.TextSize = 14
+		gainLabel.Text = "+0"
+		gainLabel.Parent = row
+		forestRuneSessionRows[runeId] = gainLabel
 	end
 	forestRuneSessionPanel = panel
 end
@@ -4757,6 +4778,9 @@ function registerNotifyEventListeners()
 			if payload.system == "Forest" then
 				if payload.active then
 					for k in pairs(forestRuneSessionCounts) do forestRuneSessionCounts[k] = 0 end
+					for _, label in pairs(forestRuneSessionRows) do
+						label.Text = "+0"
+					end
 					if forestRuneSessionPanel then forestRuneSessionPanel.Visible = true end
 				else
 					if forestRuneSessionPanel then forestRuneSessionPanel.Visible = false end
@@ -4765,7 +4789,7 @@ function registerNotifyEventListeners()
 				if payload.active then startRuneRolling(payload.system) else stopRuneRolling(payload.system) end
 			end
 		elseif payload.kind == "rune_roll_tick" then
-			if payload.system and payload.system ~= "Nature" then
+			if payload.system and payload.system ~= "Nature" and payload.system ~= "Forest" then
 				return
 			end
 			local session = payload.session or {}
@@ -4773,7 +4797,7 @@ function registerNotifyEventListeners()
 			if payload.system == "Forest" then
 				for runeId, amount in pairs(session) do forestRuneSessionCounts[runeId] = tonumber(amount) or 0 end
 				for runeId, label in pairs(forestRuneSessionRows) do
-					label.Text = (RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId) .. ": +" .. formatNumber(forestRuneSessionCounts[runeId] or 0)
+					label.Text = "+" .. formatNumber(forestRuneSessionCounts[runeId] or 0)
 				end
 				if forestRuneSessionPanel then forestRuneSessionPanel.Visible = true end
 			else
