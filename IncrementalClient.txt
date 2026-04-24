@@ -1974,18 +1974,16 @@ function getHayUpgradeCard(cardKey)
 	return nil
 end
 if hayUpgradeBoardPart then
-	ensureHayUpgradeIconSlots()
 	local _, hayUpgradeBoard = createWorldBoard("HayUpgradeBoardSurfaceGui", hayUpgradeBoardPart, Enum.NormalId.Front, 72)
 	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
 	local hayScroll = createHorizontalScroller(hayUpgradeBoard, 66, 12)
-	local hayIcons = AssetSlots and AssetSlots.UpgradeIcons or {}
-	hayAmountUpgradeCard = createUpgradeCard(hayScroll, "HayAmount", "Увеличивает количество сена за цикл.", "+1", hayIcons["HayAmount"], "H", {
+	hayAmountUpgradeCard = createUpgradeCard(hayScroll, "HayAmount", "Увеличивает количество сена за цикл.", "+1", ICON_ASSET_IDS.HayAmountUpgradeIcon or "", "H", {
 			card1 = Color3.fromRGB(121, 215, 158), card2 = Color3.fromRGB(73, 175, 120), inner1 = Color3.fromRGB(176, 241, 200), inner2 = Color3.fromRGB(105, 202, 148), icon1 = Color3.fromRGB(255, 238, 159), icon2 = Color3.fromRGB(232, 186, 79),
 		})
-	hayMultiplierUpgradeCard = createUpgradeCard(hayScroll, "HayMultiplier", "Увеличивает множитель сена.", "+0.5x", hayIcons["HayMultiplier"], "M", {
+	hayMultiplierUpgradeCard = createUpgradeCard(hayScroll, "HayMultiplier", "Увеличивает множитель сена.", "+0.5x", ICON_ASSET_IDS.HayMultiplierUpgradeIcon or "", "M", {
 			card1 = Color3.fromRGB(98, 161, 236), card2 = Color3.fromRGB(71, 123, 196), inner1 = Color3.fromRGB(160, 205, 255), inner2 = Color3.fromRGB(113, 166, 234), icon1 = Color3.fromRGB(214, 230, 255), icon2 = Color3.fromRGB(145, 173, 245),
 		})
-	hayCooldownUpgradeCard = createUpgradeCard(hayScroll, "HayCooldown", "Уменьшает задержку получения сена.", "-0.1s", hayIcons["HayCooldown"], "C", {
+	hayCooldownUpgradeCard = createUpgradeCard(hayScroll, "HayCooldown", "Уменьшает задержку получения сена.", "-0.1s", ICON_ASSET_IDS.HayCooldownUpgradeIcon or "", "C", {
 			card1 = Color3.fromRGB(182, 140, 236), card2 = Color3.fromRGB(146, 97, 213), inner1 = Color3.fromRGB(224, 192, 255), inner2 = Color3.fromRGB(177, 129, 236), icon1 = Color3.fromRGB(255, 222, 244), icon2 = Color3.fromRGB(232, 174, 255),
 		})
 end
