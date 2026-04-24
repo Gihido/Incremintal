@@ -1796,7 +1796,16 @@ if xpProgressDoska then
 	buyBtn.Parent = xpProgressBoard
 	createCorner(buyBtn, 12)
 	addScaleHover(buyBtn)
-	xpProgressUi = {valueText = valueRow, costText = costRow, barFill = barFill, buyButton = buyBtn}
+	local currentXpRow = createStatRow(xpProgressBoard, "XP сейчас")
+	local collectXpRow = createStatRow(xpProgressBoard, "XP за сбор")
+	xpProgressUi = {
+		valueText = valueRow,
+		costText = costRow,
+		currentText = currentXpRow,
+		collectText = collectXpRow,
+		barFill = barFill,
+		buyButton = buyBtn
+	}
 	xpProgressLockedOverlay = createLockedOverlay(xpProgressBoard, "Откроется на 2-м перерождении")
 end
 
@@ -3256,6 +3265,15 @@ function getWoodCooldown()
 	return roundToTenth(value / math.max(1, passiveSpeed))
 end
 
+function getClientXpPerCollectEstimate()
+	local passive = getEquippedPassiveDef()
+	local passiveXpMul = passive and (passive.xpMultiplier or 1) or 1
+	local baseXpPerCoin = 1 + (tonumber(xpMultiplierLevel and xpMultiplierLevel.Value) or 0)
+	local boostMul = 1 + (tonumber(xpBoostLevel and xpBoostLevel.Value) or 0)
+	local eventMul = isAdminEventActive("StatsX2") and 2 or 1
+	return roundToTenth(baseXpPerCoin * boostMul * passiveXpMul * eventMul)
+end
+
 function isAdminEventActive(eventKey)
 	for _, ev in ipairs(activeAdminEvents or {}) do
 		if ev.key == eventKey and (tonumber(ev.timeLeft) or 0) > 0 then
@@ -4372,6 +4390,12 @@ updateBoards = function()
 		local boostValue = 1 + xpBoostLevel.Value
 		xpProgressUi.valueText.Text = "x" .. formatNumber(boostValue)
 		xpProgressUi.costText.Text = xpBoostNextCost.Value <= 0 and "MAX" or formatNumber(math.floor(xpBoostNextCost.Value + 0.5))
+		if xpProgressUi.currentText then
+			xpProgressUi.currentText.Text = formatNumber(xpValue.Value)
+		end
+		if xpProgressUi.collectText then
+			xpProgressUi.collectText.Text = "+" .. formatNumber(getClientXpPerCollectEstimate()) .. " XP"
+		end
 		local progress = xpBoostNextCost.Value > 0 and math.clamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
 		TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
 		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
