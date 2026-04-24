@@ -125,9 +125,9 @@ xpProgressDoska = workspace:FindFirstChild("XPProgressDoska")
 hayBlock = workspace:FindFirstChild("HayBlock")
 hayUpgradeBoardPart = workspace:FindFirstChild("HayUpgradeBoard")
 hayAreaGate = workspace:FindFirstChild("HayAreaGate") or workspace:FindFirstChild("Rebirth7Gate")
-natureRuneBlock = workspace:FindFirstChild("NatureRuneBlock")
-natureRuneIndexBoard = workspace:FindFirstChild("NatureRuneIndexBoard")
-natureRuneStatsBoard = workspace:FindFirstChild("NatureRuneStatsBoard")
+forestRuneBlock = workspace:FindFirstChild("ForestRuneBlock") or workspace:FindFirstChild("NatureRuneBlock")
+forestRuneIndexBoard = workspace:FindFirstChild("ForestRuneIndexBoard") or workspace:FindFirstChild("NatureRuneIndexBoard")
+forestRuneStatsBoard = workspace:FindFirstChild("ForestRuneStatsBoard") or workspace:FindFirstChild("NatureRuneStatsBoard")
 
 xpFolder = data:WaitForChild("XP")
 xpValue = xpFolder:WaitForChild("XPValue")
@@ -232,15 +232,15 @@ ICON_ASSET_IDS = {
 	HayAmountUpgrade = "rbxassetid://6031260785",
 	HayMultiplierUpgrade = "rbxassetid://6031260785",
 	HayCooldownUpgrade = "rbxassetid://6031260785",
-	NatureRuneBlock = "rbxassetid://6031079152",
-	NatureRuneIndexBoard = "rbxassetid://6031079152",
-	NatureRuneStatsBoard = "rbxassetid://6031079152",
-	NatureRuneGrass = "rbxassetid://6031079152",
-	NatureRuneDarkGrass = "rbxassetid://6031079152",
-	NatureRuneDandelion = "rbxassetid://6031079152",
-	NatureRuneFlower = "rbxassetid://6031079152",
-	NatureRuneViolet = "rbxassetid://6031079152",
-	NatureRuneRose = "rbxassetid://6031079152",
+	ForestRuneBlock = "rbxassetid://6031079152",
+	ForestRuneIndexBoard = "rbxassetid://6031079152",
+	ForestRuneStatsBoard = "rbxassetid://6031079152",
+	ForestRuneGrass = "rbxassetid://6031079152",
+	ForestRuneDarkGrass = "rbxassetid://6031079152",
+	ForestRuneDandelion = "rbxassetid://6031079152",
+	ForestRuneFlower = "rbxassetid://6031079152",
+	ForestRuneViolet = "rbxassetid://6031079152",
+	ForestRuneRose = "rbxassetid://6031079152",
 	HayAreaGate = "rbxassetid://6035067843",
 
 }
@@ -281,12 +281,12 @@ AssetSlots = {
 		RebirthUpgrade = ICON_ASSET_IDS.UpgradeRebirth,
 	},
 	RuneIcons = {
-		Common = ICON_ASSET_IDS.RuneCommon,
-		Uncommon = ICON_ASSET_IDS.RuneUncommon,
-		Rare = ICON_ASSET_IDS.RuneRare,
-		Epic = ICON_ASSET_IDS.RuneEpic,
-		Legendary = ICON_ASSET_IDS.RuneLegendary,
-		Mythic = ICON_ASSET_IDS.RuneMythic,
+		Grass = ICON_ASSET_IDS.ForestRuneGrass,
+		DarkGrass = ICON_ASSET_IDS.ForestRuneDarkGrass,
+		Dandelion = ICON_ASSET_IDS.ForestRuneDandelion,
+		Flower = ICON_ASSET_IDS.ForestRuneFlower,
+		Violet = ICON_ASSET_IDS.ForestRuneViolet,
+		Rose = ICON_ASSET_IDS.ForestRuneRose,
 	},
 	NotificationIcons = {
 		Coin = ICON_ASSET_IDS.CurrencyCoin,
@@ -371,14 +371,14 @@ ROLL_ANIMATION_CONFIG = {
 	maxCoinSize = 86,
 	coinSpawnInterval = 0.05,
 }
-RUNE_DISPLAY_ORDER = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"}
+RUNE_DISPLAY_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
 RUNE_VISUALS = {
-	Common = {name = "ОБЫЧНАЯ", chance = "60%", rowColor = Color3.fromRGB(61, 74, 79), accent = Color3.fromRGB(210, 210, 210), icon = "◈"},
-	Uncommon = {name = "НЕОБЫЧНАЯ", chance = "25%", rowColor = Color3.fromRGB(34, 86, 44), accent = Color3.fromRGB(154, 255, 84), icon = "ᛒ"},
-	Rare = {name = "РЕДКАЯ", chance = "10%", rowColor = Color3.fromRGB(10, 73, 118), accent = Color3.fromRGB(78, 201, 255), icon = "ᛟ"},
-	Epic = {name = "ЭПИЧЕСКАЯ", chance = "4%", rowColor = Color3.fromRGB(72, 16, 110), accent = Color3.fromRGB(196, 86, 255), icon = "ᚲ"},
-	Legendary = {name = "ЛЕГЕНДАРНАЯ", chance = "0.95%", rowColor = Color3.fromRGB(96, 72, 22), accent = Color3.fromRGB(255, 205, 64), icon = "ᛋ"},
-	Mythic = {name = "МИФИЧЕСКАЯ", chance = "0.05%", rowColor = Color3.fromRGB(90, 18, 66), accent = Color3.fromRGB(255, 118, 220), icon = "✦"},
+	Grass = {name = "ТРАВА", chance = "≈69%", rowColor = Color3.fromRGB(61, 74, 79), accent = Color3.fromRGB(210, 210, 210), icon = "◈"},
+	DarkGrass = {name = "ТЁМНАЯ ТРАВА", chance = "≈17%", rowColor = Color3.fromRGB(34, 86, 44), accent = Color3.fromRGB(154, 255, 84), icon = "ᛒ"},
+	Dandelion = {name = "ОДУВАНЧИК", chance = "≈7%", rowColor = Color3.fromRGB(10, 73, 118), accent = Color3.fromRGB(78, 201, 255), icon = "ᛟ"},
+	Flower = {name = "ЦВЕТОК", chance = "≈3.5%", rowColor = Color3.fromRGB(72, 16, 110), accent = Color3.fromRGB(196, 86, 255), icon = "ᚲ"},
+	Violet = {name = "ФИАЛКА", chance = "≈1.4%", rowColor = Color3.fromRGB(96, 72, 22), accent = Color3.fromRGB(255, 205, 64), icon = "ᛋ"},
+	Rose = {name = "РОЗА", chance = "≈0.7%", rowColor = Color3.fromRGB(90, 18, 66), accent = Color3.fromRGB(255, 118, 220), icon = "✦"},
 }
 
 function roundToTenth(value)
@@ -2391,7 +2391,7 @@ end
 
 createRuneUi()
 
-runeSessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0}
+runeSessionCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0}
 runeRollingActive = false
 parseRuneState = function() return {counts = {}} end
 
@@ -2734,7 +2734,7 @@ end
 
 function startRuneRolling()
 	runeRollingActive = true
-	runeSessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0}
+	runeSessionCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0}
 	if runeUi.sessionPanel then
 		runeUi.sessionPanel.Visible = true
 	end
@@ -2766,7 +2766,7 @@ parseRuneState = function()
 	if ok and type(decoded) == "table" and type(decoded.counts) == "table" then
 		return decoded
 	end
-	return {counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0}}
+	return {counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0}}
 end
 
 function getEquippedPassiveDef()
@@ -3482,16 +3482,16 @@ updateBoards = function()
 	setWorldNodeVisible(paperUpgradeDoska, fourthUnlockedVisual)
 	setWorldNodeVisible(passiveRollBlock, fifthUnlockedVisual)
 	setWorldNodeVisible(passiveInventoryBlock, fifthUnlockedVisual)
-	setWorldNodeVisible(runeRollBlock, sixthUnlockedVisual)
-	setWorldNodeVisible(runeIndexBlock, sixthUnlockedVisual)
-	setWorldNodeVisible(runeStatsIndexBlock, sixthUnlockedVisual)
-	setWorldNodeVisible(runeUpgradeBlock, sixthUnlockedVisual)
-	setWorldNodeVisible(runeUpgradeDoska, sixthUnlockedVisual)
+	setWorldNodeVisible(runeRollBlock, secondUnlockedVisual)
+	setWorldNodeVisible(runeIndexBlock, secondUnlockedVisual)
+	setWorldNodeVisible(runeStatsIndexBlock, secondUnlockedVisual)
+	setWorldNodeVisible(runeUpgradeBlock, secondUnlockedVisual)
+	setWorldNodeVisible(runeUpgradeDoska, secondUnlockedVisual)
 	setWorldNodeVisible(xpUpgradeDoska, secondUnlockedVisual)
 	setWorldNodeVisible(xpProgressDoska, secondUnlockedVisual)
-	setWorldNodeVisible(natureRuneBlock, secondUnlockedVisual)
-	setWorldNodeVisible(natureRuneIndexBoard, secondUnlockedVisual)
-	setWorldNodeVisible(natureRuneStatsBoard, secondUnlockedVisual)
+	setWorldNodeVisible(forestRuneBlock, secondUnlockedVisual)
+	setWorldNodeVisible(forestRuneIndexBoard, secondUnlockedVisual)
+	setWorldNodeVisible(forestRuneStatsBoard, secondUnlockedVisual)
 	setWorldNodeVisible(hayBlock, seventhUnlockedVisual)
 	setWorldNodeVisible(hayUpgradeBoardPart, seventhUnlockedVisual)
 	setWorldNodeVisible(hayAreaGate, not seventhUnlockedVisual)
@@ -3511,11 +3511,11 @@ updateBoards = function()
 	setWorldBoardGuiVisible("BoostBoardSurfaceGui", fourthUnlockedVisual)
 	setWorldBoardGuiVisible("PaperFactoryBoardSurfaceGui", fourthUnlockedVisual)
 	setWorldBoardGuiVisible("PaperUpgradeBoardSurfaceGui", fourthUnlockedVisual)
-	setWorldBoardGuiVisible("RuneUpgradeBoardSurfaceGui", sixthUnlockedVisual)
+	setWorldBoardGuiVisible("RuneUpgradeBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("XPUpgradeBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("XPProgressBoardSurfaceGui", secondUnlockedVisual)
-	setWorldBoardGuiVisible("RuneIndexBoardSurfaceGui", sixthUnlockedVisual)
-	setWorldBoardGuiVisible("RuneStatsIndexBoardSurfaceGui", sixthUnlockedVisual)
+	setWorldBoardGuiVisible("RuneIndexBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("RuneStatsIndexBoardSurfaceGui", secondUnlockedVisual)
 
 	function updateUnlockDebug()
 		-- debug panel removed in production build
@@ -3546,9 +3546,9 @@ updateBoards = function()
 		setCardVisible(xpUpgradeCards.runeSpeed, secondUnlockedVisual)
 	end
 	if runeUpgradeCards then
-		setCardVisible(runeUpgradeCards.luck, sixthUnlockedVisual)
-		setCardVisible(runeUpgradeCards.speed, sixthUnlockedVisual)
-		setCardVisible(runeUpgradeCards.bulk, sixthUnlockedVisual)
+		setCardVisible(runeUpgradeCards.luck, secondUnlockedVisual)
+		setCardVisible(runeUpgradeCards.speed, secondUnlockedVisual)
+		setCardVisible(runeUpgradeCards.bulk, secondUnlockedVisual)
 	end
 
 	updateCard(coinGainCard, coinValueLevel.Value, coinValueCost.Value, coinValueActive.Value, math.huge, coins.Value)
@@ -3661,8 +3661,8 @@ updateBoards = function()
 
 	if passiveUi.indexPanel then passiveUi.indexPanel.Visible = fifthUnlockedVisual and passiveUi.indexPanel.Visible or false end
 	if passiveUi.inventoryPanel then passiveUi.inventoryPanel.Visible = fifthUnlockedVisual and passiveUi.inventoryPanel.Visible or false end
-	if runeUi.panel and not sixthUnlockedVisual then runeUi.panel.Visible = false end
-	if runeUi.sessionPanel and not sixthUnlockedVisual then runeUi.sessionPanel.Visible = false end
+	if runeUi.panel and not secondUnlockedVisual then runeUi.panel.Visible = false end
+	if runeUi.sessionPanel and not secondUnlockedVisual then runeUi.sessionPanel.Visible = false end
 	if xpProgressUi and xpProgressUi.panel then xpProgressUi.panel.Visible = secondUnlockedVisual end
 
 	if passiveUi.hintGui then
@@ -3815,17 +3815,17 @@ updateBoards = function()
 	if next(runeIndexBoardRows) ~= nil then
 		local rs = parseRuneState()
 		local c = rs.counts or {}
-		local bonuses = {
-			Common = {per = "+0.10x монет", base = 0.10, target = "монет", cap = 10},
-			Uncommon = {per = "+0.10x XP", base = 0.10, target = "XP", cap = 10},
-			Rare = {per = "+0.15x дерева", base = 0.15, target = "дерева", cap = 10},
-			Epic = {per = "+0.10x бумаги", base = 0.10, target = "бумаги", cap = 5},
-			Legendary = {per = "+0.05x бумаги", base = 0.05, target = "бумаги", cap = 7.5},
-			Mythic = {per = "+0.10x Luck/Speed", base = 0.10, target = "рунных статов", cap = 5},
-		}
+			local bonuses = {
+				Grass = {per = "+0.10x монет", base = 0.10, target = "монет", cap = 2.5},
+				DarkGrass = {per = "+0.25x монет", base = 0.25, target = "монет", cap = 15},
+				Dandelion = {per = "+0.10x XP", base = 0.10, target = "XP", cap = 5},
+				Flower = {per = "+0.10x Luck/Speed, +1 Bulk", base = 0.10, target = "Forest Rune stats", cap = 3},
+				Violet = {per = "+0.10x дерева, +0.05x бумаги", base = 0.10, target = "ресурсов", cap = 2},
+				Rose = {per = "+0.10x Passive Luck", base = 0.10, target = "пассивной удачи", cap = 3},
+			}
 		for runeId, label in pairs(runeIndexBoardRows) do
 			local count = tonumber(c[runeId]) or 0
-			local info = bonuses[runeId] or bonuses.Common
+				local info = bonuses[runeId] or bonuses.Grass
 			local capMul = (info.cap or 10)
 			local eff = math.min(math.floor((capMul / math.max(info.base, 0.0001)) + 0.5), count)
 			local total = eff * info.base
@@ -3835,7 +3835,7 @@ updateBoards = function()
 	end
 
 	do
-		local runeUnlocked = sixthUnlockedVisual
+			local runeUnlocked = secondUnlockedVisual
 		if runeUi.panel and runeUi.panel.Visible and not runeUnlocked then
 			runeUi.panel.Visible = false
 		end
@@ -3849,15 +3849,16 @@ updateBoards = function()
 		end
 		local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
 		if runeUi.indexText then
-			runeUi.indexText.Text = "Обычная: " .. formatNumber(c.Common or 0) .. " (эф. " .. formatNumber(stacks(c.Common)) .. ")\n"
-				.. "Необычная: " .. formatNumber(c.Uncommon or 0) .. " (эф. " .. formatNumber(stacks(c.Uncommon)) .. ")\n"
-				.. "Редкая: " .. formatNumber(c.Rare or 0) .. " (эф. " .. formatNumber(stacks(c.Rare)) .. ")\n"
-				.. "Эпическая: " .. formatNumber(c.Epic or 0) .. " (эф. " .. formatNumber(stacks(c.Epic)) .. ")\n"
-				.. "Легендарная: " .. formatNumber(c.Legendary or 0) .. " (эф. " .. formatNumber(stacks(c.Legendary)) .. ")\n\n"
+				runeUi.indexText.Text = "Трава: " .. formatNumber(c.Grass or 0) .. " (эф. " .. formatNumber(stacks(c.Grass)) .. ")\n"
+					.. "Тёмная трава: " .. formatNumber(c.DarkGrass or 0) .. " (эф. " .. formatNumber(stacks(c.DarkGrass)) .. ")\n"
+					.. "Одуванчик: " .. formatNumber(c.Dandelion or 0) .. " (эф. " .. formatNumber(stacks(c.Dandelion)) .. ")\n"
+					.. "Цветок: " .. formatNumber(c.Flower or 0) .. " (эф. " .. formatNumber(stacks(c.Flower)) .. ")\n"
+					.. "Фиалка: " .. formatNumber(c.Violet or 0) .. " (эф. " .. formatNumber(stacks(c.Violet)) .. ")\n"
+					.. "Роза: " .. formatNumber(c.Rose or 0) .. " (эф. " .. formatNumber(stacks(c.Rose)) .. ")\n\n"
 				.. "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(math.max(0, effBulk - 1))
 		end
 		if runeUi.openBtn then
-			setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ РУНЫ (50 дерева)", woodCurrency.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
+				setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ FOREST RUNE (50 Coins)", coins.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
 		end
 		if runeUi.luckBtn then runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)" end
 		if runeUi.speedBtn then runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)" end
@@ -3925,7 +3926,7 @@ updateBoards = function()
 		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, nil)
 		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, nil)
 	end
-	if sixthUnlockedVisual and runeUpgradeCards then
+	if secondUnlockedVisual and runeUpgradeCards then
 		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil)
 		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, nil)
 		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil)
@@ -3995,7 +3996,7 @@ function triggerRuneBurst()
 		return
 	end
 	local burst = Instance.new("ParticleEmitter")
-	burst.Texture = getAssetOrEmpty(AssetSlots.RuneIcons.Common)
+	burst.Texture = getAssetOrEmpty(AssetSlots.RuneIcons.Grass)
 	burst.Color = ColorSequence.new(Color3.fromRGB(122, 255, 116), Color3.fromRGB(66, 184, 82))
 	burst.Speed = NumberRange.new(4, 7)
 	burst.Lifetime = NumberRange.new(0.2, 0.35)
