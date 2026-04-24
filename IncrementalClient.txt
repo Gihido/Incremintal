@@ -389,7 +389,17 @@ function formatNumber(value)
 	value = tonumber(value) or 0
 	local sign = value < 0 and "-" or ""
 	local absValue = math.abs(value)
-	local suffixes = {"", "K", "M", "B", "T", "Qd", "Qn", "Sx", "Sp"}
+	local suffixes = {"", "K", "M", "B", "T", "Qa", "Qi", "Sx", "SP", "OC", "NO"}
+
+	if absValue < 1000 then
+		if absValue % 1 == 0 then
+			return sign .. tostring(math.floor(absValue))
+		end
+		local exact = string.format("%.2f", absValue)
+		exact = exact:gsub("(%..-)0+$", "%1"):gsub("%.$", "")
+		return sign .. exact
+	end
+
 	local idx = 1
 	while absValue >= 1000 and idx < #suffixes do
 		absValue /= 1000
@@ -397,7 +407,7 @@ function formatNumber(value)
 	end
 	local digits = absValue >= 100 and 0 or (absValue >= 10 and 1 or 2)
 	local formatted = string.format("%." .. tostring(digits) .. "f", absValue)
-	formatted = formatted:gsub("%.?0+$", "")
+	formatted = formatted:gsub("(%..-)0+$", "%1"):gsub("%.$", "")
 	return sign .. formatted .. suffixes[idx]
 end
 
