@@ -4624,25 +4624,24 @@ function bindPassiveAndRuneButtons()
 			return
 		end
 		local legacyRows = hayUpgradeRows
-		local legacyDefs = {
-			{rowKey = "HayAmount", serverKey = "HayAmount"},
-			{rowKey = "HayMultiplier", serverKey = "HayMultiplier"},
-			{rowKey = "HayCooldown", serverKey = "HayCooldown"},
-		}
-		for i = 1, #legacyDefs do
-			local cfg = legacyDefs[i]
-			local row = legacyRows[cfg.rowKey]
+		for i = 1, #HAY_UPGRADE_ORDER do
+			local internalKey = HAY_UPGRADE_ORDER[i]
+			local serverKey = HAY_SERVER_UPGRADE_KEYS[internalKey] or internalKey
+			local row = rawget(legacyRows, internalKey)
+			if row == nil then
+				row = rawget(legacyRows, serverKey)
+			end
 			if type(row) == "table" then
 				local buyButton = row.buyButton
 				if buyButton and buyButton.MouseButton1Click then
 					buyButton.MouseButton1Click:Connect(function()
-						purchaseUpgradeEvent:FireServer("Hay", cfg.serverKey, "Buy")
+						purchaseUpgradeEvent:FireServer("Hay", serverKey, "Buy")
 					end)
 				end
 				local maxButton = row.maxButton
 				if maxButton and maxButton.MouseButton1Click then
 					maxButton.MouseButton1Click:Connect(function()
-						purchaseUpgradeEvent:FireServer("Hay", cfg.serverKey, "Max")
+						purchaseUpgradeEvent:FireServer("Hay", serverKey, "Max")
 					end)
 				end
 			end
