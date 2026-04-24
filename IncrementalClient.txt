@@ -375,11 +375,16 @@ AssetSlots = {
 }
 
 function ensureHayUpgradeIconSlots()
-	AssetSlots = AssetSlots or {}
-	AssetSlots.UpgradeIcons = AssetSlots.UpgradeIcons or {}
-	AssetSlots.UpgradeIcons.HayAmount = AssetSlots.UpgradeIcons.HayAmount or ICON_ASSET_IDS.HayAmountUpgradeIcon or ""
-	AssetSlots.UpgradeIcons.HayMultiplier = AssetSlots.UpgradeIcons.HayMultiplier or ICON_ASSET_IDS.HayMultiplierUpgradeIcon or ""
-	AssetSlots.UpgradeIcons.HayCooldown = AssetSlots.UpgradeIcons.HayCooldown or ICON_ASSET_IDS.HayCooldownUpgradeIcon or ""
+	if type(AssetSlots) ~= "table" then
+		AssetSlots = {}
+	end
+	if type(AssetSlots.UpgradeIcons) ~= "table" then
+		AssetSlots.UpgradeIcons = {}
+	end
+	local icons = AssetSlots.UpgradeIcons
+	icons["HayAmount"] = icons["HayAmount"] or ICON_ASSET_IDS.HayAmountUpgradeIcon or ""
+	icons["HayMultiplier"] = icons["HayMultiplier"] or ICON_ASSET_IDS.HayMultiplierUpgradeIcon or ""
+	icons["HayCooldown"] = icons["HayCooldown"] or ICON_ASSET_IDS.HayCooldownUpgradeIcon or ""
 end
 ensureHayUpgradeIconSlots()
 
@@ -1952,36 +1957,37 @@ if hayIndexBoardPart then
 	hayUiRows.formula = createStatRow(hayInfoBoard, "Formula")
 end
 
-hayUpgradeCards = {HayAmount = nil, HayMultiplier = nil, HayCooldown = nil}
-function ensureHayUpgradeCardsTable()
-	if type(hayUpgradeCards) ~= "table" then
-		hayUpgradeCards = {HayAmount = nil, HayMultiplier = nil, HayCooldown = nil}
+hayAmountUpgradeCard = nil
+hayMultiplierUpgradeCard = nil
+hayCooldownUpgradeCard = nil
+
+function getHayUpgradeCard(cardKey)
+	if cardKey == "HayAmount" then
+		return hayAmountUpgradeCard
 	end
-	return hayUpgradeCards
+	if cardKey == "HayMultiplier" then
+		return hayMultiplierUpgradeCard
+	end
+	if cardKey == "HayCooldown" then
+		return hayCooldownUpgradeCard
+	end
+	return nil
 end
 if hayUpgradeBoardPart then
 	ensureHayUpgradeIconSlots()
 	local _, hayUpgradeBoard = createWorldBoard("HayUpgradeBoardSurfaceGui", hayUpgradeBoardPart, Enum.NormalId.Front, 72)
 	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
 	local hayScroll = createHorizontalScroller(hayUpgradeBoard, 66, 12)
-	local cards = ensureHayUpgradeCardsTable()
-	cards.HayAmount = createUpgradeCard(hayScroll, "HayAmount", "Увеличивает количество сена за цикл.", "+1", AssetSlots.UpgradeIcons.HayAmount, "H", {
+	local hayIcons = AssetSlots and AssetSlots.UpgradeIcons or {}
+	hayAmountUpgradeCard = createUpgradeCard(hayScroll, "HayAmount", "Увеличивает количество сена за цикл.", "+1", hayIcons["HayAmount"], "H", {
 			card1 = Color3.fromRGB(121, 215, 158), card2 = Color3.fromRGB(73, 175, 120), inner1 = Color3.fromRGB(176, 241, 200), inner2 = Color3.fromRGB(105, 202, 148), icon1 = Color3.fromRGB(255, 238, 159), icon2 = Color3.fromRGB(232, 186, 79),
 		})
-	cards.HayMultiplier = createUpgradeCard(hayScroll, "HayMultiplier", "Увеличивает множитель сена.", "+0.5x", AssetSlots.UpgradeIcons.HayMultiplier, "M", {
+	hayMultiplierUpgradeCard = createUpgradeCard(hayScroll, "HayMultiplier", "Увеличивает множитель сена.", "+0.5x", hayIcons["HayMultiplier"], "M", {
 			card1 = Color3.fromRGB(98, 161, 236), card2 = Color3.fromRGB(71, 123, 196), inner1 = Color3.fromRGB(160, 205, 255), inner2 = Color3.fromRGB(113, 166, 234), icon1 = Color3.fromRGB(214, 230, 255), icon2 = Color3.fromRGB(145, 173, 245),
 		})
-	cards.HayCooldown = createUpgradeCard(hayScroll, "HayCooldown", "Уменьшает задержку получения сена.", "-0.1s", AssetSlots.UpgradeIcons.HayCooldown, "C", {
+	hayCooldownUpgradeCard = createUpgradeCard(hayScroll, "HayCooldown", "Уменьшает задержку получения сена.", "-0.1s", hayIcons["HayCooldown"], "C", {
 			card1 = Color3.fromRGB(182, 140, 236), card2 = Color3.fromRGB(146, 97, 213), inner1 = Color3.fromRGB(224, 192, 255), inner2 = Color3.fromRGB(177, 129, 236), icon1 = Color3.fromRGB(255, 222, 244), icon2 = Color3.fromRGB(232, 174, 255),
 		})
-end
-
-function getHayUpgradeCard(cardKey)
-	local cards = ensureHayUpgradeCardsTable()
-	if type(cards) ~= "table" then
-		return nil
-	end
-	return rawget(cards, cardKey)
 end
 
 function getValueOrDefault(valueObject, defaultValue)
