@@ -2032,6 +2032,19 @@ function getHayUpgradeCard(cardKey)
 	end
 	return hayUpgradeCardsByKey[cardKey]
 end
+
+function readHayUpgradeLevel(snapshot, cardKey)
+	local root = type(snapshot) == "table" and snapshot or {}
+	local upgrades = getSafeHayUpgrades(root)
+	return tonumber(upgrades[cardKey]) or 0
+end
+
+function readHayUpgradeCost(snapshot, cardKey)
+	local root = type(snapshot) == "table" and snapshot or {}
+	local costs = type(root.HayCosts) == "table" and root.HayCosts or {}
+	local def = getHayUpgradeDefSafe(cardKey)
+	return tonumber(costs[cardKey]) or def.baseCost
+end
 if hayUpgradeBoardPart then
 	local _, hayUpgradeBoard = createWorldBoard("HayUpgradeBoardSurfaceGui", hayUpgradeBoardPart, Enum.NormalId.Front, 72)
 	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
@@ -4232,12 +4245,10 @@ updateBoards = function()
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
 		local safeHayState = buildStableHaySnapshot()
-		local safeHayUpgrades = safeHayState.HayUpgrades
-		local safeHayCosts = safeHayState.HayCosts
-		local hayAmountLevelValue = safeHayUpgrades.HayAmount
-		local hayMultiplierLevelValue = safeHayUpgrades.HayMultiplier
-		local hayCooldownLevelValue = safeHayUpgrades.HayCooldown
-		local hayCurrencyValue = safeHayState.HayCurrency
+		local hayAmountLevelValue = readHayUpgradeLevel(safeHayState, "HayAmount")
+		local hayMultiplierLevelValue = readHayUpgradeLevel(safeHayState, "HayMultiplier")
+		local hayCooldownLevelValue = readHayUpgradeLevel(safeHayState, "HayCooldown")
+		local hayCurrencyValue = tonumber(type(safeHayState) == "table" and safeHayState.HayCurrency or 0) or 0
 		if hayUiRows.gain then
 			local gain = (1 + hayAmountLevelValue) * (1 + hayMultiplierLevelValue * 0.5)
 			local cooldown = math.max(0.8, 5 - hayCooldownLevelValue * 0.1)
@@ -4255,15 +4266,15 @@ updateBoards = function()
 			local def = getHayUpgradeDefSafe(key)
 			local card = getHayUpgradeCard(key)
 			if card then
-				updateCard(
-					card,
-					tonumber(safeHayUpgrades[key]) or 0,
-					tonumber(safeHayCosts[key]) or def.baseCost,
-					true,
-					def.maxLevel,
-					hayCurrencyValue,
-					not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil
-				)
+					updateCard(
+						card,
+						readHayUpgradeLevel(safeHayState, key),
+						readHayUpgradeCost(safeHayState, key),
+						true,
+						def.maxLevel,
+						hayCurrencyValue,
+						not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil
+					)
 			end
 		end
 	end
