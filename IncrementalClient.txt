@@ -1965,6 +1965,28 @@ HAY_UPGRADE_DEFS = {
 }
 hayUpgradeCardsByKey = {}
 
+function getHayUpgradeDefSafe(cardKey)
+	local fallbackDefs = {
+		HayAmount = {title = "HayAmount", maxLevel = 250, baseCost = 1, effectText = "+1 Hay за цикл", bonusText = "+1", fallbackText = "H", iconAssetId = ICON_ASSET_IDS.HayAmountUpgradeIcon or ""},
+		HayMultiplier = {title = "HayMultiplier", maxLevel = 50, baseCost = 25, effectText = "+0.5x Hay multiplier", bonusText = "+0.5x", fallbackText = "M", iconAssetId = ICON_ASSET_IDS.HayMultiplierUpgradeIcon or ""},
+		HayCooldown = {title = "HayCooldown", maxLevel = 25, baseCost = 500, effectText = "-0.1s cooldown", bonusText = "-0.1s", fallbackText = "C", iconAssetId = ICON_ASSET_IDS.HayCooldownUpgradeIcon or ""},
+	}
+	local defs = type(HAY_UPGRADE_DEFS) == "table" and HAY_UPGRADE_DEFS or fallbackDefs
+	local def = defs[cardKey]
+	if type(def) ~= "table" then
+		def = fallbackDefs[cardKey] or {}
+	end
+	return {
+		title = tostring(def.title or cardKey),
+		maxLevel = tonumber(def.maxLevel) or 1,
+		baseCost = tonumber(def.baseCost) or 1,
+		effectText = tostring(def.effectText or ""),
+		bonusText = tostring(def.bonusText or ""),
+		fallbackText = tostring(def.fallbackText or "H"),
+		iconAssetId = tostring(def.iconAssetId or ""),
+	}
+end
+
 function getSafeHayUpgrades(data)
 	local root = type(data) == "table" and data or {}
 	local upgrades = type(root.HayUpgrades) == "table" and root.HayUpgrades or {}
@@ -1975,7 +1997,10 @@ function getSafeHayUpgrades(data)
 	}
 end
 
-function getSafeHayClientState()
+function buildStableHaySnapshot()
+	local amountDef = getHayUpgradeDefSafe("HayAmount")
+	local multiplierDef = getHayUpgradeDefSafe("HayMultiplier")
+	local cooldownDef = getHayUpgradeDefSafe("HayCooldown")
 	local safeData = {
 		HayCurrency = getValueOrDefault(hayCurrency, 0),
 		HayUpgrades = {
@@ -1984,9 +2009,9 @@ function getSafeHayClientState()
 			HayCooldown = getValueOrDefault(hayCooldownLevel, 0),
 		},
 		HayCosts = {
-			HayAmount = getValueOrDefault(hayAmountCost, HAY_UPGRADE_DEFS.HayAmount.baseCost),
-			HayMultiplier = getValueOrDefault(hayMultiplierCost, HAY_UPGRADE_DEFS.HayMultiplier.baseCost),
-			HayCooldown = getValueOrDefault(hayCooldownCost, HAY_UPGRADE_DEFS.HayCooldown.baseCost),
+			HayAmount = getValueOrDefault(hayAmountCost, amountDef.baseCost),
+			HayMultiplier = getValueOrDefault(hayMultiplierCost, multiplierDef.baseCost),
+			HayCooldown = getValueOrDefault(hayCooldownCost, cooldownDef.baseCost),
 		},
 	}
 	local safeUpgrades = getSafeHayUpgrades(safeData)
@@ -1994,9 +2019,9 @@ function getSafeHayClientState()
 		HayCurrency = tonumber(safeData.HayCurrency) or 0,
 		HayUpgrades = safeUpgrades,
 		HayCosts = {
-			HayAmount = tonumber(safeData.HayCosts.HayAmount) or HAY_UPGRADE_DEFS.HayAmount.baseCost,
-			HayMultiplier = tonumber(safeData.HayCosts.HayMultiplier) or HAY_UPGRADE_DEFS.HayMultiplier.baseCost,
-			HayCooldown = tonumber(safeData.HayCosts.HayCooldown) or HAY_UPGRADE_DEFS.HayCooldown.baseCost,
+			HayAmount = tonumber(safeData.HayCosts.HayAmount) or amountDef.baseCost,
+			HayMultiplier = tonumber(safeData.HayCosts.HayMultiplier) or multiplierDef.baseCost,
+			HayCooldown = tonumber(safeData.HayCosts.HayCooldown) or cooldownDef.baseCost,
 		},
 	}
 end
@@ -2018,14 +2043,14 @@ if hayUpgradeBoardPart then
 	}
 	for idx = 1, #HAY_UPGRADE_ORDER do
 		local key = HAY_UPGRADE_ORDER[idx]
-		local def = HAY_UPGRADE_DEFS[key] or {}
+		local def = getHayUpgradeDefSafe(key)
 		hayUpgradeCardsByKey[key] = createUpgradeCard(
 			hayScroll,
-			def.title or key,
-			def.effectText or "",
-			def.bonusText or "",
-			def.iconAssetId or "",
-			def.fallbackText or "H",
+			def.title,
+			def.effectText,
+			def.bonusText,
+			def.iconAssetId,
+			def.fallbackText,
 			hayCardPaletteByKey[key]
 		)
 	end
@@ -4206,7 +4231,7 @@ updateBoards = function()
 		if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
-		local safeHayState = getSafeHayClientState()
+		local safeHayState = buildStableHaySnapshot()
 		local safeHayUpgrades = safeHayState.HayUpgrades
 		local safeHayCosts = safeHayState.HayCosts
 		local hayAmountLevelValue = safeHayUpgrades.HayAmount
@@ -4227,15 +4252,15 @@ updateBoards = function()
 		end
 		for idx = 1, #HAY_UPGRADE_ORDER do
 			local key = HAY_UPGRADE_ORDER[idx]
-			local def = HAY_UPGRADE_DEFS[key] or {}
+			local def = getHayUpgradeDefSafe(key)
 			local card = getHayUpgradeCard(key)
 			if card then
 				updateCard(
 					card,
 					tonumber(safeHayUpgrades[key]) or 0,
-					tonumber(safeHayCosts[key]) or tonumber(def.baseCost) or 0,
+					tonumber(safeHayCosts[key]) or def.baseCost,
 					true,
-					tonumber(def.maxLevel) or 1,
+					def.maxLevel,
 					hayCurrencyValue,
 					not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil
 				)
