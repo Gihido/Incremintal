@@ -12,6 +12,7 @@ local coinTemplate = ServerStorage:WaitForChild("CoinPart")
 local rebirthWall = Workspace:WaitForChild("RebirthWall")
 local treeBlock = Workspace:WaitForChild("TreeBlock")
 local runeRollBlock = Workspace:FindFirstChild("RuneRollBlock")
+local hayBlock = Workspace:FindFirstChild("HayBlock")
 
 local SAVE_STORE_NAME = "IncrementalSave_v10"
 
@@ -47,24 +48,30 @@ local START_WOOD_COINBOOST_COST = 250
 local START_PAPER_VALUE_COST = 10
 local START_PAPER_MULTIPLIER_COST = 50
 local START_PAPER_SPEED_COST = 15
+local START_HAY_AMOUNT_COST = 1
+local START_HAY_MULTIPLIER_COST = 25
+local START_HAY_COOLDOWN_COST = 500
+local BASE_HAY_COOLDOWN = 5
+local MIN_HAY_COOLDOWN = 0.8
 
 local ADMIN_NAME = "Doter24_7"
 
 local SAVE_INTERVAL = 45
 local SAVE_COOLDOWN = 20
+local DEV_REBIRTH_LOGS = RunService:IsStudio()
 
-local MAX_REBIRTH_COUNT = 6
+local MAX_REBIRTH_COUNT = 7
 local RUNE_OPEN_WOOD_COST = 50
 local RUNE_OPEN_BASE_TIME = 10
 local RUNE_MAX_EFFECTIVE_STACKS = 10
 
 local RUNE_TYPES = {
-	Common = {displayName = "Обычная", rarity = "Common", weight = 1/1, coinBonus = 0.10, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 90},
-	Uncommon = {displayName = "Необычная", rarity = "Uncommon", weight = 1/5, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0.10, capStacks = 90},
-	Rare = {displayName = "Редкая", rarity = "Rare", weight = 1/25, coinBonus = 0, woodBonus = 0.15, paperBonus = 0, xpBonus = 0, capStacks = 60},
-	Epic = {displayName = "Эпическая", rarity = "Epic", weight = 1/100, coinBonus = 0, woodBonus = 0, paperBonus = 0.10, xpBonus = 0, capStacks = 40},
-	Legendary = {displayName = "Легендарная", rarity = "Legendary", weight = 1/1000, coinBonus = 0, woodBonus = 0, paperBonus = 0.05, xpBonus = 0, capStacks = 130},
-	Mythic = {displayName = "Мифическая", rarity = "Mythic", weight = 1/2000, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 40},
+	Grass = {displayName = "Трава", rarity = "Common", weight = 1, coinBonus = 0.1, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 15},
+	DarkGrass = {displayName = "Тёмная трава", rarity = "Uncommon", weight = 0.25, coinBonus = 0.25, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 56},
+	Dandelion = {displayName = "Одуванчик", rarity = "Rare", weight = 0.1, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0.1, capStacks = 40},
+	Flower = {displayName = "Цветок", rarity = "Epic", weight = 0.05, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 20, runeLuckBonus = 0.1, runeSpeedBonus = 0.1, runeBulkBonus = 1},
+	Violet = {displayName = "Фиалка", rarity = "Legendary", weight = 0.02, coinBonus = 0, woodBonus = 0.1, paperBonus = 0.05, xpBonus = 0.05, capStacks = 20},
+	Rose = {displayName = "Роза", rarity = "Mythic", weight = 0.01, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 20, passiveLuckBonus = 0.1},
 }
 
 local RUNE_UPGRADES = {
@@ -150,6 +157,18 @@ local REBIRTH_STAGES = {
 		},
 		[6] = {
 			cost = 500,
+			currency = "Paper",
+			coinMultiplier = 1,
+			spawnBonus = 0,
+			woodMultiplier = 1,
+			unlockTree = true,
+			unlockThirdUpgrades = true,
+			unlockFourthSystems = true,
+			unlockFifthSystems = true,
+			unlockSixthSystems = true,
+		},
+		[7] = {
+			cost = 2500,
 			currency = "Paper",
 			coinMultiplier = 1,
 			spawnBonus = 0,
@@ -281,6 +300,12 @@ local PAPER_UPGRADES = {
 		displayName = "PaperSpeed",
 		requiredRebirth = 4,
 	},
+}
+
+local HAY_UPGRADES = {
+	HayAmount = {levelName = "HayAmountLevel", costName = "HayAmountCost", startCost = START_HAY_AMOUNT_COST, priceMultiplier = 3, maxLevel = 250},
+	HayMultiplier = {levelName = "HayMultiplierLevel", costName = "HayMultiplierCost", startCost = START_HAY_MULTIPLIER_COST, priceMultiplier = 3, maxLevel = 50},
+	HayCooldown = {levelName = "HayCooldownLevel", costName = "HayCooldownCost", startCost = START_HAY_COOLDOWN_COST, priceMultiplier = 2.5, maxLevel = 25},
 }
 
 local PASSIVE_DEFS = {
@@ -456,6 +481,7 @@ local lastSaveTimes = {}
 local pendingTeleportTransforms = {}
 local characterConnections = {}
 local woodCooldowns = {}
+local hayCooldowns = {}
 local paperProcessAnchors = {}
 local passiveStates = {}
 local passiveRollCooldowns = {}
@@ -664,6 +690,21 @@ local function getPaperCurrencyObject(player)
 	return paperFactory and paperFactory:FindFirstChild("Paper") or nil
 end
 
+local function getHayFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("Hay") or nil
+end
+
+local function getHayCurrencyObject(player)
+	local hayFolder = getHayFolder(player)
+	return hayFolder and hayFolder:FindFirstChild("HayCurrency") or nil
+end
+
+local function getHayUpgradesFolder(player)
+	local hayFolder = getHayFolder(player)
+	return hayFolder and hayFolder:FindFirstChild("HayUpgrades") or nil
+end
+
 local function getServerEventMultipliers()
 	local now = os.clock()
 	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
@@ -849,7 +890,7 @@ end
 
 function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
+		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
 
@@ -886,7 +927,7 @@ function chooseRuneType(luckLevel)
 	local total = 0
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local weight = runeDef.weight or 0
-		if runeId ~= "Common" then
+		if runeId ~= "Grass" then
 			weight *= luckFactor
 		end
 		total += weight
@@ -900,7 +941,7 @@ function chooseRuneType(luckLevel)
 			return runeId
 		end
 	end
-	return "Common"
+	return "Grass"
 end
 
 function getRuneBonusMultipliers(player)
@@ -929,6 +970,15 @@ local function getXPBoostMultiplier(player)
 	return 1 + math.max(0, tonumber(lvl and lvl.Value) or 0)
 end
 
+local function getRuneSpeedOverflowBulk(speedStat)
+	local interval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
+	if interval >= 0.01 then
+		return 0
+	end
+	local overflowFactor = math.min(250, 0.01 / math.max(0.000001, interval))
+	return math.max(0, math.floor((overflowFactor - 1) * 2 + 0.5))
+end
+
 local function getEffectiveRuneStats(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
@@ -939,6 +989,10 @@ local function getEffectiveRuneStats(player)
 	local luck = 1 + runeUpgrades.RuneLuckLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneLuckXPLevel") and xpUpgrades.RuneLuckXPLevel.Value or 0))
 	local speed = 1 + runeUpgrades.RuneSpeedLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneSpeedXPLevel") and xpUpgrades.RuneSpeedXPLevel.Value or 0))
 	local bulk = 1 + runeUpgrades.RuneBulkLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneBulkXPLevel") and xpUpgrades.RuneBulkXPLevel.Value or 0))
+	local _, _, _, _, runeLuckMul, runeSpeedMul, runeBulkAdd = getRuneBonusMultipliers(player)
+	luck = luck * runeLuckMul
+	speed = speed * runeSpeedMul
+	bulk = bulk + runeBulkAdd
 	local passiveLuckMul, passiveSpeedMul, passiveBulkMul = getPassiveSpecialBoosts(player)
 	luck = math.floor(luck * passiveLuckMul + 0.5)
 	speed = math.floor(speed * passiveSpeedMul + 0.5)
@@ -948,12 +1002,17 @@ local function getEffectiveRuneStats(player)
 	speed = math.floor(speed * eventSpeedMul + 0.5)
 	bulk = math.floor(bulk * eventBulkMul + 0.5)
 	bulk += eventBulkAdd
+	local rebirth = getRebirthFolder(player)
+	if rebirth and rebirth.Count.Value >= 7 then
+		luck = math.floor(luck * 1.5 + 0.5)
+	end
+	bulk += getRuneSpeedOverflowBulk(speed)
 	return luck, speed, bulk
 end
 
 function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
+		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
 
@@ -990,7 +1049,7 @@ function chooseRuneType(luckLevel)
 	local total = 0
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local weight = runeDef.weight or 0
-		if runeId ~= "Common" then
+		if runeId ~= "Grass" then
 			weight *= luckFactor
 		end
 		total += weight
@@ -1004,12 +1063,13 @@ function chooseRuneType(luckLevel)
 			return runeId
 		end
 	end
-	return "Common"
+	return "Grass"
 end
 
 function getRuneBonusMultipliers(player)
 	local state = getRuneState(player)
-	local coinMul, woodMul, paperMul = 1, 1, 1
+	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
+	local runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul = 1, 1, 0, 1
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local count = 0
 		if state.counts then
@@ -1019,13 +1079,18 @@ function getRuneBonusMultipliers(player)
 		coinMul += (runeDef.coinBonus or 0) * stacks
 		woodMul += (runeDef.woodBonus or 0) * stacks
 		paperMul += (runeDef.paperBonus or 0) * stacks
+		xpMul += (runeDef.xpBonus or 0) * stacks
+		runeLuckMul += (runeDef.runeLuckBonus or 0) * stacks
+		runeSpeedMul += (runeDef.runeSpeedBonus or 0) * stacks
+		runeBulkAdd += (runeDef.runeBulkBonus or 0) * stacks
+		passiveLuckMul += (runeDef.passiveLuckBonus or 0) * stacks
 	end
-	return coinMul, woodMul, paperMul
+	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
 end
 
 function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
+		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
 
@@ -1062,7 +1127,7 @@ function chooseRuneType(luckLevel)
 	local total = 0
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local weight = runeDef.weight or 0
-		if runeId ~= "Common" then
+		if runeId ~= "Grass" then
 			weight *= luckFactor
 		end
 		total += weight
@@ -1076,7 +1141,7 @@ function chooseRuneType(luckLevel)
 			return runeId
 		end
 	end
-	return "Common"
+	return "Grass"
 end
 
 function getRuneBonusMultipliers(player)
@@ -1097,7 +1162,7 @@ end
 
 function emptyRuneState()
 	return {
-		counts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0},
+		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
 
@@ -1133,7 +1198,7 @@ function chooseRuneType(luckLevel)
 	local total = 0
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local weight = runeDef.weight or 0
-		if runeId ~= "Common" then
+		if runeId ~= "Grass" then
 			weight *= luckFactor
 		end
 		total += weight
@@ -1147,7 +1212,7 @@ function chooseRuneType(luckLevel)
 			return runeId
 		end
 	end
-	return "Common"
+	return "Grass"
 end
 
 function getRuneBonusMultipliers(player)
@@ -1166,17 +1231,21 @@ function getRuneBonusMultipliers(player)
 	return coinMul, woodMul, paperMul
 end
 
-local function chooseRandomPassiveId()
+local function chooseRandomPassiveId(player)
 	local totalWeight = 0
+	local passiveLuckMul = 1
+	if player then
+		_, _, _, _, _, _, _, passiveLuckMul = getRuneBonusMultipliers(player)
+	end
 	for _, passiveDef in pairs(PASSIVE_DEFS) do
-		totalWeight += passiveDef.weight
+		totalWeight += passiveDef.weight * passiveLuckMul
 	end
 
 	local roll = math.random() * totalWeight
 	local running = 0
 
 	for passiveId, passiveDef in pairs(PASSIVE_DEFS) do
-		running += passiveDef.weight
+		running += passiveDef.weight * passiveLuckMul
 		if roll <= running then
 			return passiveId
 		end
@@ -1218,6 +1287,15 @@ local function setupPlayerDataObjects(player)
 		createValue(paperUpgrades, "IntValue", config.levelName, 0)
 		createValue(paperUpgrades, "IntValue", config.costName, config.startCost)
 		createValue(paperUpgrades, "BoolValue", config.activeName, false)
+	end
+
+	local hayFolder = ensureFolder(playerData, "Hay")
+	createValue(hayFolder, "NumberValue", "HayCurrency", 0)
+	local hayUpgrades = ensureFolder(hayFolder, "HayUpgrades")
+	for _, config in pairs(HAY_UPGRADES) do
+		createValue(hayUpgrades, "IntValue", config.levelName, 0)
+		createValue(hayUpgrades, "NumberValue", config.costName, config.startCost)
+		createValue(hayUpgrades, "BoolValue", config.levelName .. "Active", false)
 	end
 
 	local xpFolder = ensureFolder(playerData, "XP")
@@ -1268,6 +1346,7 @@ local function setupPlayerDataObjects(player)
 	updateUpgradeActiveFlags(coinUpgrades, COIN_UPGRADES)
 	updateUpgradeActiveFlags(woodUpgrades, WOOD_UPGRADES)
 	updateUpgradeActiveFlags(paperUpgrades, PAPER_UPGRADES)
+	updateUpgradeActiveFlags(hayUpgrades, HAY_UPGRADES)
 end
 
 local function getPlayerCollisionGroup(player)
@@ -1298,6 +1377,47 @@ local function applyCharacterCollisionGroup(player, character)
 
 	characterConnections[player] = character.DescendantAdded:Connect(applyPart)
 end
+
+local function getRebirthCoinMultiplier(count)
+	local c = math.max(0, math.floor(tonumber(count) or 0))
+	if c == 0 then return 1 end
+	if c == 1 then return 2 end
+	if c == 2 then return 10 end
+	if c == 3 then return 100 end
+
+	local mul = 1
+	for i = 1, c do
+		local stage = REBIRTH_STAGES[i]
+		if stage then
+			mul *= (tonumber(stage.coinMultiplier) or 1)
+		end
+	end
+	return mul
+end
+
+local function syncRebirthCoinMultiplierBonus(player)
+	local rebirth = getRebirthFolder(player)
+	if not rebirth then return 1 end
+	local count = tonumber(rebirth.Count.Value) or 0
+	local rebirthMul = getRebirthCoinMultiplier(count)
+	if rebirth.CoinMultiplierBonus.Value ~= rebirthMul then
+		rebirth.CoinMultiplierBonus.Value = rebirthMul
+	end
+	return rebirthMul
+end
+
+local function runRebirthCoinMultiplierSanityCheck()
+	if not DEV_REBIRTH_LOGS then
+		return
+	end
+	for rebirthCount = 0, 3 do
+		local baseCoinGain = 1
+		local finalCoinGain = baseCoinGain * getRebirthCoinMultiplier(rebirthCount)
+		warn(string.format("[RebirthSanity] rebirth=%d base=%s final=%s", rebirthCount, tostring(baseCoinGain), tostring(finalCoinGain)))
+	end
+end
+
+runRebirthCoinMultiplierSanityCheck()
 
 local function recalculateRebirthStats(player)
 	local rebirth = getRebirthFolder(player)
@@ -1341,7 +1461,8 @@ local function recalculateRebirthStats(player)
 			end
 		end
 
-	rebirth.CoinMultiplierBonus.Value = totalCoinMultiplier
+
+	rebirth.CoinMultiplierBonus.Value = syncRebirthCoinMultiplierBonus(player)
 	rebirth.SpawnSpeedBonus.Value = totalSpawnBonus
 	rebirth.WoodMultiplierBonus.Value = totalWoodMultiplier
 	rebirth.SecondAreaUnlocked.Value = secondUnlocked
@@ -1407,6 +1528,8 @@ end
 local function resetWoodProgress(player)
 	local woodCurrency = getWoodCurrencyObject(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
+	local hayCurrency = getHayCurrencyObject(player)
+	local hayUpgrades = getHayUpgradesFolder(player)
 	local paperFactory = getPaperFactoryFolder(player)
 	local paperUpgrades = getPaperUpgradesFolder(player)
 
@@ -1429,6 +1552,24 @@ local function resetWoodProgress(player)
 		end
 
 		updateUpgradeActiveFlags(woodUpgrades, WOOD_UPGRADES)
+	end
+
+	if hayCurrency then
+		hayCurrency.Value = 0
+	end
+
+	if hayUpgrades then
+		for _, config in pairs(HAY_UPGRADES) do
+			local levelObject = hayUpgrades:FindFirstChild(config.levelName)
+			local costObject = hayUpgrades:FindFirstChild(config.costName)
+			if levelObject then
+				levelObject.Value = 0
+			end
+			if costObject then
+				costObject.Value = config.startCost
+			end
+		end
+		updateUpgradeActiveFlags(hayUpgrades, HAY_UPGRADES)
 	end
 
 	if paperFactory then
@@ -1536,25 +1677,27 @@ local function resetAllPlayerData(player)
 	markDirty(player)
 end
 
-local function getCoinReward(player)
+local function calculateFinalCoinGain(player, baseAmount)
 	local coinUpgrades = getCoinUpgradesFolder(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
-
-	if not coinUpgrades or not woodUpgrades or not rebirth then
-		return 1
-	end
-
 	local passiveCoin, _, passiveGlobalMultiplier = getPassiveMultipliers(player)
 	local runeCoinMultiplier = select(1, getRuneBonusMultipliers(player))
 
-	local baseValue = 1 + coinUpgrades.CoinValueLevel.Value
-	local baseMultiplier = 1 + (coinUpgrades.MultiplierLevel.Value * 0.1)
-	local woodCoinBoostMultiplier = 1.1 ^ woodUpgrades.CoinBoostLevel.Value
+	local baseCoinGain = math.max(0, tonumber(baseAmount) or 1)
+	local coinValueLevel = coinUpgrades and coinUpgrades:FindFirstChild("CoinValueLevel") and coinUpgrades.CoinValueLevel.Value or 0
+	local multiplierLevel = coinUpgrades and coinUpgrades:FindFirstChild("MultiplierLevel") and coinUpgrades.MultiplierLevel.Value or 0
+	local upgradedCoinGain = (baseCoinGain + coinValueLevel) * (1 + (multiplierLevel * 0.1))
+	local rebirthCoinMul = rebirth and syncRebirthCoinMultiplierBonus(player) or 1
+	local afterRebirthGain = upgradedCoinGain * rebirthCoinMul
+	local woodCoinBoostLevel = woodUpgrades and woodUpgrades:FindFirstChild("CoinBoostLevel") and woodUpgrades.CoinBoostLevel.Value or 0
+	local woodCoinBoostMultiplier = 1.1 ^ woodCoinBoostLevel
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
-	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
+	local finalCoinGain = afterRebirthGain * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul
+	local floorGain = baseCoinGain * rebirthCoinMul
+	return roundToTenth(math.max(finalCoinGain, floorGain))
 end
 
 local function getCoinRespawnDelay(player)
@@ -1621,6 +1764,29 @@ local function getWoodCooldown(player)
 	return roundToTenth(value)
 end
 
+local function getHayReward(player)
+	local hayUpgrades = getHayUpgradesFolder(player)
+	local rebirth = getRebirthFolder(player)
+	if not hayUpgrades or not rebirth or (tonumber(rebirth.Count.Value) or 0) < 7 then
+		return 0
+	end
+	local amountLevel = hayUpgrades.HayAmountLevel.Value
+	local multiplierLevel = hayUpgrades.HayMultiplierLevel.Value
+	local base = 1 + amountLevel
+	local multiplier = 1 + (multiplierLevel * 0.5)
+	return roundToTenth(base * multiplier)
+end
+
+local function getHayCooldown(player)
+	local hayUpgrades = getHayUpgradesFolder(player)
+	local rebirth = getRebirthFolder(player)
+	if not hayUpgrades or not rebirth or (tonumber(rebirth.Count.Value) or 0) < 7 then
+		return BASE_HAY_COOLDOWN
+	end
+	local level = hayUpgrades.HayCooldownLevel.Value
+	return math.max(MIN_HAY_COOLDOWN, roundToTenth(BASE_HAY_COOLDOWN - (level * 0.1)))
+end
+
 local function getPaperProductionAmount(player)
 	local paperUpgrades = getPaperUpgradesFolder(player)
 	if not paperUpgrades then
@@ -1679,6 +1845,8 @@ local function getCurrencyObjectForName(player, currencyName)
 		return getPaperCurrencyObject(player)
 	elseif currencyName == "XP" then
 		return getXPCurrencyObject(player)
+	elseif currencyName == "Hay" then
+		return getHayCurrencyObject(player)
 	end
 	return nil
 end
@@ -1775,6 +1943,16 @@ local function handleUpgradePurchase(player, upgradeFamily, upgradeKey, mode)
 		currencyObject = getXPCurrencyObject(player)
 		notEnoughText = "Не хватает XP"
 		lockedText = "Откроется на 2-м перерождении"
+	elseif upgradeFamily == "Hay" then
+		if (tonumber(rebirth.Count.Value) or 0) < 7 then
+			fireSimple(player, "Hay откроется на 7-м перерождении")
+			return
+		end
+		configTable = HAY_UPGRADES
+		folder = getHayUpgradesFolder(player)
+		currencyObject = getHayCurrencyObject(player)
+		notEnoughText = "Не хватает Hay"
+		lockedText = "Откроется на 7-м перерождении"
 	else
 		return
 	end
@@ -1944,7 +2122,7 @@ local function handlePassiveAction(player, actionName, argument)
 			return
 		end
 
-		local passiveId = chooseRandomPassiveId()
+		local passiveId = chooseRandomPassiveId(player)
 		passiveRollCooldowns[player.UserId] = now + PASSIVE_ROLL_COOLDOWN
 		table.insert(state.inventory, {
 			uid = HttpService:GenerateGUID(false),
@@ -2078,13 +2256,31 @@ local function isCharacterOnRuneBlock(player)
 		and math.abs(localPos.Y) <= (half.Y + tolerance.Y)
 end
 
+local function isCharacterOnHayBlock(player)
+	if not hayBlock then
+		return false
+	end
+	local rebirth = getRebirthFolder(player)
+	if not rebirth or (tonumber(rebirth.Count.Value) or 0) < 7 then
+		return false
+	end
+	local character = player.Character
+	local hrp = character and character:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		return false
+	end
+	local localPos = hayBlock.CFrame:PointToObjectSpace(hrp.Position)
+	local half = hayBlock.Size * 0.5
+	return math.abs(localPos.X) <= half.X and math.abs(localPos.Y) <= half.Y + 3 and math.abs(localPos.Z) <= half.Z
+end
+
 local function tryBuyRuneUpgrade(player, upgradeKey, silent)
 	local cfg = RUNE_UPGRADES[upgradeKey]
 	local upgrades = getRuneUpgradeFolder(player)
 	if not cfg or not upgrades then return end
 	local rebirth = getRebirthFolder(player)
-	if not rebirth or not rebirth.SixthSystemsUnlocked.Value then
-		if not silent then fireSimple(player, "Руны откроются на 6-м перерождении") end
+	if not rebirth or not rebirth.SecondAreaUnlocked.Value then
+		if not silent then fireSimple(player, "Forest Runes откроются на 2-м перерождении") end
 		return
 	end
 	local levelObj = upgrades:FindFirstChild(cfg.levelName)
@@ -2139,13 +2335,31 @@ local function handleRuneAction(player, actionName)
 	local runeUpgrades = getRuneUpgradeFolder(player)
 	local wood = getWoodCurrencyObject(player)
 	if not rebirth or not runeUpgrades or not wood then return end
-	if not rebirth.SixthSystemsUnlocked.Value then
-		fireSimple(player, "Система рун откроется после 6-го перерождения")
+	if not rebirth.SecondAreaUnlocked.Value then
+		fireSimple(player, "Система Forest Runes откроется после 2-го перерождения")
 		return
 	end
 
 	if actionName == "Open" then
-		fireSimple(player, "Ролл рун теперь автоматический при стоянии на блоке")
+		local coins = getCoinsObject(player)
+		if not coins or coins.Value < 50 then
+			fireSimple(player, "Нужно 50 Coins для открытия Forest Rune")
+			return
+		end
+		if not spendCurrency(coins, 50) then
+			return
+		end
+		local rolled, state = rollRuneForPlayer(player)
+		if rolled and #rolled > 0 then
+			notifyEvent:FireClient(player, {
+				kind = "rune_roll_tick",
+				rolled = rolled,
+				session = {},
+				state = state,
+			})
+			fireSimple(player, "Forest Rune открыта")
+			markDirty(player)
+		end
 	elseif actionName == "UpgradeLuck" then
 		tryBuyRuneUpgrade(player, "Luck")
 	elseif actionName == "UpgradeLuckMax" then
@@ -2286,15 +2500,29 @@ local function spawnCoin()
 		taken = true
 		coin.CanTouch = false
 
-			local reward = getCoinReward(player)
-			addCurrency(getCoinsObject(player), reward)
+			local coinsObject = getCoinsObject(player)
+			if not coinsObject then
+				return
+			end
+			local coinsBefore = coinsObject.Value
+			local reward = calculateFinalCoinGain(player, 1)
 			local rebirth = getRebirthFolder(player)
+			local floorReward = rebirth and syncRebirthCoinMultiplierBonus(player) or 1
+			if reward < floorReward then
+				reward = floorReward
+			end
+			addCurrency(coinsObject, reward)
+			local coinsAdded = roundToTenth(coinsObject.Value - coinsBefore)
+			if math.abs(coinsAdded - reward) > 0.001 then
+				warn(string.format("[CoinGainMismatch] %s reward=%s added=%s before=%s after=%s", player.Name, tostring(reward), tostring(coinsAdded), tostring(coinsBefore), tostring(coinsObject.Value)))
+			end
 			if rebirth and rebirth.SecondAreaUnlocked.Value then
-				local xpUpgrades = getXPUpgradesFolder(player)
-				local xpPerCoin = 1 + (xpUpgrades and xpUpgrades:FindFirstChild("XPMultiplierLevel") and xpUpgrades.XPMultiplierLevel.Value or 0)
-				local _, _, _, passiveXpMul = getPassiveSpecialBoosts(player)
-				local _, _, _, eventXPMul = getServerEventMultipliers()
-				local xpReward = roundToTenth(xpPerCoin * getXPBoostMultiplier(player) * passiveXpMul * eventXPMul)
+					local xpUpgrades = getXPUpgradesFolder(player)
+					local xpPerCoin = 1 + (xpUpgrades and xpUpgrades:FindFirstChild("XPMultiplierLevel") and xpUpgrades.XPMultiplierLevel.Value or 0)
+					local _, _, _, passiveXpMul = getPassiveSpecialBoosts(player)
+					local _, _, _, runeXpMul = getRuneBonusMultipliers(player)
+					local _, _, _, eventXPMul = getServerEventMultipliers()
+					local xpReward = roundToTenth(xpPerCoin * getXPBoostMultiplier(player) * passiveXpMul * runeXpMul * eventXPMul)
 				addCurrency(getXPCurrencyObject(player), xpReward)
 				firePickup(player, "XP", xpReward)
 			end
@@ -2308,7 +2536,7 @@ local function spawnCoin()
 		activeCoinCount -= 1
 		coin:Destroy()
 
-		firePickup(player, "Coin", reward)
+			firePickup(player, "Coin", coinsAdded)
 
 		local respawnDelay = getCoinRespawnDelay(player)
 		task.delay(respawnDelay, function()
@@ -2365,6 +2593,8 @@ local function buildSaveData(player)
 	local coinUpgrades = getCoinUpgradesFolder(player)
 	local woodCurrency = getWoodCurrencyObject(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
+	local hayCurrency = getHayCurrencyObject(player)
+	local hayUpgrades = getHayUpgradesFolder(player)
 	local paperFactory = getPaperFactoryFolder(player)
 	local paperUpgrades = getPaperUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
@@ -2373,7 +2603,7 @@ local function buildSaveData(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpBoost = getXPBoostFolder(player)
 
-	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
+	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not hayCurrency or not hayUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
 		return nil
 	end
 
@@ -2390,7 +2620,7 @@ local function buildSaveData(player)
 			SpawnSpeedCost = coinUpgrades.SpawnSpeedCost.Value,
 			WoodBoostCost = coinUpgrades.WoodBoostCost.Value,
 		},
-		Wood = {
+			Wood = {
 			WoodCurrency = woodCurrency.Value,
 			WoodValueLevel = woodUpgrades.WoodValueLevel.Value,
 			WoodMultiplierLevel = woodUpgrades.WoodMultiplierLevel.Value,
@@ -2401,8 +2631,17 @@ local function buildSaveData(player)
 			WoodSpeedCost = woodUpgrades.WoodSpeedCost.Value,
 			CoinBoostCost = woodUpgrades.CoinBoostCost.Value,
 			Paper = paperFactory.Paper.Value,
-			Fuel = paperFactory.Fuel.Value,
-		},
+				Fuel = paperFactory.Fuel.Value,
+			},
+			Hay = {
+				HayCurrency = hayCurrency.Value,
+				HayAmountLevel = hayUpgrades.HayAmountLevel.Value,
+				HayMultiplierLevel = hayUpgrades.HayMultiplierLevel.Value,
+				HayCooldownLevel = hayUpgrades.HayCooldownLevel.Value,
+				HayAmountCost = hayUpgrades.HayAmountCost.Value,
+				HayMultiplierCost = hayUpgrades.HayMultiplierCost.Value,
+				HayCooldownCost = hayUpgrades.HayCooldownCost.Value,
+			},
 		PaperUpgrades = {
 			PaperValueLevel = paperUpgrades.PaperValueLevel.Value,
 			PaperMultiplierLevel = paperUpgrades.PaperMultiplierLevel.Value,
@@ -2510,6 +2749,8 @@ local function loadPlayerData(player)
 	local coinUpgrades = getCoinUpgradesFolder(player)
 	local woodCurrency = getWoodCurrencyObject(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
+	local hayCurrency = getHayCurrencyObject(player)
+	local hayUpgrades = getHayUpgradesFolder(player)
 	local paperFactory = getPaperFactoryFolder(player)
 	local paperUpgrades = getPaperUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
@@ -2518,7 +2759,7 @@ local function loadPlayerData(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpBoost = getXPBoostFolder(player)
 
-	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
+	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not hayCurrency or not hayUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
 		return
 	end
 
@@ -2551,6 +2792,15 @@ local function loadPlayerData(player)
 	paperFactory.Fuel.Value = math.max(0, tonumber(savedWood.Fuel) or 0)
 	paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
 	paperFactory.IsRunning.Value = false
+
+	local savedHay = data.Hay or {}
+	hayCurrency.Value = roundToTenth(savedHay.HayCurrency or 0)
+	hayUpgrades.HayAmountLevel.Value = math.clamp(tonumber(savedHay.HayAmountLevel) or 0, 0, HAY_UPGRADES.HayAmount.maxLevel)
+	hayUpgrades.HayMultiplierLevel.Value = math.clamp(tonumber(savedHay.HayMultiplierLevel) or 0, 0, HAY_UPGRADES.HayMultiplier.maxLevel)
+	hayUpgrades.HayCooldownLevel.Value = math.clamp(tonumber(savedHay.HayCooldownLevel) or 0, 0, HAY_UPGRADES.HayCooldown.maxLevel)
+	hayUpgrades.HayAmountCost.Value = hayUpgrades.HayAmountLevel.Value >= HAY_UPGRADES.HayAmount.maxLevel and 0 or math.max(1, tonumber(savedHay.HayAmountCost) or HAY_UPGRADES.HayAmount.startCost)
+	hayUpgrades.HayMultiplierCost.Value = hayUpgrades.HayMultiplierLevel.Value >= HAY_UPGRADES.HayMultiplier.maxLevel and 0 or math.max(1, tonumber(savedHay.HayMultiplierCost) or HAY_UPGRADES.HayMultiplier.startCost)
+	hayUpgrades.HayCooldownCost.Value = hayUpgrades.HayCooldownLevel.Value >= HAY_UPGRADES.HayCooldown.maxLevel and 0 or math.max(1, tonumber(savedHay.HayCooldownCost) or HAY_UPGRADES.HayCooldown.startCost)
 
 	local savedPaperUpgrades = data.PaperUpgrades or {}
 	paperUpgrades.PaperValueLevel.Value = math.max(0, tonumber(savedPaperUpgrades.PaperValueLevel) or 0)
@@ -2821,6 +3071,7 @@ Players.PlayerRemoving:Connect(function(player)
 	lastSaveTimes[player] = nil
 	pendingTeleportTransforms[player] = nil
 	woodCooldowns[player.UserId] = nil
+	hayCooldowns[player.UserId] = nil
 	passiveRollCooldowns[player.UserId] = nil
 	runeOpenCooldowns[player.UserId] = nil
 	paperProcessAnchors[player] = nil
@@ -2892,10 +3143,25 @@ task.spawn(function()
 						paperFactory.Countdown.Value = cycleTime
 						paperProcessAnchors[player] = now
 					end
-				end
-				end
+					end
+					end
 
-				if rebirth and rebirth.SixthSystemsUnlocked.Value and runeRollBlock then
+					if isCharacterOnHayBlock(player) then
+						local nextHayAt = hayCooldowns[player.UserId] or 0
+						if now >= nextHayAt then
+							local hayReward = getHayReward(player)
+							if hayReward > 0 then
+								addCurrency(getHayCurrencyObject(player), hayReward)
+								firePickup(player, "Hay", hayReward)
+								markDirty(player)
+							end
+							hayCooldowns[player.UserId] = now + getHayCooldown(player)
+						end
+					else
+						hayCooldowns[player.UserId] = now
+					end
+
+						if rebirth and rebirth.SecondAreaUnlocked.Value and runeRollBlock then
 					if isCharacterOnRuneBlock(player) then
 						startRuneRolling(player)
 						local session = runeRollingSessions[player]
