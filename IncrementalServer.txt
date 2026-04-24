@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local DataStoreService = game:GetService("DataStoreService")
 local PhysicsService = game:GetService("PhysicsService")
 local HttpService = game:GetService("HttpService")
+MessagingService = game:GetService("MessagingService")
 
 local zonePart = Workspace:WaitForChild("ZonePart")
 local coinTemplate = ServerStorage:WaitForChild("CoinPart")
@@ -30,6 +31,7 @@ stripPromptsFromPart(natureRuneBlock)
 stripPromptsFromPart(hayBlock)
 
 local SAVE_STORE_NAME = "IncrementalSave_v10"
+GLOBAL_EVENT_STORE_NAME = "IncrementalGlobalEvents_v1"
 
 local MAX_COINS = 10
 local BASE_COIN_RESPAWN = 3
@@ -472,6 +474,8 @@ local UNLOCKED_PLAYER_GROUP = "UnlockedAreaPlayers"
 local WALL_GROUP = "RebirthWallGroup"
 
 local playerDataStore = DataStoreService:GetDataStore(SAVE_STORE_NAME)
+globalEventStore = DataStoreService:GetDataStore(GLOBAL_EVENT_STORE_NAME)
+ADMIN_EVENT_CHANNEL = "IncrementalAdminEventsV1"
 
 local spawnedCoinsFolder = Workspace:FindFirstChild("SpawnedCoins")
 if not spawnedCoinsFolder then
@@ -535,6 +539,51 @@ local ACTIVE_SERVER_EVENTS = {
 	RuneLuckX2 = {runeLuckMul = 2, tooltip = "x2 Rune Luck"},
 	PassiveLuckX3 = {passiveLuckMul = 3, tooltip = "x3 Passive Luck"},
 }
+
+function packGlobalAdminEvents()
+	local nowClock = os.clock()
+	local nowUnix = os.time()
+	local packed = {}
+	for eventId, eventState in pairs(activeAdminEvents) do
+		local endsAt = tonumber(eventState and eventState.endsAt) or 0
+		if endsAt > nowClock then
+			packed[eventId] = nowUnix + math.max(0, math.floor(endsAt - nowClock))
+		end
+	end
+	return packed
+end
+
+function applyGlobalAdminEvents(events, skipBroadcast)
+	if type(events) ~= "table" then return end
+	local nowClock = os.clock()
+	local nowUnix = os.time()
+	local changed = false
+	for eventId, unixEnd in pairs(events) do
+		if ACTIVE_SERVER_EVENTS[eventId] then
+			local unixTs = tonumber(unixEnd) or 0
+			local clockEnd = nowClock + math.max(0, unixTs - nowUnix)
+			local current = activeAdminEvents[eventId] and tonumber(activeAdminEvents[eventId].endsAt) or 0
+			if clockEnd > current then
+				activeAdminEvents[eventId] = {endsAt = clockEnd}
+				changed = true
+			end
+		end
+	end
+	if changed and not skipBroadcast then
+		broadcastAdminEventState()
+	end
+	return changed
+end
+
+function publishGlobalAdminEvents()
+	local payload = {jobId = game.JobId, events = packGlobalAdminEvents()}
+	pcall(function()
+		globalEventStore:SetAsync("ACTIVE", payload.events)
+	end)
+	pcall(function()
+		MessagingService:PublishAsync(ADMIN_EVENT_CHANNEL, payload)
+	end)
+end
 local isClosing = false
 
 local treeBaseSize = treeBlock.Size
@@ -640,6 +689,9 @@ ensureCollisionGroup(WALL_GROUP)
 pcall(function()
 	PhysicsService:CollisionGroupSetCollidable(WALL_GROUP, LOCKED_PLAYER_GROUP, true)
 	PhysicsService:CollisionGroupSetCollidable(WALL_GROUP, UNLOCKED_PLAYER_GROUP, false)
+	PhysicsService:CollisionGroupSetCollidable(LOCKED_PLAYER_GROUP, LOCKED_PLAYER_GROUP, false)
+	PhysicsService:CollisionGroupSetCollidable(UNLOCKED_PLAYER_GROUP, UNLOCKED_PLAYER_GROUP, false)
+	PhysicsService:CollisionGroupSetCollidable(LOCKED_PLAYER_GROUP, UNLOCKED_PLAYER_GROUP, false)
 end)
 
 local function applyCollisionGroupRecursive(instance, groupName)
@@ -3187,6 +3239,7 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 			return
 		end
 		broadcastAdminEventState()
+		publishGlobalAdminEvents()
 		fireSimple(player, "Server event запущен")
 	elseif actionName == "ResetSelf" then
 		resetAllPlayerData(player)
@@ -3202,6 +3255,20 @@ end)
 for _, player in ipairs(Players:GetPlayers()) do
 	setupPlayer(player)
 end
+
+pcall(function()
+	local saved = globalEventStore:GetAsync("ACTIVE")
+	applyGlobalAdminEvents(saved, true)
+end)
+
+pcall(function()
+	MessagingService:SubscribeAsync(ADMIN_EVENT_CHANNEL, function(message)
+		local data = message and message.Data
+		if type(data) == "table" and data.jobId ~= game.JobId then
+			applyGlobalAdminEvents(data.events, false)
+		end
+	end)
+end)
 
 Players.PlayerRemoving:Connect(function(player)
 	if not isClosing then
@@ -3253,6 +3320,7 @@ task.spawn(function()
 			end
 		if eventsChanged then
 			broadcastAdminEventState()
+			publishGlobalAdminEvents()
 		end
 
 			for _, player in ipairs(Players:GetPlayers()) do

@@ -1827,13 +1827,6 @@ function createRuneIndexBoard(runeSystemConfig)
 	if not runeSystemConfig.partIndex then return nil end
 	local _, board = createWorldBoard(runeSystemConfig.indexGuiName, runeSystemConfig.partIndex, Enum.NormalId.Front, 72)
 	createHeader(board, runeSystemConfig.id .. " RUNE INDEX", "Выбери руну для деталей")
-	local bg = Instance.new("ImageLabel")
-	bg.Size = UDim2.new(1, 0, 1, 0)
-	bg.BackgroundTransparency = 1
-	bg.Image = getAssetOrEmpty(runeSystemConfig.id == "Forest" and AssetSlots.UiBackgrounds.ForestRuneIndexBackground or AssetSlots.UiBackgrounds.NatureRuneIndexBackground)
-	bg.ImageTransparency = bg.Image == "" and 1 or 0.35
-	bg.ScaleType = Enum.ScaleType.Crop
-	bg.Parent = board
 	local list = Instance.new("ScrollingFrame")
 	list.Size = UDim2.new(0.45, 0, 1, -66)
 	list.Position = UDim2.new(0, 0, 0, 66)
@@ -1947,69 +1940,22 @@ if hayIndexBoardPart then
 	hayUiRows.formula = createStatRow(hayInfoBoard, "Formula")
 end
 
-hayUpgradeRows = {}
+hayUpgradeCards = nil
 if hayUpgradeBoardPart then
 	local _, hayUpgradeBoard = createWorldBoard("HayUpgradeBoardSurfaceGui", hayUpgradeBoardPart, Enum.NormalId.Front, 72)
 	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
-	local cards = Instance.new("Frame")
-	cards.Size = UDim2.new(1, 0, 1, -66)
-	cards.Position = UDim2.new(0, 0, 0, 66)
-	cards.BackgroundTransparency = 1
-	cards.Parent = hayUpgradeBoard
-	local list = Instance.new("UIListLayout")
-	list.FillDirection = Enum.FillDirection.Horizontal
-	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	list.Padding = UDim.new(0, 8)
-	list.Parent = cards
-	local function makeHayUpgradeRow(name, iconKey, c1, c2)
-		local row = Instance.new("Frame")
-		row.Size = UDim2.new(0.32, 0, 1, 0)
-		row.BackgroundColor3 = c1
-		row.BorderSizePixel = 0
-		row.Parent = cards
-		createCorner(row, 12)
-		createGradient(row, c1, c2, 90)
-		createStroke(row, Color3.fromRGB(222, 240, 255), 2, 0.15)
-		local iconWrap = Instance.new("Frame")
-		iconWrap.Size = UDim2.new(0, 48, 0, 48)
-		iconWrap.Position = UDim2.new(0.5, -24, 0, 8)
-		iconWrap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		iconWrap.BackgroundTransparency = 0.78
-		iconWrap.BorderSizePixel = 0
-		iconWrap.Parent = row
-		createCorner(iconWrap, 999)
-		local icon = Instance.new("ImageLabel")
-		icon.Size = UDim2.new(1, -10, 1, -10)
-		icon.Position = UDim2.new(0, 5, 0, 5)
-		icon.BackgroundTransparency = 1
-		icon.Image = getAssetOrEmpty(ICON_ASSET_IDS[iconKey])
-		icon.Parent = iconWrap
-		local text = Instance.new("TextLabel")
-		text.Size = UDim2.new(1, -8, 0, 120)
-		text.Position = UDim2.new(0, 4, 0, 60)
-		text.BackgroundTransparency = 1
-		text.TextXAlignment = Enum.TextXAlignment.Center
-		text.TextYAlignment = Enum.TextYAlignment.Top
-		text.TextWrapped = true
-		text.TextColor3 = Color3.fromRGB(245, 246, 210)
-		text.Font = Enum.Font.GothamBold
-		text.TextSize = 12
-		text.Text = name
-		text.Parent = row
-		local buyBtn = Instance.new("TextButton")
-		buyBtn.Size = UDim2.new(0.48, -6, 0, 28)
-		buyBtn.Position = UDim2.new(0, 4, 1, -32)
-		buyBtn.Parent = row
-		local maxBtn = Instance.new("TextButton")
-		maxBtn.Size = UDim2.new(0.48, -6, 0, 28)
-		maxBtn.Position = UDim2.new(0.52, 2, 1, -32)
-		maxBtn.Parent = row
-		createCorner(buyBtn, 8); createCorner(maxBtn, 8)
-		return {card = row, text = text, buyButton = buyBtn, maxButton = maxBtn}
-	end
-	hayUpgradeRows.HayAmount = makeHayUpgradeRow("Hay Amount", "HayAmountUpgradeIcon", Color3.fromRGB(121, 215, 158), Color3.fromRGB(73, 175, 120))
-	hayUpgradeRows.HayMultiplier = makeHayUpgradeRow("Hay Multiplier", "HayMultiplierUpgradeIcon", Color3.fromRGB(98, 161, 236), Color3.fromRGB(71, 123, 196))
-	hayUpgradeRows.HayCooldown = makeHayUpgradeRow("Hay Cooldown", "HayCooldownUpgradeIcon", Color3.fromRGB(182, 140, 236), Color3.fromRGB(146, 97, 213))
+	local hayScroll = createHorizontalScroller(hayUpgradeBoard, 66, 12)
+	hayUpgradeCards = {
+		HayAmount = createUpgradeCard(hayScroll, "HayAmount", "Увеличивает количество сена за цикл.", "+1", ICON_ASSET_IDS.HayAmountUpgradeIcon, "H", {
+			card1 = Color3.fromRGB(121, 215, 158), card2 = Color3.fromRGB(73, 175, 120), inner1 = Color3.fromRGB(176, 241, 200), inner2 = Color3.fromRGB(105, 202, 148), icon1 = Color3.fromRGB(255, 238, 159), icon2 = Color3.fromRGB(232, 186, 79),
+		}),
+		HayMultiplier = createUpgradeCard(hayScroll, "HayMultiplier", "Увеличивает множитель сена.", "+0.5x", ICON_ASSET_IDS.HayMultiplierUpgradeIcon, "M", {
+			card1 = Color3.fromRGB(98, 161, 236), card2 = Color3.fromRGB(71, 123, 196), inner1 = Color3.fromRGB(160, 205, 255), inner2 = Color3.fromRGB(113, 166, 234), icon1 = Color3.fromRGB(214, 230, 255), icon2 = Color3.fromRGB(145, 173, 245),
+		}),
+		HayCooldown = createUpgradeCard(hayScroll, "HayCooldown", "Уменьшает задержку получения сена.", "-0.1s", ICON_ASSET_IDS.HayCooldownUpgradeIcon, "C", {
+			card1 = Color3.fromRGB(182, 140, 236), card2 = Color3.fromRGB(146, 97, 213), inner1 = Color3.fromRGB(224, 192, 255), inner2 = Color3.fromRGB(177, 129, 236), icon1 = Color3.fromRGB(255, 222, 244), icon2 = Color3.fromRGB(232, 174, 255),
+		}),
+	}
 end
 treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
@@ -2818,8 +2764,8 @@ function createRuneOverlays()
 		local bgImage = Instance.new("ImageLabel")
 		bgImage.Size = UDim2.new(1, 0, 1, 0)
 		bgImage.BackgroundTransparency = 1
-		bgImage.Image = getAssetOrEmpty(AssetSlots.UiBackgrounds.NatureRuneSession or AssetSlots.UiBackgrounds.RuneSession)
-		bgImage.ImageTransparency = bgImage.Image == "" and 1 or 0
+		bgImage.Image = ""
+		bgImage.ImageTransparency = 1
 		bgImage.ScaleType = Enum.ScaleType.Stretch
 		bgImage.Parent = panel
 
@@ -2938,13 +2884,6 @@ do
 	panel.Parent = screenGui
 	createCorner(panel, 14)
 	createStroke(panel, Color3.fromRGB(205, 174, 118), 3, 0)
-	local bg = Instance.new("ImageLabel")
-	bg.Size = UDim2.new(1, 0, 1, 0)
-	bg.BackgroundTransparency = 1
-	bg.Image = getAssetOrEmpty(AssetSlots.UiBackgrounds.ForestRuneSession)
-	bg.ImageTransparency = bg.Image == "" and 1 or 0
-	bg.ScaleType = Enum.ScaleType.Stretch
-	bg.Parent = panel
 	local listHolder = Instance.new("ScrollingFrame")
 	listHolder.Size = UDim2.new(1, -10, 1, -42)
 	listHolder.Position = UDim2.new(0, 5, 0, 36)
@@ -4196,16 +4135,10 @@ updateBoards = function()
 			hayUiRows.cdLvl.Text = tostring(hayCooldownLevel.Value) .. "/25"
 			hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevel.Value, hayMultiplierLevel.Value)
 		end
-		if hayUpgradeRows.HayAmount then
-			hayUpgradeRows.HayAmount.text.Text = string.format("Hay Amount | LVL %d/250 | Cost: %s\nЭффект: +1 Hay за цикл", hayAmountLevel.Value, hayAmountCost.Value <= 0 and "MAX" or formatNumber(hayAmountCost.Value))
-			hayUpgradeRows.HayMultiplier.text.Text = string.format("Hay Multiplier | LVL %d/50 | Cost: %s\nЭффект: +0.5x multiplier", hayMultiplierLevel.Value, hayMultiplierCost.Value <= 0 and "MAX" or formatNumber(hayMultiplierCost.Value))
-			hayUpgradeRows.HayCooldown.text.Text = string.format("Hay Cooldown | LVL %d/25 | Cost: %s\nЭффект: -0.1s cooldown", hayCooldownLevel.Value, hayCooldownCost.Value <= 0 and "MAX" or formatNumber(hayCooldownCost.Value))
-			setButtonVisual(hayUpgradeRows.HayAmount.buyButton, "BUY", seventhUnlockedVisual and hayAmountCost.Value > 0 and hayCurrency.Value >= hayAmountCost.Value, hayAmountCost.Value <= 0, Color3.fromRGB(111, 217, 126), Color3.fromRGB(96, 108, 96), Color3.fromRGB(22, 45, 24), not seventhUnlockedVisual)
-			setButtonVisual(hayUpgradeRows.HayAmount.maxButton, "MAX", seventhUnlockedVisual and hayAmountCost.Value > 0 and hayCurrency.Value >= hayAmountCost.Value, hayAmountCost.Value <= 0, Color3.fromRGB(187, 148, 246), Color3.fromRGB(96, 108, 96), Color3.fromRGB(36, 25, 56), not seventhUnlockedVisual)
-			setButtonVisual(hayUpgradeRows.HayMultiplier.buyButton, "BUY", seventhUnlockedVisual and hayMultiplierCost.Value > 0 and hayCurrency.Value >= hayMultiplierCost.Value, hayMultiplierCost.Value <= 0, Color3.fromRGB(111, 217, 126), Color3.fromRGB(96, 108, 96), Color3.fromRGB(22, 45, 24), not seventhUnlockedVisual)
-			setButtonVisual(hayUpgradeRows.HayMultiplier.maxButton, "MAX", seventhUnlockedVisual and hayMultiplierCost.Value > 0 and hayCurrency.Value >= hayMultiplierCost.Value, hayMultiplierCost.Value <= 0, Color3.fromRGB(187, 148, 246), Color3.fromRGB(96, 108, 96), Color3.fromRGB(36, 25, 56), not seventhUnlockedVisual)
-			setButtonVisual(hayUpgradeRows.HayCooldown.buyButton, "BUY", seventhUnlockedVisual and hayCooldownCost.Value > 0 and hayCurrency.Value >= hayCooldownCost.Value, hayCooldownCost.Value <= 0, Color3.fromRGB(111, 217, 126), Color3.fromRGB(96, 108, 96), Color3.fromRGB(22, 45, 24), not seventhUnlockedVisual)
-			setButtonVisual(hayUpgradeRows.HayCooldown.maxButton, "MAX", seventhUnlockedVisual and hayCooldownCost.Value > 0 and hayCurrency.Value >= hayCooldownCost.Value, hayCooldownCost.Value <= 0, Color3.fromRGB(187, 148, 246), Color3.fromRGB(96, 108, 96), Color3.fromRGB(36, 25, 56), not seventhUnlockedVisual)
+		if hayUpgradeCards then
+			updateCard(hayUpgradeCards.HayAmount, hayAmountLevel.Value, hayAmountCost.Value, true, 250, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+			updateCard(hayUpgradeCards.HayMultiplier, hayMultiplierLevel.Value, hayMultiplierCost.Value, true, 50, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+			updateCard(hayUpgradeCards.HayCooldown, hayCooldownLevel.Value, hayCooldownCost.Value, true, 25, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
 		end
 	end
 
@@ -4520,6 +4453,11 @@ function bindUpgradeBoards()
 			local binding = xpBindings[idx]
 			bindUpgradeCard(binding[1], "XP", binding[2])
 		end
+	end
+	if hayUpgradeCards then
+		bindUpgradeCard(hayUpgradeCards.HayAmount, "Hay", "HayAmount")
+		bindUpgradeCard(hayUpgradeCards.HayMultiplier, "Hay", "HayMultiplier")
+		bindUpgradeCard(hayUpgradeCards.HayCooldown, "Hay", "HayCooldown")
 	end
 
 	if xpProgressUi and xpProgressUi.buyButton then
