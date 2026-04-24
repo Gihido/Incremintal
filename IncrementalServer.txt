@@ -1571,7 +1571,7 @@ local function getCoinReward(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
 
-	if not coinUpgrades or not woodUpgrades or not rebirth then
+	if not coinUpgrades or not rebirth then
 		return 1
 	end
 
@@ -1580,7 +1580,8 @@ local function getCoinReward(player)
 
 	local baseValue = 1 + coinUpgrades.CoinValueLevel.Value
 	local baseMultiplier = 1 + (coinUpgrades.MultiplierLevel.Value * 0.1)
-	local woodCoinBoostMultiplier = 1.1 ^ woodUpgrades.CoinBoostLevel.Value
+	local woodCoinBoostLevel = woodUpgrades and woodUpgrades:FindFirstChild("CoinBoostLevel") and woodUpgrades.CoinBoostLevel.Value or 0
+	local woodCoinBoostMultiplier = 1.1 ^ woodCoinBoostLevel
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
