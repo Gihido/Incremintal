@@ -315,6 +315,9 @@ AssetSlots = {
 		RuneSpeedXP = ICON_ASSET_IDS.UpgradeRuneSpeedXP,
 		PassiveRoll = ICON_ASSET_IDS.UpgradePassiveRoll,
 		RebirthUpgrade = ICON_ASSET_IDS.UpgradeRebirth,
+		HayAmount = ICON_ASSET_IDS.HayAmountUpgradeIcon,
+		HayMultiplier = ICON_ASSET_IDS.HayMultiplierUpgradeIcon,
+		HayCooldown = ICON_ASSET_IDS.HayCooldownUpgradeIcon,
 	},
 	RuneIcons = {
 		Grass = ICON_ASSET_IDS.NatureRune_Grass,
@@ -370,6 +373,15 @@ AssetSlots = {
 		PassiveLuckX3 = "rbxassetid://6031229361",
 	},
 }
+
+function ensureHayUpgradeIconSlots()
+	AssetSlots = AssetSlots or {}
+	AssetSlots.UpgradeIcons = AssetSlots.UpgradeIcons or {}
+	AssetSlots.UpgradeIcons.HayAmount = AssetSlots.UpgradeIcons.HayAmount or ICON_ASSET_IDS.HayAmountUpgradeIcon or ""
+	AssetSlots.UpgradeIcons.HayMultiplier = AssetSlots.UpgradeIcons.HayMultiplier or ICON_ASSET_IDS.HayMultiplierUpgradeIcon or ""
+	AssetSlots.UpgradeIcons.HayCooldown = AssetSlots.UpgradeIcons.HayCooldown or ICON_ASSET_IDS.HayCooldownUpgradeIcon or ""
+end
+ensureHayUpgradeIconSlots()
 
 PASSIVE_DEFS = {
 	CoinBallA = {name = "Золотой поток", rarity = "Common", currencyType = "Coins", desc = "Стабильный бонус монет.", effect = "+50% монет", iconKey = "Coin", coinMultiplier = 1.5, woodMultiplier = 1, globalMultiplier = 1, speedMultiplier = 1, chance = "35%"},
@@ -1948,17 +1960,18 @@ function ensureHayUpgradeCardsTable()
 	return hayUpgradeCards
 end
 if hayUpgradeBoardPart then
+	ensureHayUpgradeIconSlots()
 	local _, hayUpgradeBoard = createWorldBoard("HayUpgradeBoardSurfaceGui", hayUpgradeBoardPart, Enum.NormalId.Front, 72)
 	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
 	local hayScroll = createHorizontalScroller(hayUpgradeBoard, 66, 12)
 	local cards = ensureHayUpgradeCardsTable()
-	cards.HayAmount = createUpgradeCard(hayScroll, "HayAmount", "Увеличивает количество сена за цикл.", "+1", ICON_ASSET_IDS.HayAmountUpgradeIcon, "H", {
+	cards.HayAmount = createUpgradeCard(hayScroll, "HayAmount", "Увеличивает количество сена за цикл.", "+1", AssetSlots.UpgradeIcons.HayAmount, "H", {
 			card1 = Color3.fromRGB(121, 215, 158), card2 = Color3.fromRGB(73, 175, 120), inner1 = Color3.fromRGB(176, 241, 200), inner2 = Color3.fromRGB(105, 202, 148), icon1 = Color3.fromRGB(255, 238, 159), icon2 = Color3.fromRGB(232, 186, 79),
 		})
-	cards.HayMultiplier = createUpgradeCard(hayScroll, "HayMultiplier", "Увеличивает множитель сена.", "+0.5x", ICON_ASSET_IDS.HayMultiplierUpgradeIcon, "M", {
+	cards.HayMultiplier = createUpgradeCard(hayScroll, "HayMultiplier", "Увеличивает множитель сена.", "+0.5x", AssetSlots.UpgradeIcons.HayMultiplier, "M", {
 			card1 = Color3.fromRGB(98, 161, 236), card2 = Color3.fromRGB(71, 123, 196), inner1 = Color3.fromRGB(160, 205, 255), inner2 = Color3.fromRGB(113, 166, 234), icon1 = Color3.fromRGB(214, 230, 255), icon2 = Color3.fromRGB(145, 173, 245),
 		})
-	cards.HayCooldown = createUpgradeCard(hayScroll, "HayCooldown", "Уменьшает задержку получения сена.", "-0.1s", ICON_ASSET_IDS.HayCooldownUpgradeIcon, "C", {
+	cards.HayCooldown = createUpgradeCard(hayScroll, "HayCooldown", "Уменьшает задержку получения сена.", "-0.1s", AssetSlots.UpgradeIcons.HayCooldown, "C", {
 			card1 = Color3.fromRGB(182, 140, 236), card2 = Color3.fromRGB(146, 97, 213), inner1 = Color3.fromRGB(224, 192, 255), inner2 = Color3.fromRGB(177, 129, 236), icon1 = Color3.fromRGB(255, 222, 244), icon2 = Color3.fromRGB(232, 174, 255),
 		})
 end
@@ -1969,6 +1982,16 @@ function getHayUpgradeCard(cardKey)
 		return nil
 	end
 	return rawget(cards, cardKey)
+end
+
+function getValueOrDefault(valueObject, defaultValue)
+	if valueObject and valueObject.Value ~= nil then
+		local numeric = tonumber(valueObject.Value)
+		if numeric ~= nil then
+			return numeric
+		end
+	end
+	return defaultValue
 end
 treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
@@ -4136,29 +4159,36 @@ updateBoards = function()
 		if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
+		local hayAmountLevelValue = getValueOrDefault(hayAmountLevel, 0)
+		local hayMultiplierLevelValue = getValueOrDefault(hayMultiplierLevel, 0)
+		local hayCooldownLevelValue = getValueOrDefault(hayCooldownLevel, 0)
+		local hayAmountCostValue = getValueOrDefault(hayAmountCost, 0)
+		local hayMultiplierCostValue = getValueOrDefault(hayMultiplierCost, 0)
+		local hayCooldownCostValue = getValueOrDefault(hayCooldownCost, 0)
+		local hayCurrencyValue = getValueOrDefault(hayCurrency, 0)
 		if hayUiRows.gain then
-			local gain = (1 + hayAmountLevel.Value) * (1 + hayMultiplierLevel.Value * 0.5)
-			local cooldown = math.max(0.8, 5 - hayCooldownLevel.Value * 0.1)
-			hayUiRows.currency.Text = formatNumber(hayCurrency.Value)
+			local gain = (1 + hayAmountLevelValue) * (1 + hayMultiplierLevelValue * 0.5)
+			local cooldown = math.max(0.8, 5 - hayCooldownLevelValue * 0.1)
+			hayUiRows.currency.Text = formatNumber(hayCurrencyValue)
 			hayUiRows.gain.Text = "+" .. formatNumber(gain)
-			hayUiRows.multiplier.Text = "x" .. formatNumber(1 + hayMultiplierLevel.Value * 0.5)
+			hayUiRows.multiplier.Text = "x" .. formatNumber(1 + hayMultiplierLevelValue * 0.5)
 			hayUiRows.cooldown.Text = formatNumber(cooldown) .. "s"
-			hayUiRows.amountLvl.Text = tostring(hayAmountLevel.Value) .. "/250"
-			hayUiRows.multLvl.Text = tostring(hayMultiplierLevel.Value) .. "/50"
-			hayUiRows.cdLvl.Text = tostring(hayCooldownLevel.Value) .. "/25"
-			hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevel.Value, hayMultiplierLevel.Value)
+			hayUiRows.amountLvl.Text = tostring(hayAmountLevelValue) .. "/250"
+			hayUiRows.multLvl.Text = tostring(hayMultiplierLevelValue) .. "/50"
+			hayUiRows.cdLvl.Text = tostring(hayCooldownLevelValue) .. "/25"
+			hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevelValue, hayMultiplierLevelValue)
 		end
 		local hayAmountCard = getHayUpgradeCard("HayAmount")
 		local hayMultiplierCard = getHayUpgradeCard("HayMultiplier")
 		local hayCooldownCard = getHayUpgradeCard("HayCooldown")
 		if hayAmountCard then
-			updateCard(hayAmountCard, hayAmountLevel.Value, hayAmountCost.Value, true, 250, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+			updateCard(hayAmountCard, hayAmountLevelValue, hayAmountCostValue, true, 250, hayCurrencyValue, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
 		end
 		if hayMultiplierCard then
-			updateCard(hayMultiplierCard, hayMultiplierLevel.Value, hayMultiplierCost.Value, true, 50, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+			updateCard(hayMultiplierCard, hayMultiplierLevelValue, hayMultiplierCostValue, true, 50, hayCurrencyValue, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
 		end
 		if hayCooldownCard then
-			updateCard(hayCooldownCard, hayCooldownLevel.Value, hayCooldownCost.Value, true, 25, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+			updateCard(hayCooldownCard, hayCooldownLevelValue, hayCooldownCostValue, true, 25, hayCurrencyValue, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
 		end
 	end
 

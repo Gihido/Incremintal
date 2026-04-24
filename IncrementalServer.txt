@@ -344,6 +344,27 @@ local HAY_UPGRADES = {
 	HayMultiplier = {levelName = "HayMultiplierLevel", costName = "HayMultiplierCost", startCost = START_HAY_MULTIPLIER_COST, priceMultiplier = 3, maxLevel = 50},
 	HayCooldown = {levelName = "HayCooldownLevel", costName = "HayCooldownCost", startCost = START_HAY_COOLDOWN_COST, priceMultiplier = 2.5, maxLevel = 25},
 }
+local HAY_UPGRADE_KEYS = {"HayAmount", "HayMultiplier", "HayCooldown"}
+
+local function normalizeHaySaveData(savedHay)
+	local hayTable = type(savedHay) == "table" and savedHay or {}
+	local nestedUpgrades = type(hayTable.HayUpgrades) == "table" and hayTable.HayUpgrades or {}
+	local normalizedLevels = {}
+	for _, key in ipairs(HAY_UPGRADE_KEYS) do
+		local levelName = HAY_UPGRADES[key].levelName
+		normalizedLevels[levelName] = tonumber(hayTable[levelName]) or tonumber(nestedUpgrades[key]) or 0
+	end
+
+	return {
+		HayCurrency = tonumber(hayTable.HayCurrency) or 0,
+		HayAmountLevel = normalizedLevels.HayAmountLevel or 0,
+		HayMultiplierLevel = normalizedLevels.HayMultiplierLevel or 0,
+		HayCooldownLevel = normalizedLevels.HayCooldownLevel or 0,
+		HayAmountCost = tonumber(hayTable.HayAmountCost),
+		HayMultiplierCost = tonumber(hayTable.HayMultiplierCost),
+		HayCooldownCost = tonumber(hayTable.HayCooldownCost),
+	}
+end
 
 local PASSIVE_DEFS = {
 	CoinBallA = {
@@ -2824,15 +2845,20 @@ local function buildSaveData(player)
 			Paper = paperFactory.Paper.Value,
 				Fuel = paperFactory.Fuel.Value,
 			},
-			Hay = {
-				HayCurrency = hayCurrency.Value,
-				HayAmountLevel = hayUpgrades.HayAmountLevel.Value,
-				HayMultiplierLevel = hayUpgrades.HayMultiplierLevel.Value,
-				HayCooldownLevel = hayUpgrades.HayCooldownLevel.Value,
-				HayAmountCost = hayUpgrades.HayAmountCost.Value,
-				HayMultiplierCost = hayUpgrades.HayMultiplierCost.Value,
-				HayCooldownCost = hayUpgrades.HayCooldownCost.Value,
-			},
+				Hay = {
+					HayCurrency = hayCurrency.Value,
+					HayAmountLevel = hayUpgrades.HayAmountLevel.Value,
+					HayMultiplierLevel = hayUpgrades.HayMultiplierLevel.Value,
+					HayCooldownLevel = hayUpgrades.HayCooldownLevel.Value,
+					HayAmountCost = hayUpgrades.HayAmountCost.Value,
+					HayMultiplierCost = hayUpgrades.HayMultiplierCost.Value,
+					HayCooldownCost = hayUpgrades.HayCooldownCost.Value,
+					HayUpgrades = {
+						HayAmount = hayUpgrades.HayAmountLevel.Value,
+						HayMultiplier = hayUpgrades.HayMultiplierLevel.Value,
+						HayCooldown = hayUpgrades.HayCooldownLevel.Value,
+					},
+				},
 		PaperUpgrades = {
 			PaperValueLevel = paperUpgrades.PaperValueLevel.Value,
 			PaperMultiplierLevel = paperUpgrades.PaperMultiplierLevel.Value,
@@ -2984,7 +3010,7 @@ local function loadPlayerData(player)
 	paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
 	paperFactory.IsRunning.Value = false
 
-	local savedHay = data.Hay or {}
+	local savedHay = normalizeHaySaveData(data.Hay)
 	hayCurrency.Value = roundToTenth(savedHay.HayCurrency or 0)
 	hayUpgrades.HayAmountLevel.Value = math.clamp(tonumber(savedHay.HayAmountLevel) or 0, 0, HAY_UPGRADES.HayAmount.maxLevel)
 	hayUpgrades.HayMultiplierLevel.Value = math.clamp(tonumber(savedHay.HayMultiplierLevel) or 0, 0, HAY_UPGRADES.HayMultiplier.maxLevel)
