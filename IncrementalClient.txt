@@ -3072,6 +3072,7 @@ function normalizeAdminEvents(rawEvents)
 end
 
 function showPickup(iconKey, amount)
+	amount = tonumber(amount) or 0
 	local holder = Instance.new("Frame")
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
 	activePickupCount += 1
@@ -4265,10 +4266,10 @@ function registerNotifyEventListeners()
 
 		if payload.kind == "pickup" then
 			local ok = pcall(function()
-				showPickup(payload.icon or "Coin", payload.amount or 1)
+				showPickup(payload.icon or "Coin", payload.amount or 0)
 			end)
 			if not ok then
-				showToast("+" .. tostring(payload.amount or 1))
+				showToast("+" .. tostring(payload.amount or 0))
 			end
 		elseif payload.kind == "passive_roll_result" then
 			local def = PASSIVE_DEFS[payload.passiveId or ""]
