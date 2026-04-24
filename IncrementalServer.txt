@@ -1325,6 +1325,21 @@ local function applyCharacterCollisionGroup(player, character)
 	characterConnections[player] = character.DescendantAdded:Connect(applyPart)
 end
 
+local function computeRebirthCoinMultiplier(count)
+	local c = math.max(0, math.floor(tonumber(count) or 0))
+	local mul = 1
+	for i = 1, c do
+		local stage = REBIRTH_STAGES[i]
+		if stage then
+			mul *= (tonumber(stage.coinMultiplier) or 1)
+		end
+	end
+	if c >= 3 and mul < 100 then
+		mul = 100
+	end
+	return mul
+end
+
 local function recalculateRebirthStats(player)
 	local rebirth = getRebirthFolder(player)
 	if not rebirth then
@@ -1368,10 +1383,7 @@ local function recalculateRebirthStats(player)
 		end
 
 
-	if count >= 3 and totalCoinMultiplier < 100 then
-		totalCoinMultiplier = 100
-	end
-	rebirth.CoinMultiplierBonus.Value = totalCoinMultiplier
+	rebirth.CoinMultiplierBonus.Value = computeRebirthCoinMultiplier(count)
 	rebirth.SpawnSpeedBonus.Value = totalSpawnBonus
 	rebirth.WoodMultiplierBonus.Value = totalWoodMultiplier
 	rebirth.SecondAreaUnlocked.Value = secondUnlocked
@@ -1585,11 +1597,8 @@ local function getCoinReward(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
-	local rebirthCoinMul = math.max(1, tonumber(rebirth.CoinMultiplierBonus.Value) or 1)
 	local count = tonumber(rebirth.Count.Value) or 0
-	if count >= 3 and rebirthCoinMul < 100 then
-		rebirthCoinMul = 100
-	end
+	local rebirthCoinMul = computeRebirthCoinMultiplier(count)
 	return roundToTenth(baseValue * baseMultiplier * rebirthCoinMul * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
 end
 
