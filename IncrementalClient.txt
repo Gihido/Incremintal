@@ -1957,35 +1957,78 @@ if hayIndexBoardPart then
 	hayUiRows.formula = createStatRow(hayInfoBoard, "Formula")
 end
 
-hayAmountUpgradeCard = nil
-hayMultiplierUpgradeCard = nil
-hayCooldownUpgradeCard = nil
+HAY_UPGRADE_ORDER = {"HayAmount", "HayMultiplier", "HayCooldown"}
+HAY_UPGRADE_DEFS = {
+	HayAmount = {title = "HayAmount", maxLevel = 250, baseCost = 1, costMultiplier = 3, effectText = "+1 Hay за цикл", bonusText = "+1", fallbackText = "H", iconAssetId = ICON_ASSET_IDS.HayAmountUpgradeIcon or ""},
+	HayMultiplier = {title = "HayMultiplier", maxLevel = 50, baseCost = 25, costMultiplier = 3, effectText = "+0.5x Hay multiplier", bonusText = "+0.5x", fallbackText = "M", iconAssetId = ICON_ASSET_IDS.HayMultiplierUpgradeIcon or ""},
+	HayCooldown = {title = "HayCooldown", maxLevel = 25, baseCost = 500, costMultiplier = 2.5, effectText = "-0.1s cooldown", bonusText = "-0.1s", fallbackText = "C", iconAssetId = ICON_ASSET_IDS.HayCooldownUpgradeIcon or ""},
+}
+hayUpgradeCardsByKey = {}
+
+function getSafeHayUpgrades(data)
+	local root = type(data) == "table" and data or {}
+	local upgrades = type(root.HayUpgrades) == "table" and root.HayUpgrades or {}
+	return {
+		HayAmount = tonumber(upgrades.HayAmount) or 0,
+		HayMultiplier = tonumber(upgrades.HayMultiplier) or 0,
+		HayCooldown = tonumber(upgrades.HayCooldown) or 0,
+	}
+end
+
+function getSafeHayClientState()
+	local safeData = {
+		HayCurrency = getValueOrDefault(hayCurrency, 0),
+		HayUpgrades = {
+			HayAmount = getValueOrDefault(hayAmountLevel, 0),
+			HayMultiplier = getValueOrDefault(hayMultiplierLevel, 0),
+			HayCooldown = getValueOrDefault(hayCooldownLevel, 0),
+		},
+		HayCosts = {
+			HayAmount = getValueOrDefault(hayAmountCost, HAY_UPGRADE_DEFS.HayAmount.baseCost),
+			HayMultiplier = getValueOrDefault(hayMultiplierCost, HAY_UPGRADE_DEFS.HayMultiplier.baseCost),
+			HayCooldown = getValueOrDefault(hayCooldownCost, HAY_UPGRADE_DEFS.HayCooldown.baseCost),
+		},
+	}
+	local safeUpgrades = getSafeHayUpgrades(safeData)
+	return {
+		HayCurrency = tonumber(safeData.HayCurrency) or 0,
+		HayUpgrades = safeUpgrades,
+		HayCosts = {
+			HayAmount = tonumber(safeData.HayCosts.HayAmount) or HAY_UPGRADE_DEFS.HayAmount.baseCost,
+			HayMultiplier = tonumber(safeData.HayCosts.HayMultiplier) or HAY_UPGRADE_DEFS.HayMultiplier.baseCost,
+			HayCooldown = tonumber(safeData.HayCosts.HayCooldown) or HAY_UPGRADE_DEFS.HayCooldown.baseCost,
+		},
+	}
+end
 
 function getHayUpgradeCard(cardKey)
-	if cardKey == "HayAmount" then
-		return hayAmountUpgradeCard
+	if type(hayUpgradeCardsByKey) ~= "table" then
+		hayUpgradeCardsByKey = {}
 	end
-	if cardKey == "HayMultiplier" then
-		return hayMultiplierUpgradeCard
-	end
-	if cardKey == "HayCooldown" then
-		return hayCooldownUpgradeCard
-	end
-	return nil
+	return hayUpgradeCardsByKey[cardKey]
 end
 if hayUpgradeBoardPart then
 	local _, hayUpgradeBoard = createWorldBoard("HayUpgradeBoardSurfaceGui", hayUpgradeBoardPart, Enum.NormalId.Front, 72)
 	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
 	local hayScroll = createHorizontalScroller(hayUpgradeBoard, 66, 12)
-	hayAmountUpgradeCard = createUpgradeCard(hayScroll, "HayAmount", "Увеличивает количество сена за цикл.", "+1", ICON_ASSET_IDS.HayAmountUpgradeIcon or "", "H", {
-			card1 = Color3.fromRGB(121, 215, 158), card2 = Color3.fromRGB(73, 175, 120), inner1 = Color3.fromRGB(176, 241, 200), inner2 = Color3.fromRGB(105, 202, 148), icon1 = Color3.fromRGB(255, 238, 159), icon2 = Color3.fromRGB(232, 186, 79),
-		})
-	hayMultiplierUpgradeCard = createUpgradeCard(hayScroll, "HayMultiplier", "Увеличивает множитель сена.", "+0.5x", ICON_ASSET_IDS.HayMultiplierUpgradeIcon or "", "M", {
-			card1 = Color3.fromRGB(98, 161, 236), card2 = Color3.fromRGB(71, 123, 196), inner1 = Color3.fromRGB(160, 205, 255), inner2 = Color3.fromRGB(113, 166, 234), icon1 = Color3.fromRGB(214, 230, 255), icon2 = Color3.fromRGB(145, 173, 245),
-		})
-	hayCooldownUpgradeCard = createUpgradeCard(hayScroll, "HayCooldown", "Уменьшает задержку получения сена.", "-0.1s", ICON_ASSET_IDS.HayCooldownUpgradeIcon or "", "C", {
-			card1 = Color3.fromRGB(182, 140, 236), card2 = Color3.fromRGB(146, 97, 213), inner1 = Color3.fromRGB(224, 192, 255), inner2 = Color3.fromRGB(177, 129, 236), icon1 = Color3.fromRGB(255, 222, 244), icon2 = Color3.fromRGB(232, 174, 255),
-		})
+	local hayCardPaletteByKey = {
+		HayAmount = {card1 = Color3.fromRGB(121, 215, 158), card2 = Color3.fromRGB(73, 175, 120), inner1 = Color3.fromRGB(176, 241, 200), inner2 = Color3.fromRGB(105, 202, 148), icon1 = Color3.fromRGB(255, 238, 159), icon2 = Color3.fromRGB(232, 186, 79)},
+		HayMultiplier = {card1 = Color3.fromRGB(98, 161, 236), card2 = Color3.fromRGB(71, 123, 196), inner1 = Color3.fromRGB(160, 205, 255), inner2 = Color3.fromRGB(113, 166, 234), icon1 = Color3.fromRGB(214, 230, 255), icon2 = Color3.fromRGB(145, 173, 245)},
+		HayCooldown = {card1 = Color3.fromRGB(182, 140, 236), card2 = Color3.fromRGB(146, 97, 213), inner1 = Color3.fromRGB(224, 192, 255), inner2 = Color3.fromRGB(177, 129, 236), icon1 = Color3.fromRGB(255, 222, 244), icon2 = Color3.fromRGB(232, 174, 255)},
+	}
+	for idx = 1, #HAY_UPGRADE_ORDER do
+		local key = HAY_UPGRADE_ORDER[idx]
+		local def = HAY_UPGRADE_DEFS[key] or {}
+		hayUpgradeCardsByKey[key] = createUpgradeCard(
+			hayScroll,
+			def.title or key,
+			def.effectText or "",
+			def.bonusText or "",
+			def.iconAssetId or "",
+			def.fallbackText or "H",
+			hayCardPaletteByKey[key]
+		)
+	end
 end
 
 function getValueOrDefault(valueObject, defaultValue)
@@ -4163,13 +4206,13 @@ updateBoards = function()
 		if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
-		local hayAmountLevelValue = getValueOrDefault(hayAmountLevel, 0)
-		local hayMultiplierLevelValue = getValueOrDefault(hayMultiplierLevel, 0)
-		local hayCooldownLevelValue = getValueOrDefault(hayCooldownLevel, 0)
-		local hayAmountCostValue = getValueOrDefault(hayAmountCost, 0)
-		local hayMultiplierCostValue = getValueOrDefault(hayMultiplierCost, 0)
-		local hayCooldownCostValue = getValueOrDefault(hayCooldownCost, 0)
-		local hayCurrencyValue = getValueOrDefault(hayCurrency, 0)
+		local safeHayState = getSafeHayClientState()
+		local safeHayUpgrades = safeHayState.HayUpgrades
+		local safeHayCosts = safeHayState.HayCosts
+		local hayAmountLevelValue = safeHayUpgrades.HayAmount
+		local hayMultiplierLevelValue = safeHayUpgrades.HayMultiplier
+		local hayCooldownLevelValue = safeHayUpgrades.HayCooldown
+		local hayCurrencyValue = safeHayState.HayCurrency
 		if hayUiRows.gain then
 			local gain = (1 + hayAmountLevelValue) * (1 + hayMultiplierLevelValue * 0.5)
 			local cooldown = math.max(0.8, 5 - hayCooldownLevelValue * 0.1)
@@ -4182,17 +4225,21 @@ updateBoards = function()
 			hayUiRows.cdLvl.Text = tostring(hayCooldownLevelValue) .. "/25"
 			hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevelValue, hayMultiplierLevelValue)
 		end
-		local hayAmountCard = getHayUpgradeCard("HayAmount")
-		local hayMultiplierCard = getHayUpgradeCard("HayMultiplier")
-		local hayCooldownCard = getHayUpgradeCard("HayCooldown")
-		if hayAmountCard then
-			updateCard(hayAmountCard, hayAmountLevelValue, hayAmountCostValue, true, 250, hayCurrencyValue, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
-		end
-		if hayMultiplierCard then
-			updateCard(hayMultiplierCard, hayMultiplierLevelValue, hayMultiplierCostValue, true, 50, hayCurrencyValue, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
-		end
-		if hayCooldownCard then
-			updateCard(hayCooldownCard, hayCooldownLevelValue, hayCooldownCostValue, true, 25, hayCurrencyValue, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+		for idx = 1, #HAY_UPGRADE_ORDER do
+			local key = HAY_UPGRADE_ORDER[idx]
+			local def = HAY_UPGRADE_DEFS[key] or {}
+			local card = getHayUpgradeCard(key)
+			if card then
+				updateCard(
+					card,
+					tonumber(safeHayUpgrades[key]) or 0,
+					tonumber(safeHayCosts[key]) or tonumber(def.baseCost) or 0,
+					true,
+					tonumber(def.maxLevel) or 1,
+					hayCurrencyValue,
+					not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil
+				)
+			end
 		end
 	end
 
@@ -4508,12 +4555,13 @@ function bindUpgradeBoards()
 			bindUpgradeCard(binding[1], "XP", binding[2])
 		end
 	end
-	local hayAmountCard = getHayUpgradeCard("HayAmount")
-	local hayMultiplierCard = getHayUpgradeCard("HayMultiplier")
-	local hayCooldownCard = getHayUpgradeCard("HayCooldown")
-	if hayAmountCard then bindUpgradeCard(hayAmountCard, "Hay", "HayAmount") end
-	if hayMultiplierCard then bindUpgradeCard(hayMultiplierCard, "Hay", "HayMultiplier") end
-	if hayCooldownCard then bindUpgradeCard(hayCooldownCard, "Hay", "HayCooldown") end
+	for idx = 1, #HAY_UPGRADE_ORDER do
+		local key = HAY_UPGRADE_ORDER[idx]
+		local card = getHayUpgradeCard(key)
+		if card then
+			bindUpgradeCard(card, "Hay", key)
+		end
+	end
 
 	if xpProgressUi and xpProgressUi.buyButton then
 		xpProgressUi.buyButton.MouseButton1Click:Connect(function()
