@@ -941,6 +941,15 @@ local function getXPBoostMultiplier(player)
 	return 1 + math.max(0, tonumber(lvl and lvl.Value) or 0)
 end
 
+local function getRuneSpeedOverflowBulk(speedStat)
+	local interval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
+	if interval >= 0.01 then
+		return 0
+	end
+	local overflowFactor = math.min(250, 0.01 / math.max(0.000001, interval))
+	return math.max(0, math.floor((overflowFactor - 1) * 2 + 0.5))
+end
+
 local function getEffectiveRuneStats(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
@@ -960,6 +969,11 @@ local function getEffectiveRuneStats(player)
 	speed = math.floor(speed * eventSpeedMul + 0.5)
 	bulk = math.floor(bulk * eventBulkMul + 0.5)
 	bulk += eventBulkAdd
+	local rebirth = getRebirthFolder(player)
+	if rebirth and rebirth.Count.Value >= 7 then
+		luck = math.floor(luck * 1.5 + 0.5)
+	end
+	bulk += getRuneSpeedOverflowBulk(speed)
 	return luck, speed, bulk
 end
 

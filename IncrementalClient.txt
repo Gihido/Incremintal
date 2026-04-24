@@ -122,6 +122,12 @@ runeUpgradeBlock = workspace:FindFirstChild("RuneUpgradeBlock")
 runeUpgradeDoska = workspace:FindFirstChild("RuneUpgradeDoska")
 xpUpgradeDoska = workspace:FindFirstChild("XPUpgradeDoska")
 xpProgressDoska = workspace:FindFirstChild("XPProgressDoska")
+hayBlock = workspace:FindFirstChild("HayBlock")
+hayUpgradeBoardPart = workspace:FindFirstChild("HayUpgradeBoard")
+hayAreaGate = workspace:FindFirstChild("HayAreaGate") or workspace:FindFirstChild("Rebirth7Gate")
+natureRuneBlock = workspace:FindFirstChild("NatureRuneBlock")
+natureRuneIndexBoard = workspace:FindFirstChild("NatureRuneIndexBoard")
+natureRuneStatsBoard = workspace:FindFirstChild("NatureRuneStatsBoard")
 
 xpFolder = data:WaitForChild("XP")
 xpValue = xpFolder:WaitForChild("XPValue")
@@ -161,6 +167,7 @@ ICON_ASSET_IDS = {
 	CurrencyFuel = "rbxassetid://6031280882",
 	CurrencyRebirth = "rbxassetid://6035067843",
 	CurrencyXP = "rbxassetid://6031271144",
+	CurrencyHay = "rbxassetid://6031068423",
 
 	UpgradeCoinGain = "rbxassetid://6031260785",
 	UpgradeCoinMultiplier = "rbxassetid://6031260785",
@@ -220,6 +227,22 @@ ICON_ASSET_IDS = {
 	BoardRuneUpgrade = "rbxassetid://6031260785",
 	BoardXPUpgrade = "rbxassetid://6031260785",
 	BoardXPProgress = "rbxassetid://6031260785",
+	HayBlock = "rbxassetid://6031068423",
+	HayUpgradeBoard = "rbxassetid://6031260785",
+	HayAmountUpgrade = "rbxassetid://6031260785",
+	HayMultiplierUpgrade = "rbxassetid://6031260785",
+	HayCooldownUpgrade = "rbxassetid://6031260785",
+	NatureRuneBlock = "rbxassetid://6031079152",
+	NatureRuneIndexBoard = "rbxassetid://6031079152",
+	NatureRuneStatsBoard = "rbxassetid://6031079152",
+	NatureRuneGrass = "rbxassetid://6031079152",
+	NatureRuneDarkGrass = "rbxassetid://6031079152",
+	NatureRuneDandelion = "rbxassetid://6031079152",
+	NatureRuneFlower = "rbxassetid://6031079152",
+	NatureRuneViolet = "rbxassetid://6031079152",
+	NatureRuneRose = "rbxassetid://6031079152",
+	HayAreaGate = "rbxassetid://6035067843",
+
 }
 
 AssetSlots = {
@@ -230,6 +253,7 @@ AssetSlots = {
 		Fuel = ICON_ASSET_IDS.CurrencyFuel,
 		Rebirth = ICON_ASSET_IDS.CurrencyRebirth,
 		XP = ICON_ASSET_IDS.CurrencyXP,
+		Hay = ICON_ASSET_IDS.CurrencyHay,
 	},
 	UpgradeIcons = {
 		CoinGain = ICON_ASSET_IDS.UpgradeCoinGain,
@@ -270,6 +294,7 @@ AssetSlots = {
 		Paper = ICON_ASSET_IDS.CurrencyPaper,
 		Fuel = ICON_ASSET_IDS.CurrencyFuel,
 		XP = ICON_ASSET_IDS.CurrencyXP,
+		Hay = ICON_ASSET_IDS.CurrencyHay,
 	},
 	PassiveIcons = {},
 	PassiveCardImages = {},
@@ -2818,6 +2843,20 @@ end
 
 getActiveAdminEventUpgrades = function() return 1, 1, 1, 0 end
 
+function getRuneSpeedOverflowBulk(speedStat)
+	local interval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
+	if interval >= 0.01 then
+		return 0
+	end
+	local overflowFactor = math.min(250, 0.01 / math.max(0.000001, interval))
+	return math.max(0, math.floor((overflowFactor - 1) * 2 + 0.5))
+end
+
+function getRuneRollIntervalFromSpeed(speedStat)
+	local baseInterval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
+	return math.max(0.01, baseInterval)
+end
+
 function getClientEffectiveRuneStats()
 	local baseLuck = 1 + runeLuckLevel.Value + runeLuckXpLevel.Value
 	local baseSpeed = 1 + runeSpeedLevel.Value + runeSpeedXpLevel.Value
@@ -2838,6 +2877,10 @@ function getClientEffectiveRuneStats()
 	local speed = math.floor(baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul * mythicLuckSpeedMul * eventSpeedMul + 0.5)
 	local bulkBonus = math.floor((baseBulkBonus + mythicBulkAdd) * passiveBulkMul * passiveGlobalMul + 0.5)
 	bulkBonus = math.floor(bulkBonus * eventBulkMul + 0.5) + eventBulkAdd
+	if rebirthCount.Value >= 7 then
+		luck = math.floor(luck * 1.5 + 0.5)
+	end
+	bulkBonus += getRuneSpeedOverflowBulk(speed)
 	local bulk = math.max(1, 1 + bulkBonus)
 	return luck, speed, bulk
 end
@@ -3352,6 +3395,7 @@ updateBoards = function()
 	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
 	local fifthUnlockedVisual = fifthSystemsUnlocked.Value or rebirthCount.Value >= 5
 	local sixthUnlockedVisual = sixthSystemsUnlocked.Value or rebirthCount.Value >= 6
+	local seventhUnlockedVisual = rebirthCount.Value >= 7
 
 	function setWorldNodeVisible(node, visible)
 		if not node then return end
@@ -3382,6 +3426,12 @@ updateBoards = function()
 	setWorldNodeVisible(runeStatsIndexBlock, sixthUnlockedVisual)
 	setWorldNodeVisible(runeUpgradeBlock, sixthUnlockedVisual)
 	setWorldNodeVisible(runeUpgradeDoska, sixthUnlockedVisual)
+	setWorldNodeVisible(natureRuneBlock, secondUnlockedVisual)
+	setWorldNodeVisible(natureRuneIndexBoard, secondUnlockedVisual)
+	setWorldNodeVisible(natureRuneStatsBoard, secondUnlockedVisual)
+	setWorldNodeVisible(hayBlock, seventhUnlockedVisual)
+	setWorldNodeVisible(hayUpgradeBoardPart, seventhUnlockedVisual)
+	setWorldNodeVisible(hayAreaGate, not seventhUnlockedVisual)
 
 	function updateUnlockDebug()
 		-- debug panel removed in production build
@@ -3422,7 +3472,9 @@ updateBoards = function()
 	elseif rebirthCount.Value == 4 then
 		rebirthNextText.Text = "5-е: пассивы и инвентарь (50 бумаги)"
 	elseif rebirthCount.Value == 5 then
-		rebirthNextText.Text = "6-е: система рун и индекса рун"
+		rebirthNextText.Text = "6-е: руны, индекс, ускорение рунной прогрессии"
+	elseif rebirthCount.Value == 6 then
+		rebirthNextText.Text = "7-е: Hay, HayBlock, HayBoard, HayAreaGate, +50% Rune Luck"
 	else
 		rebirthNextText.Text = "Все перерождения куплены"
 	end
@@ -3702,11 +3754,12 @@ updateBoards = function()
 		updateRuneWorldDisplay()
 		if runeStatsRows and runeStatsRows.luck then
 			local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+			local speedOverflowBulk = getRuneSpeedOverflowBulk(effSpeed)
 			local effBulkBonus = math.max(0, effBulk - 1)
-			local speedSeconds = math.max(0.01, 10 / math.max(1, effSpeed))
+			local speedSeconds = getRuneRollIntervalFromSpeed(effSpeed)
 			runeStatsRows.luck.Text = "x" .. formatNumber(effLuck)
 			runeStatsRows.bulk.Text = "+" .. formatNumber(effBulkBonus)
-			runeStatsRows.speed.Text = string.format("1 rune / %.2fs", speedSeconds)
+			runeStatsRows.speed.Text = string.format("%.2fs/roll | Overflow Bulk +%s", speedSeconds, formatNumber(speedOverflowBulk))
 			runeStatsRows.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulkBonus)
 		end
 	end
