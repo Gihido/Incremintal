@@ -52,8 +52,9 @@ local ADMIN_NAME = "Doter24_7"
 
 local SAVE_INTERVAL = 45
 local SAVE_COOLDOWN = 20
+local DEV_REBIRTH_LOGS = RunService:IsStudio()
 
-local MAX_REBIRTH_COUNT = 6
+local MAX_REBIRTH_COUNT = 7
 local RUNE_OPEN_WOOD_COST = 50
 local RUNE_OPEN_BASE_TIME = 10
 local RUNE_MAX_EFFECTIVE_STACKS = 10
@@ -150,6 +151,18 @@ local REBIRTH_STAGES = {
 		},
 		[6] = {
 			cost = 500,
+			currency = "Paper",
+			coinMultiplier = 1,
+			spawnBonus = 0,
+			woodMultiplier = 1,
+			unlockTree = true,
+			unlockThirdUpgrades = true,
+			unlockFourthSystems = true,
+			unlockFifthSystems = true,
+			unlockSixthSystems = true,
+		},
+		[7] = {
+			cost = 2500,
 			currency = "Paper",
 			coinMultiplier = 1,
 			spawnBonus = 0,
@@ -929,6 +942,15 @@ local function getXPBoostMultiplier(player)
 	return 1 + math.max(0, tonumber(lvl and lvl.Value) or 0)
 end
 
+local function getRuneSpeedOverflowBulk(speedStat)
+	local interval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
+	if interval >= 0.01 then
+		return 0
+	end
+	local overflowFactor = math.min(250, 0.01 / math.max(0.000001, interval))
+	return math.max(0, math.floor((overflowFactor - 1) * 2 + 0.5))
+end
+
 local function getEffectiveRuneStats(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
@@ -948,6 +970,11 @@ local function getEffectiveRuneStats(player)
 	speed = math.floor(speed * eventSpeedMul + 0.5)
 	bulk = math.floor(bulk * eventBulkMul + 0.5)
 	bulk += eventBulkAdd
+	local rebirth = getRebirthFolder(player)
+	if rebirth and rebirth.Count.Value >= 7 then
+		luck = math.floor(luck * 1.5 + 0.5)
+	end
+	bulk += getRuneSpeedOverflowBulk(speed)
 	return luck, speed, bulk
 end
 
@@ -1299,6 +1326,47 @@ local function applyCharacterCollisionGroup(player, character)
 	characterConnections[player] = character.DescendantAdded:Connect(applyPart)
 end
 
+local function getRebirthCoinMultiplier(count)
+	local c = math.max(0, math.floor(tonumber(count) or 0))
+	if c == 0 then return 1 end
+	if c == 1 then return 2 end
+	if c == 2 then return 10 end
+	if c == 3 then return 100 end
+
+	local mul = 1
+	for i = 1, c do
+		local stage = REBIRTH_STAGES[i]
+		if stage then
+			mul *= (tonumber(stage.coinMultiplier) or 1)
+		end
+	end
+	return mul
+end
+
+local function syncRebirthCoinMultiplierBonus(player)
+	local rebirth = getRebirthFolder(player)
+	if not rebirth then return 1 end
+	local count = tonumber(rebirth.Count.Value) or 0
+	local rebirthMul = getRebirthCoinMultiplier(count)
+	if rebirth.CoinMultiplierBonus.Value ~= rebirthMul then
+		rebirth.CoinMultiplierBonus.Value = rebirthMul
+	end
+	return rebirthMul
+end
+
+local function runRebirthCoinMultiplierSanityCheck()
+	if not DEV_REBIRTH_LOGS then
+		return
+	end
+	for rebirthCount = 0, 3 do
+		local baseCoinGain = 1
+		local finalCoinGain = baseCoinGain * getRebirthCoinMultiplier(rebirthCount)
+		warn(string.format("[RebirthSanity] rebirth=%d base=%s final=%s", rebirthCount, tostring(baseCoinGain), tostring(finalCoinGain)))
+	end
+end
+
+runRebirthCoinMultiplierSanityCheck()
+
 local function recalculateRebirthStats(player)
 	local rebirth = getRebirthFolder(player)
 	if not rebirth then
@@ -1341,7 +1409,8 @@ local function recalculateRebirthStats(player)
 			end
 		end
 
-	rebirth.CoinMultiplierBonus.Value = totalCoinMultiplier
+
+	rebirth.CoinMultiplierBonus.Value = syncRebirthCoinMultiplierBonus(player)
 	rebirth.SpawnSpeedBonus.Value = totalSpawnBonus
 	rebirth.WoodMultiplierBonus.Value = totalWoodMultiplier
 	rebirth.SecondAreaUnlocked.Value = secondUnlocked
@@ -1536,25 +1605,27 @@ local function resetAllPlayerData(player)
 	markDirty(player)
 end
 
-local function getCoinReward(player)
+local function calculateFinalCoinGain(player, baseAmount)
 	local coinUpgrades = getCoinUpgradesFolder(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
-
-	if not coinUpgrades or not woodUpgrades or not rebirth then
-		return 1
-	end
-
 	local passiveCoin, _, passiveGlobalMultiplier = getPassiveMultipliers(player)
 	local runeCoinMultiplier = select(1, getRuneBonusMultipliers(player))
 
-	local baseValue = 1 + coinUpgrades.CoinValueLevel.Value
-	local baseMultiplier = 1 + (coinUpgrades.MultiplierLevel.Value * 0.1)
-	local woodCoinBoostMultiplier = 1.1 ^ woodUpgrades.CoinBoostLevel.Value
+	local baseCoinGain = math.max(0, tonumber(baseAmount) or 1)
+	local coinValueLevel = coinUpgrades and coinUpgrades:FindFirstChild("CoinValueLevel") and coinUpgrades.CoinValueLevel.Value or 0
+	local multiplierLevel = coinUpgrades and coinUpgrades:FindFirstChild("MultiplierLevel") and coinUpgrades.MultiplierLevel.Value or 0
+	local upgradedCoinGain = (baseCoinGain + coinValueLevel) * (1 + (multiplierLevel * 0.1))
+	local rebirthCoinMul = rebirth and syncRebirthCoinMultiplierBonus(player) or 1
+	local afterRebirthGain = upgradedCoinGain * rebirthCoinMul
+	local woodCoinBoostLevel = woodUpgrades and woodUpgrades:FindFirstChild("CoinBoostLevel") and woodUpgrades.CoinBoostLevel.Value or 0
+	local woodCoinBoostMultiplier = 1.1 ^ woodCoinBoostLevel
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
-	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
+	local finalCoinGain = afterRebirthGain * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul
+	local floorGain = baseCoinGain * rebirthCoinMul
+	return roundToTenth(math.max(finalCoinGain, floorGain))
 end
 
 local function getCoinRespawnDelay(player)
@@ -2286,9 +2357,22 @@ local function spawnCoin()
 		taken = true
 		coin.CanTouch = false
 
-			local reward = getCoinReward(player)
-			addCurrency(getCoinsObject(player), reward)
+			local coinsObject = getCoinsObject(player)
+			if not coinsObject then
+				return
+			end
+			local coinsBefore = coinsObject.Value
+			local reward = calculateFinalCoinGain(player, 1)
 			local rebirth = getRebirthFolder(player)
+			local floorReward = rebirth and syncRebirthCoinMultiplierBonus(player) or 1
+			if reward < floorReward then
+				reward = floorReward
+			end
+			addCurrency(coinsObject, reward)
+			local coinsAdded = roundToTenth(coinsObject.Value - coinsBefore)
+			if math.abs(coinsAdded - reward) > 0.001 then
+				warn(string.format("[CoinGainMismatch] %s reward=%s added=%s before=%s after=%s", player.Name, tostring(reward), tostring(coinsAdded), tostring(coinsBefore), tostring(coinsObject.Value)))
+			end
 			if rebirth and rebirth.SecondAreaUnlocked.Value then
 				local xpUpgrades = getXPUpgradesFolder(player)
 				local xpPerCoin = 1 + (xpUpgrades and xpUpgrades:FindFirstChild("XPMultiplierLevel") and xpUpgrades.XPMultiplierLevel.Value or 0)
@@ -2308,7 +2392,7 @@ local function spawnCoin()
 		activeCoinCount -= 1
 		coin:Destroy()
 
-		firePickup(player, "Coin", reward)
+			firePickup(player, "Coin", coinsAdded)
 
 		local respawnDelay = getCoinRespawnDelay(player)
 		task.delay(respawnDelay, function()
