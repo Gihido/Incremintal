@@ -4669,6 +4669,9 @@ function registerNotifyEventListeners()
 				if payload.active then startRuneRolling(payload.system) else stopRuneRolling(payload.system) end
 			end
 		elseif payload.kind == "rune_roll_tick" then
+			if payload.system and payload.system ~= "Nature" then
+				return
+			end
 			local session = payload.session or {}
 			effectiveRuneDenominators = payload.effectiveDenominators or effectiveRuneDenominators
 			if payload.system == "Forest" then
