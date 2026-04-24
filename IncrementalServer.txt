@@ -1223,7 +1223,8 @@ end
 
 function getRuneBonusMultipliers(player)
 	local state = getRuneState(player)
-	local coinMul, woodMul, paperMul = 1, 1, 1
+	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
+	local runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul = 1, 1, 0, 1
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local count = 0
 		if state.counts then
@@ -1233,8 +1234,13 @@ function getRuneBonusMultipliers(player)
 		coinMul += (runeDef.coinBonus or 0) * stacks
 		woodMul += (runeDef.woodBonus or 0) * stacks
 		paperMul += (runeDef.paperBonus or 0) * stacks
+		xpMul += (runeDef.xpBonus or 0) * stacks
+		runeLuckMul += (runeDef.runeLuckBonus or 0) * stacks
+		runeSpeedMul += (runeDef.runeSpeedBonus or 0) * stacks
+		runeBulkAdd += (runeDef.runeBulkBonus or 0) * stacks
+		passiveLuckMul += (runeDef.passiveLuckBonus or 0) * stacks
 	end
-	return coinMul, woodMul, paperMul
+	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
 end
 
 local function chooseRandomPassiveId(player)
