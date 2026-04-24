@@ -125,6 +125,15 @@ xpProgressDoska = workspace:FindFirstChild("XPProgressDoska")
 hayBlock = workspace:FindFirstChild("HayBlock")
 hayUpgradeBoardPart = workspace:FindFirstChild("HayUpgradeBoard")
 hayAreaGate = workspace:FindFirstChild("HayAreaGate") or workspace:FindFirstChild("Rebirth7Gate")
+hayFolder = data:WaitForChild("Hay")
+hayCurrency = hayFolder:WaitForChild("HayCurrency")
+hayUpgrades = hayFolder:WaitForChild("HayUpgrades")
+hayAmountLevel = hayUpgrades:WaitForChild("HayAmountLevel")
+hayMultiplierLevel = hayUpgrades:WaitForChild("HayMultiplierLevel")
+hayCooldownLevel = hayUpgrades:WaitForChild("HayCooldownLevel")
+hayAmountCost = hayUpgrades:WaitForChild("HayAmountCost")
+hayMultiplierCost = hayUpgrades:WaitForChild("HayMultiplierCost")
+hayCooldownCost = hayUpgrades:WaitForChild("HayCooldownCost")
 	forestRuneBlock = workspace:FindFirstChild("ForestRuneBlock")
 	forestRuneIndexBoard = workspace:FindFirstChild("ForestRuneIndexBoard")
 	forestRuneStatsBoard = workspace:FindFirstChild("ForestRuneStatsBoard")
@@ -235,6 +244,13 @@ ICON_ASSET_IDS = {
 	HayAmountUpgrade = "rbxassetid://6031260785",
 	HayMultiplierUpgrade = "rbxassetid://6031260785",
 	HayCooldownUpgrade = "rbxassetid://6031260785",
+	ForestRuneBlockIcon = "rbxassetid://123456789",
+	ForestRuneIndexBoardBackground = "rbxassetid://123456789",
+	NatureRuneBlockIcon = "rbxassetid://123456789",
+	NatureRuneIndexBoardBackground = "rbxassetid://123456789",
+	HayIcon = "rbxassetid://123456789",
+	HayBlockIcon = "rbxassetid://123456789",
+	HayUpgradeBoardBackground = "rbxassetid://123456789",
 		ForestRuneBlock = "rbxassetid://6031079152",
 		ForestRuneIndexBoard = "rbxassetid://6031079152",
 		ForestRuneStatsBoard = "rbxassetid://6031079152",
@@ -299,12 +315,18 @@ AssetSlots = {
 		RebirthUpgrade = ICON_ASSET_IDS.UpgradeRebirth,
 	},
 	RuneIcons = {
-		Grass = ICON_ASSET_IDS.ForestRuneGrass,
-		DarkGrass = ICON_ASSET_IDS.ForestRuneDarkGrass,
-		Dandelion = ICON_ASSET_IDS.ForestRuneDandelion,
-		Flower = ICON_ASSET_IDS.ForestRuneFlower,
-		Violet = ICON_ASSET_IDS.ForestRuneViolet,
-		Rose = ICON_ASSET_IDS.ForestRuneRose,
+		Grass = ICON_ASSET_IDS.NatureRune_Grass,
+		DarkGrass = ICON_ASSET_IDS.NatureRune_DarkGrass,
+		Dandelion = ICON_ASSET_IDS.NatureRune_Dandelion,
+		Flower = ICON_ASSET_IDS.NatureRune_Flower,
+		Violet = ICON_ASSET_IDS.NatureRune_Violet,
+		Rose = ICON_ASSET_IDS.NatureRune_Rose,
+		Palka = ICON_ASSET_IDS.ForestRune_Palka,
+		ObrublennyKonec = ICON_ASSET_IDS.ForestRune_ObrublennyKonec,
+		VetvDereva = ICON_ASSET_IDS.ForestRune_VetvDereva,
+		Brevno = ICON_ASSET_IDS.ForestRune_Brevno,
+		Poleno = ICON_ASSET_IDS.ForestRune_Poleno,
+		ObgorevshiyPen = ICON_ASSET_IDS.ForestRune_ObgorevshiyPen,
 	},
 	NotificationIcons = {
 		Coin = ICON_ASSET_IDS.CurrencyCoin,
@@ -391,7 +413,9 @@ ROLL_ANIMATION_CONFIG = {
 	maxCoinSize = 86,
 	coinSpawnInterval = 0.05,
 }
-RUNE_DISPLAY_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
+NATURE_RUNE_DISPLAY_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
+FOREST_RUNE_DISPLAY_ORDER = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}
+RUNE_DISPLAY_ORDER = NATURE_RUNE_DISPLAY_ORDER
 RUNE_VISUALS = {
 	Grass = {name = "ТРАВА", chance = "≈69%", rowColor = Color3.fromRGB(61, 74, 79), accent = Color3.fromRGB(210, 210, 210), icon = "◈"},
 	DarkGrass = {name = "ТЁМНАЯ ТРАВА", chance = "≈17%", rowColor = Color3.fromRGB(34, 86, 44), accent = Color3.fromRGB(154, 255, 84), icon = "ᛒ"},
@@ -399,6 +423,12 @@ RUNE_VISUALS = {
 	Flower = {name = "ЦВЕТОК", chance = "≈3.5%", rowColor = Color3.fromRGB(72, 16, 110), accent = Color3.fromRGB(196, 86, 255), icon = "ᚲ"},
 	Violet = {name = "ФИАЛКА", chance = "≈1.4%", rowColor = Color3.fromRGB(96, 72, 22), accent = Color3.fromRGB(255, 205, 64), icon = "ᛋ"},
 	Rose = {name = "РОЗА", chance = "≈0.7%", rowColor = Color3.fromRGB(90, 18, 66), accent = Color3.fromRGB(255, 118, 220), icon = "✦"},
+	Palka = {name = "ПАЛКА", chance = "≈60%", rowColor = Color3.fromRGB(88, 66, 42), accent = Color3.fromRGB(214, 171, 113), icon = "◈"},
+	ObrublennyKonec = {name = "ОБРУБЛЕННЫЙ КОНЕЦ", chance = "≈21%", rowColor = Color3.fromRGB(73, 52, 31), accent = Color3.fromRGB(231, 191, 126), icon = "◈"},
+	VetvDereva = {name = "ВЕТВЬ ДЕРЕВА", chance = "≈10%", rowColor = Color3.fromRGB(54, 80, 42), accent = Color3.fromRGB(146, 216, 104), icon = "◈"},
+	Brevno = {name = "БРЕВНО", chance = "≈5%", rowColor = Color3.fromRGB(94, 70, 38), accent = Color3.fromRGB(241, 208, 140), icon = "◈"},
+	Poleno = {name = "ПОЛЕНО", chance = "≈2.8%", rowColor = Color3.fromRGB(85, 45, 33), accent = Color3.fromRGB(255, 161, 121), icon = "◈"},
+	ObgorevshiyPen = {name = "ОБГОРЕВШИЙ ПЕНЬ", chance = "≈1.2%", rowColor = Color3.fromRGB(43, 43, 43), accent = Color3.fromRGB(255, 211, 140), icon = "◈"},
 }
 
 function roundToTenth(value)
@@ -2737,7 +2767,7 @@ end
 
 function updateRuneSummaryGui()
 	local state = parseRuneState()
-	local counts = state.counts or {}
+	local counts = state.natureCounts or {}
 	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
 		local label = runeUi.summaryRows and runeUi.summaryRows[runeId]
 		if label then
@@ -2783,10 +2813,12 @@ parseRuneState = function()
 	local ok, decoded = pcall(function()
 		return HttpService:JSONDecode(runeStateJson.Value)
 	end)
-	if ok and type(decoded) == "table" and type(decoded.counts) == "table" then
-		return decoded
+	if ok and type(decoded) == "table" then
+		local natureCounts = type(decoded.natureCounts) == "table" and decoded.natureCounts or (type(decoded.counts) == "table" and decoded.counts or {})
+		local forestCounts = type(decoded.forestCounts) == "table" and decoded.forestCounts or {}
+		return {natureCounts = natureCounts, forestCounts = forestCounts}
 	end
-	return {counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0}}
+	return {natureCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0}, forestCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0}}
 end
 
 function getEquippedPassiveDef()
@@ -3502,16 +3534,16 @@ updateBoards = function()
 	setWorldNodeVisible(paperUpgradeDoska, fourthUnlockedVisual)
 	setWorldNodeVisible(passiveRollBlock, fifthUnlockedVisual)
 	setWorldNodeVisible(passiveInventoryBlock, fifthUnlockedVisual)
-	setWorldNodeVisible(runeRollBlock, secondUnlockedVisual)
-	setWorldNodeVisible(runeIndexBlock, secondUnlockedVisual)
-	setWorldNodeVisible(runeStatsIndexBlock, secondUnlockedVisual)
+	setWorldNodeVisible(runeRollBlock, false)
+	setWorldNodeVisible(runeIndexBlock, false)
+	setWorldNodeVisible(runeStatsIndexBlock, false)
 	setWorldNodeVisible(runeUpgradeBlock, secondUnlockedVisual)
 	setWorldNodeVisible(runeUpgradeDoska, secondUnlockedVisual)
 	setWorldNodeVisible(xpUpgradeDoska, secondUnlockedVisual)
 	setWorldNodeVisible(xpProgressDoska, secondUnlockedVisual)
-	setWorldNodeVisible(forestRuneBlock, secondUnlockedVisual)
-	setWorldNodeVisible(forestRuneIndexBoard, secondUnlockedVisual)
-	setWorldNodeVisible(forestRuneStatsBoard, secondUnlockedVisual)
+	setWorldNodeVisible(forestRuneBlock, sixthUnlockedVisual)
+	setWorldNodeVisible(forestRuneIndexBoard, sixthUnlockedVisual)
+	setWorldNodeVisible(forestRuneStatsBoard, sixthUnlockedVisual)
 	setWorldNodeVisible(natureRuneBlock, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneIndexBoard, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneStatsBoard, secondUnlockedVisual)
@@ -3537,8 +3569,8 @@ updateBoards = function()
 	setWorldBoardGuiVisible("RuneUpgradeBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("XPUpgradeBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("XPProgressBoardSurfaceGui", secondUnlockedVisual)
-	setWorldBoardGuiVisible("RuneIndexBoardSurfaceGui", secondUnlockedVisual)
-	setWorldBoardGuiVisible("RuneStatsIndexBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("RuneIndexBoardSurfaceGui", false)
+	setWorldBoardGuiVisible("RuneStatsIndexBoardSurfaceGui", false)
 
 	function updateUnlockDebug()
 		-- debug panel removed in production build
@@ -3967,8 +3999,11 @@ end
 if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
 	table.insert(passiveEffectParts, passiveInventoryBlock)
 end
-if runeRollBlock and runeRollBlock:IsA("BasePart") then
-	table.insert(passiveEffectParts, runeRollBlock)
+if natureRuneBlock and natureRuneBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, natureRuneBlock)
+end
+if forestRuneBlock and forestRuneBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, forestRuneBlock)
 end
 if runeIndexBlock and runeIndexBlock:IsA("BasePart") then
 	table.insert(passiveEffectParts, runeIndexBlock)
@@ -3990,8 +4025,8 @@ for i = 1, #passiveEffectParts do
 			local h = Instance.new("Highlight")
 			h.Name = "PassiveFxHighlight"
 			h.Adornee = p
-			h.FillColor = p == runeRollBlock and Color3.fromRGB(122, 255, 220) or Color3.fromRGB(168, 199, 255)
-			h.OutlineColor = p == runeRollBlock and Color3.fromRGB(224, 255, 244) or Color3.fromRGB(245, 249, 255)
+			h.FillColor = (p == natureRuneBlock or p == forestRuneBlock) and Color3.fromRGB(122, 255, 220) or Color3.fromRGB(168, 199, 255)
+			h.OutlineColor = (p == natureRuneBlock or p == forestRuneBlock) and Color3.fromRGB(224, 255, 244) or Color3.fromRGB(245, 249, 255)
 			h.FillTransparency = 0.7
 			h.OutlineTransparency = 0.02
 			h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
@@ -4014,8 +4049,9 @@ for i = 1, #passiveEffectParts do
 	end)(passiveEffectParts[i])
 end
 
-function triggerRuneBurst()
-	if not runeRollBlock or not runeRollBlock:IsA("BasePart") then
+function triggerRuneBurst(targetBlock)
+	local runeBurstBlock = targetBlock or natureRuneBlock or forestRuneBlock
+	if not runeBurstBlock or not runeBurstBlock:IsA("BasePart") then
 		return
 	end
 	local burst = Instance.new("ParticleEmitter")
@@ -4029,7 +4065,7 @@ function triggerRuneBurst()
 		NumberSequenceKeypoint.new(0, 0.35),
 		NumberSequenceKeypoint.new(1, 0),
 	})
-	burst.Parent = runeRollBlock
+	burst.Parent = runeBurstBlock
 	burst:Emit(14)
 	task.delay(0.4, function()
 		burst:Destroy()
@@ -4325,7 +4361,12 @@ function registerNotifyEventListeners()
 			updateRuneSessionGui()
 			updateRuneSummaryGui()
 			updateRuneWorldDisplay()
-			triggerRuneBurst()
+			triggerRuneBurst(payload.system == "Forest" and forestRuneBlock or natureRuneBlock)
+			if payload.system == "Forest" then
+				showToast("Forest Rune: +" .. tostring(#(payload.rolled or {})))
+			else
+				showToast("Nature Rune: +" .. tostring(#(payload.rolled or {})))
+			end
 		elseif payload.kind == "admin_event_state" then
 			activeAdminEvents = normalizeAdminEvents(payload.events)
 			renderAdminEvents(activeAdminEvents)
@@ -4374,9 +4415,20 @@ function registerWorldInputBindings()
 			return
 		end
 
-		if mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock then
+		if mouse.Target == natureRuneBlock then
+			if not isSystemUnlocked(2) then
+				showToast("Nature Rune откроется на 2-м перерождении")
+			else
+				runeActionEvent:FireServer("OpenNature")
+			end
+			return
+		end
+
+		if mouse.Target == forestRuneBlock then
 			if not isSystemUnlocked(6) then
-				showToast("Руны откроются на 6-м перерождении")
+				showToast("Forest Rune откроется на 6-м перерождении")
+			else
+				runeActionEvent:FireServer("OpenForest")
 			end
 			return
 		end
@@ -4403,6 +4455,7 @@ function registerWatchedValueUpdates()
 		passiveStateJson, runeStateJson, runeLuckLevel, runeSpeedLevel, runeBulkLevel, runeLuckCost, runeSpeedCost, runeBulkCost,
 		xpValue, coinXpLevel, woodXpLevel, paperXpLevel, xpMultiplierLevel, runeLuckXpLevel, runeBulkXpLevel, runeSpeedXpLevel,
 		coinXpCost, woodXpCost, paperXpCost, xpMultiplierCost, runeLuckXpCost, runeBulkXpCost, runeSpeedXpCost, xpBoostLevel, xpBoostNextCost,
+		hayCurrency, hayAmountLevel, hayMultiplierLevel, hayCooldownLevel, hayAmountCost, hayMultiplierCost, hayCooldownCost,
 	}
 	for i = 1, #watchedValues do
 		local watched = watchedValues[i]
@@ -4423,11 +4476,12 @@ function startRuntimeUiUpdates()
 				passiveUi.hintEmoji.Text = "😊"
 			end
 			passiveUi.hintEmoji.Rotation = math.sin(t * 0.8) * 6
-			if runeRollBlock and runeRollBlock:IsA("BasePart") then
+			local animatedRuneBlock = natureRuneBlock or forestRuneBlock
+			if animatedRuneBlock and animatedRuneBlock:IsA("BasePart") then
 				local pulse = (math.sin(t * 1.6) + 1) * 0.5
 				local green = math.floor(120 + pulse * 90)
-				runeRollBlock.Color = Color3.fromRGB(40 + math.floor(pulse * 24), green, 52 + math.floor(pulse * 24))
-				local light = runeRollBlock:FindFirstChild("PassiveFxLight")
+				animatedRuneBlock.Color = Color3.fromRGB(40 + math.floor(pulse * 24), green, 52 + math.floor(pulse * 24))
+				local light = animatedRuneBlock:FindFirstChild("PassiveFxLight")
 				if light and light:IsA("PointLight") then
 					light.Brightness = 1.5 + pulse * 1.2
 					light.Color = Color3.fromRGB(122, 255, 138)
