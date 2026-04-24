@@ -1605,14 +1605,14 @@ local function resetAllPlayerData(player)
 	markDirty(player)
 end
 
-local function getCoinReward(player)
+local function calculateFinalCoinGain(player, baseAmount)
 	local coinUpgrades = getCoinUpgradesFolder(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
 	local passiveCoin, _, passiveGlobalMultiplier = getPassiveMultipliers(player)
 	local runeCoinMultiplier = select(1, getRuneBonusMultipliers(player))
 
-	local baseCoinGain = 1
+	local baseCoinGain = math.max(0, tonumber(baseAmount) or 1)
 	local coinValueLevel = coinUpgrades and coinUpgrades:FindFirstChild("CoinValueLevel") and coinUpgrades.CoinValueLevel.Value or 0
 	local multiplierLevel = coinUpgrades and coinUpgrades:FindFirstChild("MultiplierLevel") and coinUpgrades.MultiplierLevel.Value or 0
 	local upgradedCoinGain = (baseCoinGain + coinValueLevel) * (1 + (multiplierLevel * 0.1))
@@ -1624,7 +1624,8 @@ local function getCoinReward(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
 	local finalCoinGain = afterRebirthGain * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul
-	return roundToTenth(finalCoinGain)
+	local floorGain = baseCoinGain * rebirthCoinMul
+	return roundToTenth(math.max(finalCoinGain, floorGain))
 end
 
 local function getCoinRespawnDelay(player)
@@ -2356,13 +2357,22 @@ local function spawnCoin()
 		taken = true
 		coin.CanTouch = false
 
-			local reward = getCoinReward(player)
+			local coinsObject = getCoinsObject(player)
+			if not coinsObject then
+				return
+			end
+			local coinsBefore = coinsObject.Value
+			local reward = calculateFinalCoinGain(player, 1)
 			local rebirth = getRebirthFolder(player)
 			local floorReward = rebirth and syncRebirthCoinMultiplierBonus(player) or 1
 			if reward < floorReward then
 				reward = floorReward
 			end
-			addCurrency(getCoinsObject(player), reward)
+			addCurrency(coinsObject, reward)
+			local coinsAdded = roundToTenth(coinsObject.Value - coinsBefore)
+			if math.abs(coinsAdded - reward) > 0.001 then
+				warn(string.format("[CoinGainMismatch] %s reward=%s added=%s before=%s after=%s", player.Name, tostring(reward), tostring(coinsAdded), tostring(coinsBefore), tostring(coinsObject.Value)))
+			end
 			if rebirth and rebirth.SecondAreaUnlocked.Value then
 				local xpUpgrades = getXPUpgradesFolder(player)
 				local xpPerCoin = 1 + (xpUpgrades and xpUpgrades:FindFirstChild("XPMultiplierLevel") and xpUpgrades.XPMultiplierLevel.Value or 0)
@@ -2382,7 +2392,7 @@ local function spawnCoin()
 		activeCoinCount -= 1
 		coin:Destroy()
 
-		firePickup(player, "Coin", reward)
+			firePickup(player, "Coin", coinsAdded)
 
 		local respawnDelay = getCoinRespawnDelay(player)
 		task.delay(respawnDelay, function()
