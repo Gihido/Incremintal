@@ -3834,7 +3834,6 @@ updateBoards = function()
 	local thirdUnlockedVisual = thirdUpgradeUnlocked.Value or rebirthCount.Value >= 3
 	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
 	local fifthUnlockedVisual = fifthSystemsUnlocked.Value or rebirthCount.Value >= 5
-	local sixthUnlockedVisual = sixthSystemsUnlocked.Value or rebirthCount.Value >= 6
 	local seventhUnlockedVisual = rebirthCount.Value >= 7
 
 	function setWorldNodeVisible(node, visible)
@@ -3903,9 +3902,9 @@ updateBoards = function()
 	setWorldNodeVisible(runeUpgradeDoska, secondUnlockedVisual)
 	setWorldNodeVisible(xpUpgradeDoska, secondUnlockedVisual)
 	setWorldNodeVisible(xpProgressDoska, secondUnlockedVisual)
-	setWorldNodeVisible(forestRuneBlock, sixthUnlockedVisual)
-	setWorldNodeVisible(forestRuneIndexBoard, sixthUnlockedVisual)
-	setWorldNodeVisible(forestRuneStatsBoard, sixthUnlockedVisual)
+	setWorldNodeVisible(forestRuneBlock, secondUnlockedVisual)
+	setWorldNodeVisible(forestRuneIndexBoard, secondUnlockedVisual)
+	setWorldNodeVisible(forestRuneStatsBoard, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneBlock, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneIndexBoard, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneStatsBoard, secondUnlockedVisual)
@@ -3936,8 +3935,8 @@ updateBoards = function()
 	setWorldBoardGuiVisible("RuneStatsIndexBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("NatureRuneIndexBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("NatureRuneStatsBoardSurfaceGui", secondUnlockedVisual)
-	setWorldBoardGuiVisible("ForestRuneIndexBoardSurfaceGui", sixthUnlockedVisual)
-	setWorldBoardGuiVisible("ForestRuneStatsBoardSurfaceGui", sixthUnlockedVisual)
+	setWorldBoardGuiVisible("ForestRuneIndexBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("ForestRuneStatsBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("HayIndexBoardSurfaceGui", seventhUnlockedVisual)
 	setWorldBoardGuiVisible("HayUpgradeBoardSurfaceGui", seventhUnlockedVisual)
 
