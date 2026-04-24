@@ -53,7 +53,7 @@ local ADMIN_NAME = "Doter24_7"
 local SAVE_INTERVAL = 45
 local SAVE_COOLDOWN = 20
 
-local MAX_REBIRTH_COUNT = 6
+local MAX_REBIRTH_COUNT = 7
 local RUNE_OPEN_WOOD_COST = 50
 local RUNE_OPEN_BASE_TIME = 10
 local RUNE_MAX_EFFECTIVE_STACKS = 10
@@ -150,6 +150,18 @@ local REBIRTH_STAGES = {
 		},
 		[6] = {
 			cost = 500,
+			currency = "Paper",
+			coinMultiplier = 1,
+			spawnBonus = 0,
+			woodMultiplier = 1,
+			unlockTree = true,
+			unlockThirdUpgrades = true,
+			unlockFourthSystems = true,
+			unlockFifthSystems = true,
+			unlockSixthSystems = true,
+		},
+		[7] = {
+			cost = 2500,
 			currency = "Paper",
 			coinMultiplier = 1,
 			spawnBonus = 0,
@@ -929,6 +941,15 @@ local function getXPBoostMultiplier(player)
 	return 1 + math.max(0, tonumber(lvl and lvl.Value) or 0)
 end
 
+local function getRuneSpeedOverflowBulk(speedStat)
+	local interval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
+	if interval >= 0.01 then
+		return 0
+	end
+	local overflowFactor = math.min(250, 0.01 / math.max(0.000001, interval))
+	return math.max(0, math.floor((overflowFactor - 1) * 2 + 0.5))
+end
+
 local function getEffectiveRuneStats(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
@@ -948,6 +969,11 @@ local function getEffectiveRuneStats(player)
 	speed = math.floor(speed * eventSpeedMul + 0.5)
 	bulk = math.floor(bulk * eventBulkMul + 0.5)
 	bulk += eventBulkAdd
+	local rebirth = getRebirthFolder(player)
+	if rebirth and rebirth.Count.Value >= 7 then
+		luck = math.floor(luck * 1.5 + 0.5)
+	end
+	bulk += getRuneSpeedOverflowBulk(speed)
 	return luck, speed, bulk
 end
 
