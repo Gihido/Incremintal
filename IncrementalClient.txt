@@ -3005,10 +3005,18 @@ createRuneOverlays()
 forestRuneSessionCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0}
 forestRuneSessionRows = {}
 forestRuneSessionPanel = nil
+FOREST_SESSION_ICON_ASSETS = {
+	Palka = "", -- вставь rbxassetid://...
+	ObrublennyKonec = "",
+	VetvDereva = "",
+	Brevno = "",
+	Poleno = "",
+	ObgorevshiyPen = "",
+}
 do
 	local panel = Instance.new("Frame")
 	panel.Name = "ForestRuneSessionGui"
-	panel.Size = UDim2.new(0, 210, 0, 262)
+	panel.Size = UDim2.new(0, 246, 0, 292)
 	panel.AnchorPoint = Vector2.new(1, 1)
 	panel.Position = UDim2.new(1, -14, 1, -14)
 	panel.BackgroundColor3 = Color3.fromRGB(73, 57, 31)
@@ -3017,16 +3025,22 @@ do
 	createCorner(panel, 14)
 	createStroke(panel, Color3.fromRGB(205, 174, 118), 3, 0)
 	local listHolder = Instance.new("ScrollingFrame")
-	listHolder.Size = UDim2.new(1, -10, 1, -42)
+	listHolder.Size = UDim2.new(1, -12, 1, -46)
 	listHolder.Position = UDim2.new(0, 5, 0, 36)
 	listHolder.BackgroundTransparency = 1
 	listHolder.BorderSizePixel = 0
+	listHolder.ScrollBarThickness = 7
+	listHolder.ScrollBarImageColor3 = Color3.fromRGB(214, 186, 136)
+	listHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
 	listHolder.Parent = panel
 	local list = Instance.new("UIListLayout")
 	list.Padding = UDim.new(0, 4)
 	list.Parent = listHolder
 	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	list.VerticalAlignment = Enum.VerticalAlignment.Top
+	list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		listHolder.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 8)
+	end)
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, -8, 0, 24)
 	title.BackgroundTransparency = 1
@@ -3035,18 +3049,37 @@ do
 	title.TextScaled = true
 	title.TextColor3 = Color3.fromRGB(255, 244, 220)
 	title.Parent = panel
+	local runeIcons = type(AssetSlots) == "table" and type(AssetSlots.RuneIcons) == "table" and AssetSlots.RuneIcons or {}
 	for _, runeId in ipairs({"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}) do
 		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, 0, 0, 32)
+		row.Size = UDim2.new(1, 0, 0, 36)
 		row.BackgroundColor3 = Color3.fromRGB(48, 36, 22)
 		row.BackgroundTransparency = 0.2
 		row.BorderSizePixel = 0
 		row.Parent = listHolder
 		createCorner(row, 8)
 
+		local iconWrap = Instance.new("Frame")
+		iconWrap.Size = UDim2.new(0, 26, 0, 26)
+		iconWrap.Position = UDim2.new(0, 6, 0.5, -13)
+		iconWrap.BackgroundColor3 = Color3.fromRGB(35, 26, 17)
+		iconWrap.BackgroundTransparency = 0.1
+		iconWrap.BorderSizePixel = 0
+		iconWrap.Parent = row
+		createCorner(iconWrap, 999)
+		createStroke(iconWrap, Color3.fromRGB(160, 128, 82), 1.2, 0.2)
+
+		local icon = Instance.new("ImageLabel")
+		icon.Size = UDim2.new(1, -6, 1, -6)
+		icon.Position = UDim2.new(0, 3, 0, 3)
+		icon.BackgroundTransparency = 1
+		icon.ScaleType = Enum.ScaleType.Fit
+		icon.Image = getAssetOrEmpty((FOREST_SESSION_ICON_ASSETS and FOREST_SESSION_ICON_ASSETS[runeId]) or runeIcons[runeId] or "")
+		icon.Parent = iconWrap
+
 		local nameLabel = Instance.new("TextLabel")
-		nameLabel.Size = UDim2.new(1, -64, 1, 0)
-		nameLabel.Position = UDim2.new(0, 8, 0, 0)
+		nameLabel.Size = UDim2.new(1, -120, 1, 0)
+		nameLabel.Position = UDim2.new(0, 36, 0, 0)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 		nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -3057,15 +3090,17 @@ do
 		nameLabel.Parent = row
 
 		local gainLabel = Instance.new("TextLabel")
-		gainLabel.Size = UDim2.new(0, 54, 1, 0)
-		gainLabel.Position = UDim2.new(1, -58, 0, 0)
-		gainLabel.BackgroundTransparency = 1
+		gainLabel.Size = UDim2.new(0, 74, 1, -6)
+		gainLabel.Position = UDim2.new(1, -78, 0, 3)
+		gainLabel.BackgroundColor3 = Color3.fromRGB(58, 42, 24)
+		gainLabel.BackgroundTransparency = 0.25
 		gainLabel.TextXAlignment = Enum.TextXAlignment.Right
 		gainLabel.TextColor3 = Color3.fromRGB(255, 234, 194)
 		gainLabel.Font = Enum.Font.GothamBlack
-		gainLabel.TextSize = 14
+		gainLabel.TextSize = 13
 		gainLabel.Text = "+0"
 		gainLabel.Parent = row
+		createCorner(gainLabel, 7)
 		forestRuneSessionRows[runeId] = gainLabel
 	end
 	forestRuneSessionPanel = panel
