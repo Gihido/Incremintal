@@ -1584,7 +1584,12 @@ local function getCoinReward(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
-	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
+	local rebirthCoinMul = math.max(1, tonumber(rebirth.CoinMultiplierBonus.Value) or 1)
+	local count = tonumber(rebirth.Count.Value) or 0
+	if count >= 3 and rebirthCoinMul < 100 then
+		rebirthCoinMul = 100
+	end
+	return roundToTenth(baseValue * baseMultiplier * rebirthCoinMul * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
 end
 
 local function getCoinRespawnDelay(player)
