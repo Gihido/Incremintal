@@ -348,12 +348,16 @@ local HAY_UPGRADE_KEYS = {"HayAmount", "HayMultiplier", "HayCooldown"}
 
 local function normalizeHaySaveData(savedHay)
 	local hayTable = type(savedHay) == "table" and savedHay or {}
-	local nestedUpgrades = type(hayTable.HayUpgrades) == "table" and hayTable.HayUpgrades or {}
+	hayTable.HayUpgrades = type(hayTable.HayUpgrades) == "table" and hayTable.HayUpgrades or {}
+	local nestedUpgrades = hayTable.HayUpgrades
 	local normalizedLevels = {}
 	for _, key in ipairs(HAY_UPGRADE_KEYS) do
 		local levelName = HAY_UPGRADES[key].levelName
 		normalizedLevels[levelName] = tonumber(hayTable[levelName]) or tonumber(nestedUpgrades[key]) or 0
 	end
+	nestedUpgrades.HayAmount = normalizedLevels.HayAmountLevel or 0
+	nestedUpgrades.HayMultiplier = normalizedLevels.HayMultiplierLevel or 0
+	nestedUpgrades.HayCooldown = normalizedLevels.HayCooldownLevel or 0
 
 	return {
 		HayCurrency = tonumber(hayTable.HayCurrency) or 0,
@@ -363,6 +367,11 @@ local function normalizeHaySaveData(savedHay)
 		HayAmountCost = tonumber(hayTable.HayAmountCost),
 		HayMultiplierCost = tonumber(hayTable.HayMultiplierCost),
 		HayCooldownCost = tonumber(hayTable.HayCooldownCost),
+		HayUpgrades = {
+			HayAmount = nestedUpgrades.HayAmount,
+			HayMultiplier = nestedUpgrades.HayMultiplier,
+			HayCooldown = nestedUpgrades.HayCooldown,
+		},
 	}
 end
 
@@ -554,7 +563,7 @@ activeHayCollection = {}
 local activeAdminEvents = {}
 local ADMIN_EVENT_DURATION = 300
 local ACTIVE_SERVER_EVENTS = {
-	StatsX2 = {coinMul = 2, woodMul = 2, paperMul = 2, xpMul = 2, tooltip = "x2 ко всем статам"},
+	StatsX2 = {coinMul = 2, woodMul = 2, paperMul = 2, hayMul = 2, xpMul = 2, tooltip = "x2 ко всем статам"},
 	RuneBulkX5 = {runeBulkMul = 5, tooltip = "x5 Rune Bulk"},
 	RuneSpeedX2 = {runeSpeedMul = 2, tooltip = "x2 Rune Speed"},
 	RuneLuckX2 = {runeLuckMul = 2, tooltip = "x2 Rune Luck"},
@@ -818,7 +827,7 @@ end
 
 local function getServerEventMultipliers()
 	local now = os.clock()
-	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
+	local coinMul, woodMul, paperMul, hayMul, xpMul = 1, 1, 1, 1, 1
 	for eventKey, eventState in pairs(activeAdminEvents) do
 		if now >= (eventState.endsAt or 0) then
 			activeAdminEvents[eventKey] = nil
@@ -828,11 +837,12 @@ local function getServerEventMultipliers()
 				coinMul *= (cfg.coinMul or 1)
 				woodMul *= (cfg.woodMul or 1)
 				paperMul *= (cfg.paperMul or 1)
+				hayMul *= (cfg.hayMul or 1)
 				xpMul *= (cfg.xpMul or 1)
 			end
 		end
 	end
-	return coinMul, woodMul, paperMul, xpMul
+	return coinMul, woodMul, paperMul, hayMul, xpMul
 end
 
 function broadcastAdminEventState()
@@ -1960,7 +1970,8 @@ local function getHayReward(player)
 	local multiplierLevel = hayUpgrades.HayMultiplierLevel.Value
 	local base = 1 + amountLevel
 	local multiplier = 1 + (multiplierLevel * 0.5)
-	return roundToTenth(base * multiplier)
+	local _, _, _, eventHayMul = getServerEventMultipliers()
+	return roundToTenth(base * multiplier * eventHayMul)
 end
 
 local function getHayCooldown(player)
@@ -2733,7 +2744,7 @@ local function spawnCoin()
 					local xpPerCoin = 1 + (xpUpgrades and xpUpgrades:FindFirstChild("XPMultiplierLevel") and xpUpgrades.XPMultiplierLevel.Value or 0)
 					local _, _, _, passiveXpMul = getPassiveSpecialBoosts(player)
 					local _, _, _, runeXpMul = getRuneBonusMultipliers(player)
-					local _, _, _, eventXPMul = getServerEventMultipliers()
+					local _, _, _, _, eventXPMul = getServerEventMultipliers()
 					local xpReward = roundToTenth(xpPerCoin * getXPBoostMultiplier(player) * passiveXpMul * runeXpMul * eventXPMul)
 				addCurrency(getXPCurrencyObject(player), xpReward)
 				firePickup(player, "XP", xpReward)
@@ -3010,6 +3021,11 @@ local function loadPlayerData(player)
 	paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
 	paperFactory.IsRunning.Value = false
 
+	data.Hay = type(data.Hay) == "table" and data.Hay or {}
+	data.Hay.HayUpgrades = type(data.Hay.HayUpgrades) == "table" and data.Hay.HayUpgrades or {}
+	data.Hay.HayUpgrades.HayAmount = tonumber(data.Hay.HayUpgrades.HayAmount) or tonumber(data.Hay.HayAmountLevel) or 0
+	data.Hay.HayUpgrades.HayMultiplier = tonumber(data.Hay.HayUpgrades.HayMultiplier) or tonumber(data.Hay.HayMultiplierLevel) or 0
+	data.Hay.HayUpgrades.HayCooldown = tonumber(data.Hay.HayUpgrades.HayCooldown) or tonumber(data.Hay.HayCooldownLevel) or 0
 	local savedHay = normalizeHaySaveData(data.Hay)
 	hayCurrency.Value = roundToTenth(savedHay.HayCurrency or 0)
 	hayUpgrades.HayAmountLevel.Value = math.clamp(tonumber(savedHay.HayAmountLevel) or 0, 0, HAY_UPGRADES.HayAmount.maxLevel)
