@@ -3418,12 +3418,33 @@ updateBoards = function()
 			node.Transparency = visible and 0 or 1
 			node.CanCollide = visible
 			node.CanTouch = visible
+			node.CanQuery = visible
+			for _, c in ipairs(node:GetDescendants()) do
+				if c:IsA("ParticleEmitter") or c:IsA("Beam") or c:IsA("Trail") then
+					c.Enabled = visible
+				elseif c:IsA("PointLight") or c:IsA("SpotLight") or c:IsA("SurfaceLight") then
+					c.Enabled = visible
+				elseif c:IsA("Highlight") then
+					c.Enabled = visible
+				elseif c:IsA("BillboardGui") then
+					c.Enabled = visible
+				end
+			end
 		elseif node:IsA("Model") then
 			for _, d in ipairs(node:GetDescendants()) do
 				if d:IsA("BasePart") then
 					d.Transparency = visible and 0 or 1
 					d.CanCollide = visible
 					d.CanTouch = visible
+					d.CanQuery = visible
+				elseif d:IsA("ParticleEmitter") or d:IsA("Beam") or d:IsA("Trail") then
+					d.Enabled = visible
+				elseif d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then
+					d.Enabled = visible
+				elseif d:IsA("Highlight") then
+					d.Enabled = visible
+				elseif d:IsA("BillboardGui") then
+					d.Enabled = visible
 				end
 			end
 		end
@@ -3441,6 +3462,8 @@ updateBoards = function()
 	setWorldNodeVisible(runeStatsIndexBlock, sixthUnlockedVisual)
 	setWorldNodeVisible(runeUpgradeBlock, sixthUnlockedVisual)
 	setWorldNodeVisible(runeUpgradeDoska, sixthUnlockedVisual)
+	setWorldNodeVisible(xpUpgradeDoska, secondUnlockedVisual)
+	setWorldNodeVisible(xpProgressDoska, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneBlock, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneIndexBoard, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneStatsBoard, secondUnlockedVisual)
@@ -3589,6 +3612,12 @@ updateBoards = function()
 	treeUpgradeLockedOverlay.Visible = false
 	boostLockedOverlay.Visible = false
 	factoryLockedOverlay.Visible = false
+
+	if passiveUi.indexPanel then passiveUi.indexPanel.Visible = fifthUnlockedVisual and passiveUi.indexPanel.Visible or false end
+	if passiveUi.inventoryPanel then passiveUi.inventoryPanel.Visible = fifthUnlockedVisual and passiveUi.inventoryPanel.Visible or false end
+	if runeUi.panel and not sixthUnlockedVisual then runeUi.panel.Visible = false end
+	if runeUi.sessionPanel and not sixthUnlockedVisual then runeUi.sessionPanel.Visible = false end
+	if xpProgressUi and xpProgressUi.panel then xpProgressUi.panel.Visible = secondUnlockedVisual end
 
 	if passiveUi.hintGui then
 		passiveUi.hintGui.Enabled = fifthUnlockedVisual
