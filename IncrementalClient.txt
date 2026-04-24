@@ -1940,7 +1940,7 @@ if hayIndexBoardPart then
 	hayUiRows.formula = createStatRow(hayInfoBoard, "Formula")
 end
 
-hayUpgradeCards = nil
+hayUpgradeCards = {HayAmount = nil, HayMultiplier = nil, HayCooldown = nil}
 if hayUpgradeBoardPart then
 	local _, hayUpgradeBoard = createWorldBoard("HayUpgradeBoardSurfaceGui", hayUpgradeBoardPart, Enum.NormalId.Front, 72)
 	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
@@ -4135,10 +4135,15 @@ updateBoards = function()
 			hayUiRows.cdLvl.Text = tostring(hayCooldownLevel.Value) .. "/25"
 			hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevel.Value, hayMultiplierLevel.Value)
 		end
-		if hayUpgradeCards then
-			updateCard(hayUpgradeCards.HayAmount, hayAmountLevel.Value, hayAmountCost.Value, true, 250, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
-			updateCard(hayUpgradeCards.HayMultiplier, hayMultiplierLevel.Value, hayMultiplierCost.Value, true, 50, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
-			updateCard(hayUpgradeCards.HayCooldown, hayCooldownLevel.Value, hayCooldownCost.Value, true, 25, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+		local hayCards = hayUpgradeCards or {}
+		if hayCards.HayAmount then
+			updateCard(hayCards.HayAmount, hayAmountLevel.Value, hayAmountCost.Value, true, 250, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+		end
+		if hayCards.HayMultiplier then
+			updateCard(hayCards.HayMultiplier, hayMultiplierLevel.Value, hayMultiplierCost.Value, true, 50, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+		end
+		if hayCards.HayCooldown then
+			updateCard(hayCards.HayCooldown, hayCooldownLevel.Value, hayCooldownCost.Value, true, 25, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
 		end
 	end
 
@@ -4454,11 +4459,10 @@ function bindUpgradeBoards()
 			bindUpgradeCard(binding[1], "XP", binding[2])
 		end
 	end
-	if hayUpgradeCards then
-		bindUpgradeCard(hayUpgradeCards.HayAmount, "Hay", "HayAmount")
-		bindUpgradeCard(hayUpgradeCards.HayMultiplier, "Hay", "HayMultiplier")
-		bindUpgradeCard(hayUpgradeCards.HayCooldown, "Hay", "HayCooldown")
-	end
+	local hayCards = hayUpgradeCards or {}
+	if hayCards.HayAmount then bindUpgradeCard(hayCards.HayAmount, "Hay", "HayAmount") end
+	if hayCards.HayMultiplier then bindUpgradeCard(hayCards.HayMultiplier, "Hay", "HayMultiplier") end
+	if hayCards.HayCooldown then bindUpgradeCard(hayCards.HayCooldown, "Hay", "HayCooldown") end
 
 	if xpProgressUi and xpProgressUi.buyButton then
 		xpProgressUi.buyButton.MouseButton1Click:Connect(function()
