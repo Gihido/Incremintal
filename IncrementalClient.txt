@@ -336,7 +336,7 @@ end
 selectedAdminCurrency = "Coins"
 selectedAdminEvent = "StatsX2"
 selectedAdminDuration = 300
-updateBoards = nil
+updateBoards = function() end
 ROLL_ANIMATION_CONFIG = {
 	duration = 3,
 	totalCoins = 45,
@@ -2358,7 +2358,7 @@ createRuneUi()
 
 runeSessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0, Mythic = 0}
 runeRollingActive = false
-parseRuneState = nil
+parseRuneState = function() return {counts = {}} end
 
 function createRuneOverlays()
 	runeUi.summaryRows = {}
@@ -2816,7 +2816,7 @@ function isAdminEventActive(eventKey)
 	return false
 end
 
-getActiveAdminEventUpgrades = nil
+getActiveAdminEventUpgrades = function() return 1, 1, 1, 0 end
 
 function getClientEffectiveRuneStats()
 	local baseLuck = 1 + runeLuckLevel.Value + runeLuckXpLevel.Value
