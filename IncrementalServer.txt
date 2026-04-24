@@ -1358,6 +1358,8 @@ local function ensureRebirthCoinMultiplierConsistency(player)
 	local finalMul = math.max(computed, expected)
 	if rebirth.CoinMultiplierBonus.Value ~= finalMul then
 		rebirth.CoinMultiplierBonus.Value = finalMul
+	end
+	if computed ~= expected then
 		warn(string.format("[RebirthMultiplierFix] %s rebirth=%d computed=%s expected=%s -> set=%s", player.Name, count, tostring(computed), tostring(expected), tostring(finalMul)))
 	end
 	return finalMul
@@ -1605,23 +1607,20 @@ local function getCoinReward(player)
 	local coinUpgrades = getCoinUpgradesFolder(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
-
-	if not coinUpgrades or not rebirth then
-		return 1
-	end
+	local rebirthCoinMul = rebirth and ensureRebirthCoinMultiplierConsistency(player) or 1
 
 	local passiveCoin, _, passiveGlobalMultiplier = getPassiveMultipliers(player)
 	local runeCoinMultiplier = select(1, getRuneBonusMultipliers(player))
 
-	local baseValue = 1 + coinUpgrades.CoinValueLevel.Value
-	local baseMultiplier = 1 + (coinUpgrades.MultiplierLevel.Value * 0.1)
+	local coinValueLevel = coinUpgrades and coinUpgrades:FindFirstChild("CoinValueLevel") and coinUpgrades.CoinValueLevel.Value or 0
+	local multiplierLevel = coinUpgrades and coinUpgrades:FindFirstChild("MultiplierLevel") and coinUpgrades.MultiplierLevel.Value or 0
+	local baseValue = 1 + coinValueLevel
+	local baseMultiplier = 1 + (multiplierLevel * 0.1)
 	local woodCoinBoostLevel = woodUpgrades and woodUpgrades:FindFirstChild("CoinBoostLevel") and woodUpgrades.CoinBoostLevel.Value or 0
 	local woodCoinBoostMultiplier = 1.1 ^ woodCoinBoostLevel
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
-	local count = tonumber(rebirth.Count.Value) or 0
-	local rebirthCoinMul = ensureRebirthCoinMultiplierConsistency(player)
 	return roundToTenth(baseValue * baseMultiplier * rebirthCoinMul * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
 end
 
@@ -2356,11 +2355,9 @@ local function spawnCoin()
 
 			local reward = getCoinReward(player)
 			local rebirth = getRebirthFolder(player)
-			if rebirth then
-				local floorReward = computeRebirthCoinMultiplier(rebirth.Count.Value)
-				if reward < floorReward then
-					reward = floorReward
-				end
+			local floorReward = rebirth and ensureRebirthCoinMultiplierConsistency(player) or 1
+			if reward < floorReward then
+				reward = floorReward
 			end
 			addCurrency(getCoinsObject(player), reward)
 			if rebirth and rebirth.SecondAreaUnlocked.Value then
