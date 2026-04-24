@@ -3383,6 +3383,21 @@ function isSystemUnlocked(stage)
 	return false
 end
 
+function setCardVisible(cardObj, visible)
+	if not cardObj then return end
+	if cardObj.card then
+		cardObj.card.Visible = visible
+	end
+	if cardObj.buyButton then
+		cardObj.buyButton.Visible = visible
+		cardObj.buyButton.Active = visible
+	end
+	if cardObj.maxButton then
+		cardObj.maxButton.Visible = visible
+		cardObj.maxButton.Active = visible
+	end
+end
+
 function updateWallVisual()
 	for _, part in ipairs(wallParts) do
 		part.LocalTransparencyModifier = secondAreaUnlocked.Value and 0.78 or 0
@@ -3445,6 +3460,28 @@ updateBoards = function()
 	coinRespawnLabel.Text = formatNumber(getCoinRespawn()) .. "s"
 	rebirthCountLabel.Text = tostring(rebirthCount.Value)
 
+	setCardVisible(coinWoodBoostCard, thirdUnlockedVisual)
+	setCardVisible(treeCoinBoostCard, thirdUnlockedVisual)
+	if paperUpgradeCards then
+		setCardVisible(paperUpgradeCards.gain, fourthUnlockedVisual)
+		setCardVisible(paperUpgradeCards.multi, fourthUnlockedVisual)
+		setCardVisible(paperUpgradeCards.speed, fourthUnlockedVisual)
+	end
+	if xpUpgradeCards then
+		setCardVisible(xpUpgradeCards.coin, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.wood, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.paper, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.xpMul, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.runeLuck, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.runeBulk, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.runeSpeed, secondUnlockedVisual)
+	end
+	if runeUpgradeCards then
+		setCardVisible(runeUpgradeCards.luck, sixthUnlockedVisual)
+		setCardVisible(runeUpgradeCards.speed, sixthUnlockedVisual)
+		setCardVisible(runeUpgradeCards.bulk, sixthUnlockedVisual)
+	end
+
 	updateCard(coinGainCard, coinValueLevel.Value, coinValueCost.Value, coinValueActive.Value, math.huge, coins.Value)
 	updateCard(coinMultiCard, coinMultiplierLevel.Value, coinMultiplierCost.Value, coinMultiplierActive.Value, math.huge, coins.Value)
 	updateCard(coinSpawnCard, coinSpawnLevel.Value, coinSpawnCost.Value, coinSpawnActive.Value, MAX_COIN_SPAWN_SPEED_LEVEL, coins.Value)
@@ -3455,7 +3492,7 @@ updateBoards = function()
 		coinWoodBoostActive.Value,
 		10,
 		coins.Value,
-		thirdUnlockedVisual and nil or "Откроется на 3-м"
+		nil
 	)
 
 	rebirthLevelText.Text = "Rebirth " .. tostring(rebirthCount.Value) .. "/" .. tostring(MAX_REBIRTH_COUNT)
@@ -3518,7 +3555,7 @@ updateBoards = function()
 		woodCoinBoostActive.Value,
 		20,
 		woodCurrency.Value,
-		thirdUnlockedVisual and nil or "Откроется на 3-м"
+		nil
 	)
 
 	local goalFactor, goalsReached, nextTarget = computeGoalWoodFactor(coins.Value)
@@ -3544,14 +3581,14 @@ updateBoards = function()
 		updateCard(paperUpgradeCards.multi, paperMultiplierLevel.Value, paperMultiplierCost.Value, paperMultiplierActive.Value, math.huge, paperValue.Value)
 		updateCard(paperUpgradeCards.speed, paperSpeedLevel.Value, paperSpeedCost.Value, paperSpeedActive.Value, 10, paperValue.Value)
 		if paperUpgradeLockedOverlay then
-			paperUpgradeLockedOverlay.Visible = not fourthUnlockedVisual
+			paperUpgradeLockedOverlay.Visible = false
 		end
 	end
 
-	treeInfoLockedOverlay.Visible = not secondUnlockedVisual
-	treeUpgradeLockedOverlay.Visible = not secondUnlockedVisual
-	boostLockedOverlay.Visible = not fourthUnlockedVisual
-	factoryLockedOverlay.Visible = not fourthUnlockedVisual
+	treeInfoLockedOverlay.Visible = false
+	treeUpgradeLockedOverlay.Visible = false
+	boostLockedOverlay.Visible = false
+	factoryLockedOverlay.Visible = false
 
 	if passiveUi.hintGui then
 		passiveUi.hintGui.Enabled = fifthUnlockedVisual
@@ -3765,23 +3802,23 @@ updateBoards = function()
 	end
 
 	if runeUpgradeCards then
-		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
-		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
-		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, sixthUnlockedVisual and nil or "Откроется на 6-м")
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil)
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, nil)
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil)
 		if runeUpgradeLockedOverlay then
-			runeUpgradeLockedOverlay.Visible = not sixthUnlockedVisual
+			runeUpgradeLockedOverlay.Visible = false
 		end
 	end
 
 	if xpUpgradeCards then
 		local xpUnlocked = secondUnlockedVisual
-		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
-		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
-		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
-		updateCard(xpUpgradeCards.xpMul, xpMultiplierLevel.Value, math.floor(xpMultiplierCost.Value + 0.5), true, 5, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
-		updateCard(xpUpgradeCards.runeLuck, runeLuckXpLevel.Value, math.floor(runeLuckXpCost.Value + 0.5), true, 3, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
-		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
-		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, xpUnlocked and nil or "Откроется на 2-м")
+		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.xpMul, xpMultiplierLevel.Value, math.floor(xpMultiplierCost.Value + 0.5), true, 5, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.runeLuck, runeLuckXpLevel.Value, math.floor(runeLuckXpCost.Value + 0.5), true, 3, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, nil)
+		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, nil)
 		if xpUpgradeLockedOverlay then
 			xpUpgradeLockedOverlay.Visible = not xpUnlocked
 		end
@@ -3795,7 +3832,7 @@ updateBoards = function()
 		TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
 		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
 		if xpProgressLockedOverlay then
-			xpProgressLockedOverlay.Visible = not secondUnlockedVisual
+			xpProgressLockedOverlay.Visible = false
 		end
 	end
 
