@@ -4619,6 +4619,38 @@ function bindUpgradeBoards()
 end
 
 function bindPassiveAndRuneButtons()
+	function bindLegacyHayUpgradeRowsSafely()
+		if type(hayUpgradeRows) ~= "table" then
+			return
+		end
+		local legacyRows = hayUpgradeRows
+		local legacyDefs = {
+			{rowKey = "HayAmount", serverKey = "HayAmount"},
+			{rowKey = "HayMultiplier", serverKey = "HayMultiplier"},
+			{rowKey = "HayCooldown", serverKey = "HayCooldown"},
+		}
+		for i = 1, #legacyDefs do
+			local cfg = legacyDefs[i]
+			local row = legacyRows[cfg.rowKey]
+			if type(row) == "table" then
+				local buyButton = row.buyButton
+				if buyButton and buyButton.MouseButton1Click then
+					buyButton.MouseButton1Click:Connect(function()
+						purchaseUpgradeEvent:FireServer("Hay", cfg.serverKey, "Buy")
+					end)
+				end
+				local maxButton = row.maxButton
+				if maxButton and maxButton.MouseButton1Click then
+					maxButton.MouseButton1Click:Connect(function()
+						purchaseUpgradeEvent:FireServer("Hay", cfg.serverKey, "Max")
+					end)
+				end
+			end
+		end
+	end
+
+	bindLegacyHayUpgradeRowsSafely()
+
 	rebirthButton.MouseButton1Click:Connect(function()
 		purchaseRebirthEvent:FireServer()
 		task.delay(0.1, refreshClientUnlockVisibility)
