@@ -11,8 +11,7 @@ local zonePart = Workspace:WaitForChild("ZonePart")
 local coinTemplate = ServerStorage:WaitForChild("CoinPart")
 local rebirthWall = Workspace:WaitForChild("RebirthWall")
 local treeBlock = Workspace:WaitForChild("TreeBlock")
-local forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
-local natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
+local runeRollBlock = Workspace:FindFirstChild("RuneRollBlock")
 local hayBlock = Workspace:FindFirstChild("HayBlock")
 
 local SAVE_STORE_NAME = "IncrementalSave_v10"
@@ -78,16 +77,6 @@ local NATURE_RUNE_CONFIG = {
 	openCostCoins = 500,
 }
 
-
-
-local FOREST_RUNE_TYPES = {
-	Palka = {displayName = "Палка", rarity = "Common", weight = 1, woodBonus = 0.08, capStacks = 50},
-	ObrublennyKonec = {displayName = "Обрубленный конец", rarity = "Uncommon", weight = 0.35, paperBonus = 0.02, woodBonus = 0.04, capStacks = 40},
-	VetvDereva = {displayName = "Ветвь дерева", rarity = "Rare", weight = 0.16, woodBonus = 0.1, paperBonus = 0.05, capStacks = 35},
-	Brevno = {displayName = "Бревно", rarity = "Epic", weight = 0.08, paperBonus = 0.12, capStacks = 25},
-	Poleno = {displayName = "Полено", rarity = "Legendary", weight = 0.04, runeLuckBonus = 0.05, woodBonus = 0.15, capStacks = 20},
-	ObgorevshiyPen = {displayName = "Обгоревший пень", rarity = "Mythic", weight = 0.015, runeSpeedBonus = 0.08, paperBonus = 0.2, capStacks = 15},
-}
 local RUNE_TYPES = {
 	Grass = {displayName = "Трава", rarity = "Common", weight = 1, coinBonus = 0.1, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 15},
 	DarkGrass = {displayName = "Тёмная трава", rarity = "Uncommon", weight = 0.25, coinBonus = 0.25, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 56},
@@ -921,8 +910,7 @@ end
 
 function emptyRuneState()
 	return {
-		natureCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
-		forestCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0},
+		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
 
@@ -935,15 +923,7 @@ function getRuneState(player)
 	if not runeStates[player] then
 		runeStates[player] = emptyRuneState()
 	end
-	local state = runeStates[player]
-	if type(state.natureCounts) ~= "table" then
-		state.natureCounts = type(state.counts) == "table" and state.counts or emptyRuneState().natureCounts
-	end
-	if type(state.forestCounts) ~= "table" then
-		state.forestCounts = emptyRuneState().forestCounts
-	end
-	state.counts = nil
-	return state
+	return runeStates[player]
 end
 
 function writeRuneStateValue(player)
@@ -960,13 +940,14 @@ function getRuneUpgradeFolder(player)
 	return folder and folder:FindFirstChild("Upgrades") or nil
 end
 
-function chooseRuneType(luckLevel, runeTable, fallbackId)
-	local luckFactor = 1 + (math.max(0, luckLevel or 0) * 0.12)
+function chooseRuneType(luckLevel)
+	local luckPoints = math.max(0, luckLevel or 0) * 10
+	local luckFactor = 1 + (luckPoints * 0.01)
 	local weighted = {}
 	local total = 0
-	for runeId, runeDef in pairs(runeTable) do
+	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local weight = safeNumber(runeDef.weight, 0)
-		if runeId ~= fallbackId then
+		if runeId ~= "Grass" then
 			weight *= safeNumber(luckFactor, 1)
 		end
 		total += safeNumber(weight, 0)
@@ -980,36 +961,88 @@ function chooseRuneType(luckLevel, runeTable, fallbackId)
 			return runeId
 		end
 	end
-	return fallbackId
+	return "Grass"
 end
 
 function getRuneBonusMultipliers(player)
 	local state = getRuneState(player)
 	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
-	local runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul = 1, 1, 0, 1
-	local function accumulate(counts, defs)
-		for runeId, runeDef in pairs(defs) do
-			local count = type(counts) == "table" and safeNumber(counts[runeId], 0) or 0
-			local stacks = math.clamp(count, 0, safeNumber(runeDef.capStacks, DEFAULT_RUNE_CAP_STACKS))
-			coinMul += safeNumber(runeDef.coinBonus, 0) * stacks
-			woodMul += safeNumber(runeDef.woodBonus, 0) * stacks
-			paperMul += safeNumber(runeDef.paperBonus, 0) * stacks
-			xpMul += safeNumber(runeDef.xpBonus, 0) * stacks
-			runeLuckMul += safeNumber(runeDef.runeLuckBonus, 0) * stacks
-			runeSpeedMul += safeNumber(runeDef.runeSpeedBonus, 0) * stacks
-			runeBulkAdd += safeNumber(runeDef.runeBulkBonus, 0) * stacks
-			passiveLuckMul += safeNumber(runeDef.passiveLuckBonus, 0) * stacks
+	for runeId, runeDef in pairs(RUNE_TYPES) do
+		local count = 0
+		if state.counts then
+			count = tonumber(state.counts[runeId]) or 0
 		end
+		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or 999999)
+		coinMul += (runeDef.coinBonus or 0) * stacks
+		woodMul += (runeDef.woodBonus or 0) * stacks
+		paperMul += (runeDef.paperBonus or 0) * stacks
+		xpMul += (runeDef.xpBonus or 0) * stacks
 	end
-	accumulate(state.natureCounts, RUNE_TYPES)
-	accumulate(state.forestCounts, FOREST_RUNE_TYPES)
-	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
+	return coinMul, woodMul, paperMul, xpMul
+end
+
+local function getXPBoostMultiplier(player)
+	local boostFolder = getXPBoostFolder(player)
+	if not boostFolder then
+		return 1
+	end
+	local lvl = boostFolder:FindFirstChild(XP_BOOST_CONFIG.levelName)
+	return 1 + math.max(0, safeNumber(lvl and lvl.Value, 0))
+end
+
+local function getRuneSpeedOverflowBulk(speedStat)
+	local interval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
+	if interval >= 0.01 then
+		return 0
+	end
+	local overflowFactor = math.min(250, 0.01 / math.max(0.000001, interval))
+	return math.max(0, math.floor((overflowFactor - 1) * 2 + 0.5))
+end
+
+local function getEffectiveRuneStats(player)
+	local runeUpgrades = getRuneUpgradeFolder(player)
+	local xpUpgrades = getXPUpgradesFolder(player)
+	local runeState = getRuneState(player)
+	if not runeUpgrades then
+		return 1, 1, 1
+	end
+	local luck = 1 + runeUpgrades.RuneLuckLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneLuckXPLevel") and xpUpgrades.RuneLuckXPLevel.Value or 0))
+	local speed = 1 + runeUpgrades.RuneSpeedLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneSpeedXPLevel") and xpUpgrades.RuneSpeedXPLevel.Value or 0))
+	local bulk = 1 + runeUpgrades.RuneBulkLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneBulkXPLevel") and xpUpgrades.RuneBulkXPLevel.Value or 0))
+	local _, _, _, _, runeLuckMul, runeSpeedMul, runeBulkAdd = getRuneBonusMultipliers(player)
+	runeLuckMul = safeNumber(runeLuckMul, 1)
+	runeSpeedMul = safeNumber(runeSpeedMul, 1)
+	runeBulkAdd = safeNumber(runeBulkAdd, 0)
+	luck = luck * runeLuckMul
+	speed = speed * runeSpeedMul
+	bulk = bulk + runeBulkAdd
+	local passiveLuckMul, passiveSpeedMul, passiveBulkMul = getPassiveSpecialBoosts(player)
+	passiveLuckMul = safeNumber(passiveLuckMul, 1)
+	passiveSpeedMul = safeNumber(passiveSpeedMul, 1)
+	passiveBulkMul = safeNumber(passiveBulkMul, 1)
+	luck = math.floor(luck * passiveLuckMul + 0.5)
+	speed = math.floor(speed * passiveSpeedMul + 0.5)
+	bulk = math.floor(bulk * passiveBulkMul + 0.5)
+	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = getServerRuneEventBoosts()
+	eventLuckMul = safeNumber(eventLuckMul, 1)
+	eventSpeedMul = safeNumber(eventSpeedMul, 1)
+	eventBulkMul = safeNumber(eventBulkMul, 1)
+	eventBulkAdd = safeNumber(eventBulkAdd, 0)
+	luck = math.floor(luck * eventLuckMul + 0.5)
+	speed = math.floor(speed * eventSpeedMul + 0.5)
+	bulk = math.floor(bulk * eventBulkMul + 0.5)
+	bulk += eventBulkAdd
+	local rebirth = getRebirthFolder(player)
+	if rebirth and rebirth.Count.Value >= 7 then
+		luck = math.floor(luck * 1.5 + 0.5)
+	end
+	bulk += getRuneSpeedOverflowBulk(speed)
+	return luck, speed, bulk
 end
 
 function emptyRuneState()
 	return {
-		natureCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
-		forestCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0},
+		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
 
@@ -1022,15 +1055,7 @@ function getRuneState(player)
 	if not runeStates[player] then
 		runeStates[player] = emptyRuneState()
 	end
-	local state = runeStates[player]
-	if type(state.natureCounts) ~= "table" then
-		state.natureCounts = type(state.counts) == "table" and state.counts or emptyRuneState().natureCounts
-	end
-	if type(state.forestCounts) ~= "table" then
-		state.forestCounts = emptyRuneState().forestCounts
-	end
-	state.counts = nil
-	return state
+	return runeStates[player]
 end
 
 function writeRuneStateValue(player)
@@ -1095,8 +1120,7 @@ end
 
 function emptyRuneState()
 	return {
-		natureCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
-		forestCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0},
+		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
 
@@ -1109,15 +1133,85 @@ function getRuneState(player)
 	if not runeStates[player] then
 		runeStates[player] = emptyRuneState()
 	end
-	local state = runeStates[player]
-	if type(state.natureCounts) ~= "table" then
-		state.natureCounts = type(state.counts) == "table" and state.counts or emptyRuneState().natureCounts
+	return runeStates[player]
+end
+
+function writeRuneStateValue(player)
+	local folder = getRuneFolder(player)
+	if not folder then return end
+	local jsonValue = folder:FindFirstChild("StateJson")
+	if jsonValue then
+		jsonValue.Value = HttpService:JSONEncode(getRuneState(player))
 	end
-	if type(state.forestCounts) ~= "table" then
-		state.forestCounts = emptyRuneState().forestCounts
+end
+
+function getRuneUpgradeFolder(player)
+	local folder = getRuneFolder(player)
+	return folder and folder:FindFirstChild("Upgrades") or nil
+end
+
+function chooseRuneType(luckLevel)
+	local luckPoints = math.max(0, luckLevel or 0) * 10
+	local luckFactor = 1 + (luckPoints * 0.01)
+	local weighted = {}
+	local total = 0
+	for runeId, runeDef in pairs(RUNE_TYPES) do
+		local weight = safeNumber(runeDef.weight, 0)
+		if runeId ~= "Grass" then
+			weight *= safeNumber(luckFactor, 1)
+		end
+		total += safeNumber(weight, 0)
+		weighted[runeId] = weight
 	end
-	state.counts = nil
-	return state
+	local roll = math.random() * total
+	local running = 0
+	for runeId, weight in pairs(weighted) do
+		running += weight
+		if roll <= running then
+			return runeId
+		end
+	end
+	return "Grass"
+end
+
+function getRuneBonusMultipliers(player)
+	local state = getRuneState(player)
+	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
+	local runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul = 1, 1, 0, 1
+	for runeId, runeDef in pairs(RUNE_TYPES) do
+		local count = 0
+		if state.counts then
+			count = safeNumber(state.counts[runeId], 0)
+		end
+		local stacks = math.clamp(safeNumber(count, 0), 0, safeNumber(runeDef.capStacks, DEFAULT_RUNE_CAP_STACKS))
+		coinMul += safeNumber(runeDef.coinBonus, 0) * stacks
+		woodMul += safeNumber(runeDef.woodBonus, 0) * stacks
+		paperMul += safeNumber(runeDef.paperBonus, 0) * stacks
+		xpMul += safeNumber(runeDef.xpBonus, 0) * stacks
+		runeLuckMul += safeNumber(runeDef.runeLuckBonus, 0) * stacks
+		runeSpeedMul += safeNumber(runeDef.runeSpeedBonus, 0) * stacks
+		runeBulkAdd += safeNumber(runeDef.runeBulkBonus, 0) * stacks
+		passiveLuckMul += safeNumber(runeDef.passiveLuckBonus, 0) * stacks
+	end
+	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
+end
+
+function emptyRuneState()
+	return {
+		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
+	}
+end
+
+function getRuneFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("Runes") or nil
+end
+
+function getRuneState(player)
+	if not runeStates[player] then
+		runeStates[player] = emptyRuneState()
+	end
+	return runeStates[player]
 end
 
 function writeRuneStateValue(player)
@@ -2132,53 +2226,6 @@ local function getRuneOpenDuration(player)
 	return math.max(5, t)
 end
 
-local function getXPBoostMultiplier(player)
-	local boostFolder = getXPBoostFolder(player)
-	if not boostFolder then
-		return 1
-	end
-	local lvl = boostFolder:FindFirstChild(XP_BOOST_CONFIG.levelName)
-	return 1 + math.max(0, safeNumber(lvl and lvl.Value, 0))
-end
-
-local function getRuneSpeedOverflowBulk(speedStat)
-	local interval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
-	if interval >= 0.01 then
-		return 0
-	end
-	local overflowFactor = math.min(250, 0.01 / math.max(0.000001, interval))
-	return math.max(0, math.floor((overflowFactor - 1) * 2 + 0.5))
-end
-
-local function getEffectiveRuneStats(player)
-	local runeUpgrades = getRuneUpgradeFolder(player)
-	local xpUpgrades = getXPUpgradesFolder(player)
-	if not runeUpgrades then
-		return 1, 1, 1
-	end
-	local luck = 1 + runeUpgrades.RuneLuckLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneLuckXPLevel") and xpUpgrades.RuneLuckXPLevel.Value or 0))
-	local speed = 1 + runeUpgrades.RuneSpeedLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneSpeedXPLevel") and xpUpgrades.RuneSpeedXPLevel.Value or 0))
-	local bulk = 1 + runeUpgrades.RuneBulkLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneBulkXPLevel") and xpUpgrades.RuneBulkXPLevel.Value or 0))
-	local _, _, _, _, runeLuckMul, runeSpeedMul, runeBulkAdd = getRuneBonusMultipliers(player)
-	luck = math.floor((luck * safeNumber(runeLuckMul, 1)) + 0.5)
-	speed = math.floor((speed * safeNumber(runeSpeedMul, 1)) + 0.5)
-	bulk = math.floor((bulk + safeNumber(runeBulkAdd, 0)) + 0.5)
-	local passiveLuckMul, passiveSpeedMul, passiveBulkMul = getPassiveSpecialBoosts(player)
-	luck = math.floor(luck * safeNumber(passiveLuckMul, 1) + 0.5)
-	speed = math.floor(speed * safeNumber(passiveSpeedMul, 1) + 0.5)
-	bulk = math.floor(bulk * safeNumber(passiveBulkMul, 1) + 0.5)
-	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = getServerRuneEventBoosts()
-	luck = math.floor(luck * safeNumber(eventLuckMul, 1) + 0.5)
-	speed = math.floor(speed * safeNumber(eventSpeedMul, 1) + 0.5)
-	bulk = math.floor(bulk * safeNumber(eventBulkMul, 1) + 0.5) + safeNumber(eventBulkAdd, 0)
-	local rebirth = getRebirthFolder(player)
-	if rebirth and rebirth.Count.Value >= 7 then
-		luck = math.floor(luck * 1.5 + 0.5)
-	end
-	bulk += getRuneSpeedOverflowBulk(speed)
-	return luck, speed, bulk
-end
-
 local function getRuneRollInterval(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
 	if not runeUpgrades then
@@ -2190,54 +2237,7 @@ local function getRuneRollInterval(player)
 	return math.max(0.01, interval)
 end
 
--- Final override for dual-rune systems (Forest + Nature).
-function chooseRuneType(luckLevel, runeTable, fallbackId)
-	local luckFactor = 1 + (math.max(0, luckLevel or 0) * 0.12)
-	local weighted = {}
-	local total = 0
-	for runeId, runeDef in pairs(runeTable) do
-		local weight = safeNumber(runeDef.weight, 0)
-		if runeId ~= fallbackId then
-			weight *= safeNumber(luckFactor, 1)
-		end
-		total += safeNumber(weight, 0)
-		weighted[runeId] = weight
-	end
-	local roll = math.random() * total
-	local running = 0
-	for runeId, weight in pairs(weighted) do
-		running += weight
-		if roll <= running then
-			return runeId
-		end
-	end
-	return fallbackId
-end
-
-function getRuneBonusMultipliers(player)
-	local state = getRuneState(player)
-	local coinMul, woodMul, paperMul, xpMul = 1, 1, 1, 1
-	local runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul = 1, 1, 0, 1
-	local function accumulate(counts, defs)
-		for runeId, runeDef in pairs(defs) do
-			local count = type(counts) == "table" and safeNumber(counts[runeId], 0) or 0
-			local stacks = math.clamp(count, 0, safeNumber(runeDef.capStacks, DEFAULT_RUNE_CAP_STACKS))
-			coinMul += safeNumber(runeDef.coinBonus, 0) * stacks
-			woodMul += safeNumber(runeDef.woodBonus, 0) * stacks
-			paperMul += safeNumber(runeDef.paperBonus, 0) * stacks
-			xpMul += safeNumber(runeDef.xpBonus, 0) * stacks
-			runeLuckMul += safeNumber(runeDef.runeLuckBonus, 0) * stacks
-			runeSpeedMul += safeNumber(runeDef.runeSpeedBonus, 0) * stacks
-			runeBulkAdd += safeNumber(runeDef.runeBulkBonus, 0) * stacks
-			passiveLuckMul += safeNumber(runeDef.passiveLuckBonus, 0) * stacks
-		end
-	end
-	accumulate(state.natureCounts, RUNE_TYPES)
-	accumulate(state.forestCounts, FOREST_RUNE_TYPES)
-	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
-end
-
-local function rollRuneForPlayer(player, runeSystem)
+local function rollRuneForPlayer(player)
 	if not getRuneUpgradeFolder(player) then
 		return nil
 	end
@@ -2245,12 +2245,9 @@ local function rollRuneForPlayer(player, runeSystem)
 	local bulk = 1 + bulkLevel
 	local state = getRuneState(player)
 	local rolled = {}
-	local defs = runeSystem == "Forest" and FOREST_RUNE_TYPES or RUNE_TYPES
-	local bucket = runeSystem == "Forest" and state.forestCounts or state.natureCounts
-	local fallback = runeSystem == "Forest" and "Palka" or "Grass"
 	for _ = 1, bulk do
-		local runeId = chooseRuneType(luck, defs, fallback)
-		bucket[runeId] = (bucket[runeId] or 0) + 1
+		local runeId = chooseRuneType(luck)
+		state.counts[runeId] = (state.counts[runeId] or 0) + 1
 		table.insert(rolled, runeId)
 	end
 	writeRuneStateValue(player)
@@ -2285,7 +2282,20 @@ local function stopRuneRolling(player)
 end
 
 local function isCharacterOnRuneBlock(player)
-	return false
+	if not runeRollBlock then
+		return false
+	end
+	local character = player.Character
+	local hrp = character and character:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		return false
+	end
+	local localPos = runeRollBlock.CFrame:PointToObjectSpace(hrp.Position)
+	local half = runeRollBlock.Size * 0.5
+	local tolerance = Vector3.new(1.2, 3.5, 1.2)
+	return math.abs(localPos.X) <= (half.X + tolerance.X)
+		and math.abs(localPos.Z) <= (half.Z + tolerance.Z)
+		and math.abs(localPos.Y) <= (half.Y + tolerance.Y)
 end
 
 local function isCharacterOnHayBlock(player)
@@ -2381,7 +2391,7 @@ local function handleRuneAction(player, actionName)
 		if not spendCurrency(coins, NATURE_RUNE_CONFIG.openCostCoins) then
 			return
 		end
-		local rolled, state = rollRuneForPlayer(player, "Nature")
+		local rolled, state = rollRuneForPlayer(player)
 		if rolled and #rolled > 0 then
 			notifyEvent:FireClient(player, {
 				kind = "rune_roll_tick",
@@ -2404,16 +2414,6 @@ local function handleRuneAction(player, actionName)
 		end
 		if not spendCurrency(paper, FOREST_RUNE_CONFIG.openCostPaper) then
 			return
-		end
-		local rolled, state = rollRuneForPlayer(player, "Forest")
-		if rolled and #rolled > 0 then
-			notifyEvent:FireClient(player, {
-				kind = "rune_roll_tick",
-				system = "Forest",
-				rolled = rolled,
-				session = {},
-				state = state,
-			})
 		end
 		fireSimple(player, "Forest Rune открыта")
 		markDirty(player)
@@ -3221,51 +3221,35 @@ task.spawn(function()
 						hayCooldowns[player.UserId] = now
 					end
 
+						if rebirth and rebirth.SecondAreaUnlocked.Value and runeRollBlock then
+					if isCharacterOnRuneBlock(player) then
+						startRuneRolling(player)
+						local session = runeRollingSessions[player]
+						local interval = getRuneRollInterval(player)
+						if session and (now - (session.lastRollAt or 0)) >= interval then
+							session.lastRollAt = now
+							local rolled, state = rollRuneForPlayer(player)
+							if rolled then
+								for _, runeId in ipairs(rolled) do
+									session.sessionCounts[runeId] = (session.sessionCounts[runeId] or 0) + 1
+								end
+								notifyEvent:FireClient(player, {
+									kind = "rune_roll_tick",
+									rolled = rolled,
+									session = session.sessionCounts,
+									state = state,
+								})
+							end
+						end
+					else
+						stopRuneRolling(player)
+					end
+				else
+					stopRuneRolling(player)
+				end
 			end
 		end
 end)
-
-
-local function ensureInteractionPrompt(part, actionText, objectText, callback)
-	if not part or not part:IsA("BasePart") then return end
-	local prompt = part:FindFirstChild("InteractionPrompt")
-	if not prompt then
-		prompt = Instance.new("ProximityPrompt")
-		prompt.Name = "InteractionPrompt"
-		prompt.HoldDuration = 0
-		prompt.RequiresLineOfSight = false
-		prompt.MaxActivationDistance = 12
-		prompt.Parent = part
-	end
-	prompt.ActionText = actionText
-	prompt.ObjectText = objectText
-	prompt.Triggered:Connect(callback)
-	if not part:FindFirstChild("SystemGlow") then
-		local light = Instance.new("PointLight")
-		light.Name = "SystemGlow"
-		light.Range = 16
-		light.Brightness = 2
-		light.Color = part.Color
-		light.Parent = part
-	end
-	if not part:FindFirstChild("SystemHighlight") then
-		local h = Instance.new("Highlight")
-		h.Name = "SystemHighlight"
-		h.DepthMode = Enum.HighlightDepthMode.Occluded
-		h.FillTransparency = 0.78
-		h.OutlineTransparency = 0.2
-		h.Parent = part
-		h.Adornee = part
-	end
-end
-
-ensureInteractionPrompt(natureRuneBlock, "Open Rune", "Nature Rune (500 Coins)", function(player)
-	handleRuneAction(player, "OpenNature")
-end)
-ensureInteractionPrompt(forestRuneBlock, "Open Rune", "Forest Rune (50 Paper)", function(player)
-	handleRuneAction(player, "OpenForest")
-end)
-ensureInteractionPrompt(hayBlock, "Collect", "Hay Field", function() end)
 
 game:BindToClose(function()
 	isClosing = true
