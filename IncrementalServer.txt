@@ -64,6 +64,18 @@ local MAX_REBIRTH_COUNT = 7
 local RUNE_OPEN_WOOD_COST = 50
 local RUNE_OPEN_BASE_TIME = 10
 local RUNE_MAX_EFFECTIVE_STACKS = 10
+local DEFAULT_RUNE_CAP_STACKS = 10
+
+local FOREST_RUNE_CONFIG = {
+	unlockRebirth = 6,
+	openCostPaper = 50,
+	names = {"Палка", "Обрубленный конец", "Ветвь дерева", "Бревно", "Полено", "Обгоревший пень"},
+}
+
+local NATURE_RUNE_CONFIG = {
+	unlockRebirth = 2,
+	openCostCoins = 500,
+}
 
 local RUNE_TYPES = {
 	Grass = {displayName = "Трава", rarity = "Common", weight = 1, coinBonus = 0.1, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 15},
@@ -73,6 +85,14 @@ local RUNE_TYPES = {
 	Violet = {displayName = "Фиалка", rarity = "Legendary", weight = 0.02, coinBonus = 0, woodBonus = 0.1, paperBonus = 0.05, xpBonus = 0.05, capStacks = 20},
 	Rose = {displayName = "Роза", rarity = "Mythic", weight = 0.01, coinBonus = 0, woodBonus = 0, paperBonus = 0, xpBonus = 0, capStacks = 20, passiveLuckBonus = 0.1},
 }
+
+local function safeNumber(value, defaultValue)
+	local n = tonumber(value)
+	if n == nil then
+		return defaultValue
+	end
+	return n
+end
 
 local RUNE_UPGRADES = {
 	Luck = {levelName = "RuneLuckLevel", costName = "RuneLuckCost", startCost = 50000, maxLevel = 4, currency = "Coins"},
@@ -926,11 +946,11 @@ function chooseRuneType(luckLevel)
 	local weighted = {}
 	local total = 0
 	for runeId, runeDef in pairs(RUNE_TYPES) do
-		local weight = runeDef.weight or 0
+		local weight = safeNumber(runeDef.weight, 0)
 		if runeId ~= "Grass" then
-			weight *= luckFactor
+			weight *= safeNumber(luckFactor, 1)
 		end
-		total += weight
+		total += safeNumber(weight, 0)
 		weighted[runeId] = weight
 	end
 	local roll = math.random() * total
@@ -967,7 +987,7 @@ local function getXPBoostMultiplier(player)
 		return 1
 	end
 	local lvl = boostFolder:FindFirstChild(XP_BOOST_CONFIG.levelName)
-	return 1 + math.max(0, tonumber(lvl and lvl.Value) or 0)
+	return 1 + math.max(0, safeNumber(lvl and lvl.Value, 0))
 end
 
 local function getRuneSpeedOverflowBulk(speedStat)
@@ -990,14 +1010,24 @@ local function getEffectiveRuneStats(player)
 	local speed = 1 + runeUpgrades.RuneSpeedLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneSpeedXPLevel") and xpUpgrades.RuneSpeedXPLevel.Value or 0))
 	local bulk = 1 + runeUpgrades.RuneBulkLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneBulkXPLevel") and xpUpgrades.RuneBulkXPLevel.Value or 0))
 	local _, _, _, _, runeLuckMul, runeSpeedMul, runeBulkAdd = getRuneBonusMultipliers(player)
+	runeLuckMul = safeNumber(runeLuckMul, 1)
+	runeSpeedMul = safeNumber(runeSpeedMul, 1)
+	runeBulkAdd = safeNumber(runeBulkAdd, 0)
 	luck = luck * runeLuckMul
 	speed = speed * runeSpeedMul
 	bulk = bulk + runeBulkAdd
 	local passiveLuckMul, passiveSpeedMul, passiveBulkMul = getPassiveSpecialBoosts(player)
+	passiveLuckMul = safeNumber(passiveLuckMul, 1)
+	passiveSpeedMul = safeNumber(passiveSpeedMul, 1)
+	passiveBulkMul = safeNumber(passiveBulkMul, 1)
 	luck = math.floor(luck * passiveLuckMul + 0.5)
 	speed = math.floor(speed * passiveSpeedMul + 0.5)
 	bulk = math.floor(bulk * passiveBulkMul + 0.5)
 	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = getServerRuneEventBoosts()
+	eventLuckMul = safeNumber(eventLuckMul, 1)
+	eventSpeedMul = safeNumber(eventSpeedMul, 1)
+	eventBulkMul = safeNumber(eventBulkMul, 1)
+	eventBulkAdd = safeNumber(eventBulkAdd, 0)
 	luck = math.floor(luck * eventLuckMul + 0.5)
 	speed = math.floor(speed * eventSpeedMul + 0.5)
 	bulk = math.floor(bulk * eventBulkMul + 0.5)
@@ -1048,11 +1078,11 @@ function chooseRuneType(luckLevel)
 	local weighted = {}
 	local total = 0
 	for runeId, runeDef in pairs(RUNE_TYPES) do
-		local weight = runeDef.weight or 0
+		local weight = safeNumber(runeDef.weight, 0)
 		if runeId ~= "Grass" then
-			weight *= luckFactor
+			weight *= safeNumber(luckFactor, 1)
 		end
-		total += weight
+		total += safeNumber(weight, 0)
 		weighted[runeId] = weight
 	end
 	local roll = math.random() * total
@@ -1073,17 +1103,17 @@ function getRuneBonusMultipliers(player)
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local count = 0
 		if state.counts then
-			count = tonumber(state.counts[runeId]) or 0
+			count = safeNumber(state.counts[runeId], 0)
 		end
-		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or RUNE_MAX_EFFECTIVE_STACKS)
-		coinMul += (runeDef.coinBonus or 0) * stacks
-		woodMul += (runeDef.woodBonus or 0) * stacks
-		paperMul += (runeDef.paperBonus or 0) * stacks
-		xpMul += (runeDef.xpBonus or 0) * stacks
-		runeLuckMul += (runeDef.runeLuckBonus or 0) * stacks
-		runeSpeedMul += (runeDef.runeSpeedBonus or 0) * stacks
-		runeBulkAdd += (runeDef.runeBulkBonus or 0) * stacks
-		passiveLuckMul += (runeDef.passiveLuckBonus or 0) * stacks
+		local stacks = math.clamp(safeNumber(count, 0), 0, safeNumber(runeDef.capStacks, DEFAULT_RUNE_CAP_STACKS))
+		coinMul += safeNumber(runeDef.coinBonus, 0) * stacks
+		woodMul += safeNumber(runeDef.woodBonus, 0) * stacks
+		paperMul += safeNumber(runeDef.paperBonus, 0) * stacks
+		xpMul += safeNumber(runeDef.xpBonus, 0) * stacks
+		runeLuckMul += safeNumber(runeDef.runeLuckBonus, 0) * stacks
+		runeSpeedMul += safeNumber(runeDef.runeSpeedBonus, 0) * stacks
+		runeBulkAdd += safeNumber(runeDef.runeBulkBonus, 0) * stacks
+		passiveLuckMul += safeNumber(runeDef.passiveLuckBonus, 0) * stacks
 	end
 	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
 end
@@ -1126,11 +1156,11 @@ function chooseRuneType(luckLevel)
 	local weighted = {}
 	local total = 0
 	for runeId, runeDef in pairs(RUNE_TYPES) do
-		local weight = runeDef.weight or 0
+		local weight = safeNumber(runeDef.weight, 0)
 		if runeId ~= "Grass" then
-			weight *= luckFactor
+			weight *= safeNumber(luckFactor, 1)
 		end
-		total += weight
+		total += safeNumber(weight, 0)
 		weighted[runeId] = weight
 	end
 	local roll = math.random() * total
@@ -1151,17 +1181,17 @@ function getRuneBonusMultipliers(player)
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local count = 0
 		if state.counts then
-			count = tonumber(state.counts[runeId]) or 0
+			count = safeNumber(state.counts[runeId], 0)
 		end
-		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or RUNE_MAX_EFFECTIVE_STACKS)
-		coinMul += (runeDef.coinBonus or 0) * stacks
-		woodMul += (runeDef.woodBonus or 0) * stacks
-		paperMul += (runeDef.paperBonus or 0) * stacks
-		xpMul += (runeDef.xpBonus or 0) * stacks
-		runeLuckMul += (runeDef.runeLuckBonus or 0) * stacks
-		runeSpeedMul += (runeDef.runeSpeedBonus or 0) * stacks
-		runeBulkAdd += (runeDef.runeBulkBonus or 0) * stacks
-		passiveLuckMul += (runeDef.passiveLuckBonus or 0) * stacks
+		local stacks = math.clamp(safeNumber(count, 0), 0, safeNumber(runeDef.capStacks, DEFAULT_RUNE_CAP_STACKS))
+		coinMul += safeNumber(runeDef.coinBonus, 0) * stacks
+		woodMul += safeNumber(runeDef.woodBonus, 0) * stacks
+		paperMul += safeNumber(runeDef.paperBonus, 0) * stacks
+		xpMul += safeNumber(runeDef.xpBonus, 0) * stacks
+		runeLuckMul += safeNumber(runeDef.runeLuckBonus, 0) * stacks
+		runeSpeedMul += safeNumber(runeDef.runeSpeedBonus, 0) * stacks
+		runeBulkAdd += safeNumber(runeDef.runeBulkBonus, 0) * stacks
+		passiveLuckMul += safeNumber(runeDef.passiveLuckBonus, 0) * stacks
 	end
 	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
 end
@@ -1203,11 +1233,11 @@ function chooseRuneType(luckLevel)
 	local weighted = {}
 	local total = 0
 	for runeId, runeDef in pairs(RUNE_TYPES) do
-		local weight = runeDef.weight or 0
+		local weight = safeNumber(runeDef.weight, 0)
 		if runeId ~= "Grass" then
-			weight *= luckFactor
+			weight *= safeNumber(luckFactor, 1)
 		end
-		total += weight
+		total += safeNumber(weight, 0)
 		weighted[runeId] = weight
 	end
 	local roll = math.random() * total
@@ -1228,17 +1258,17 @@ function getRuneBonusMultipliers(player)
 	for runeId, runeDef in pairs(RUNE_TYPES) do
 		local count = 0
 		if state.counts then
-			count = tonumber(state.counts[runeId]) or 0
+			count = safeNumber(state.counts[runeId], 0)
 		end
-		local stacks = math.clamp(count, 0, tonumber(runeDef.capStacks) or RUNE_MAX_EFFECTIVE_STACKS)
-		coinMul += (runeDef.coinBonus or 0) * stacks
-		woodMul += (runeDef.woodBonus or 0) * stacks
-		paperMul += (runeDef.paperBonus or 0) * stacks
-		xpMul += (runeDef.xpBonus or 0) * stacks
-		runeLuckMul += (runeDef.runeLuckBonus or 0) * stacks
-		runeSpeedMul += (runeDef.runeSpeedBonus or 0) * stacks
-		runeBulkAdd += (runeDef.runeBulkBonus or 0) * stacks
-		passiveLuckMul += (runeDef.passiveLuckBonus or 0) * stacks
+		local stacks = math.clamp(safeNumber(count, 0), 0, safeNumber(runeDef.capStacks, DEFAULT_RUNE_CAP_STACKS))
+		coinMul += safeNumber(runeDef.coinBonus, 0) * stacks
+		woodMul += safeNumber(runeDef.woodBonus, 0) * stacks
+		paperMul += safeNumber(runeDef.paperBonus, 0) * stacks
+		xpMul += safeNumber(runeDef.xpBonus, 0) * stacks
+		runeLuckMul += safeNumber(runeDef.runeLuckBonus, 0) * stacks
+		runeSpeedMul += safeNumber(runeDef.runeSpeedBonus, 0) * stacks
+		runeBulkAdd += safeNumber(runeDef.runeBulkBonus, 0) * stacks
+		passiveLuckMul += safeNumber(runeDef.passiveLuckBonus, 0) * stacks
 	end
 	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
 end
@@ -1250,14 +1280,14 @@ local function chooseRandomPassiveId(player)
 		_, _, _, _, _, _, _, passiveLuckMul = getRuneBonusMultipliers(player)
 	end
 	for _, passiveDef in pairs(PASSIVE_DEFS) do
-		totalWeight += passiveDef.weight * passiveLuckMul
+		totalWeight += safeNumber(passiveDef.weight, 0) * safeNumber(passiveLuckMul, 1)
 	end
 
 	local roll = math.random() * totalWeight
 	local running = 0
 
 	for passiveId, passiveDef in pairs(PASSIVE_DEFS) do
-		running += passiveDef.weight * passiveLuckMul
+		running += safeNumber(passiveDef.weight, 0) * safeNumber(passiveLuckMul, 1)
 		if roll <= running then
 			return passiveId
 		end
@@ -2347,18 +2377,18 @@ local function handleRuneAction(player, actionName)
 	local runeUpgrades = getRuneUpgradeFolder(player)
 	local wood = getWoodCurrencyObject(player)
 	if not rebirth or not runeUpgrades or not wood then return end
-	if not rebirth.SecondAreaUnlocked.Value then
-		fireSimple(player, "Система Forest Runes откроется после 2-го перерождения")
-		return
-	end
 
-	if actionName == "Open" then
-		local coins = getCoinsObject(player)
-		if not coins or coins.Value < 50 then
-			fireSimple(player, "Нужно 50 Coins для открытия Forest Rune")
+	if actionName == "Open" or actionName == "OpenNature" then
+		if (tonumber(rebirth.Count.Value) or 0) < NATURE_RUNE_CONFIG.unlockRebirth then
+			fireSimple(player, "Система Nature Rune откроется после 2-го перерождения")
 			return
 		end
-		if not spendCurrency(coins, 50) then
+		local coins = getCoinsObject(player)
+		if not coins or coins.Value < NATURE_RUNE_CONFIG.openCostCoins then
+			fireSimple(player, "Нужно 500 Coins для открытия Nature Rune")
+			return
+		end
+		if not spendCurrency(coins, NATURE_RUNE_CONFIG.openCostCoins) then
 			return
 		end
 		local rolled, state = rollRuneForPlayer(player)
@@ -2367,11 +2397,29 @@ local function handleRuneAction(player, actionName)
 				kind = "rune_roll_tick",
 				rolled = rolled,
 				session = {},
-				state = state,
-			})
-			fireSimple(player, "Forest Rune открыта")
-			markDirty(player)
+					state = state,
+				})
+				fireSimple(player, "Nature Rune открыта")
+				markDirty(player)
+			end
+	elseif actionName == "OpenForest" then
+		if (tonumber(rebirth.Count.Value) or 0) < FOREST_RUNE_CONFIG.unlockRebirth then
+			fireSimple(player, "Система Forest Rune откроется после 6-го перерождения")
+			return
 		end
+		local paper = getPaperCurrencyObject(player)
+		if not paper or safeNumber(paper.Value, 0) < FOREST_RUNE_CONFIG.openCostPaper then
+			fireSimple(player, "Нужно 50 Paper для открытия Forest Rune")
+			return
+		end
+		if not spendCurrency(paper, FOREST_RUNE_CONFIG.openCostPaper) then
+			return
+		end
+		fireSimple(player, "Forest Rune открыта")
+		markDirty(player)
+	elseif not rebirth.SecondAreaUnlocked.Value then
+		fireSimple(player, "Система Nature Rune откроется после 2-го перерождения")
+		return
 	elseif actionName == "UpgradeLuck" then
 		tryBuyRuneUpgrade(player, "Luck")
 	elseif actionName == "UpgradeLuckMax" then

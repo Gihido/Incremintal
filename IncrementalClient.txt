@@ -125,9 +125,12 @@ xpProgressDoska = workspace:FindFirstChild("XPProgressDoska")
 hayBlock = workspace:FindFirstChild("HayBlock")
 hayUpgradeBoardPart = workspace:FindFirstChild("HayUpgradeBoard")
 hayAreaGate = workspace:FindFirstChild("HayAreaGate") or workspace:FindFirstChild("Rebirth7Gate")
-forestRuneBlock = workspace:FindFirstChild("ForestRuneBlock") or workspace:FindFirstChild("NatureRuneBlock")
-forestRuneIndexBoard = workspace:FindFirstChild("ForestRuneIndexBoard") or workspace:FindFirstChild("NatureRuneIndexBoard")
-forestRuneStatsBoard = workspace:FindFirstChild("ForestRuneStatsBoard") or workspace:FindFirstChild("NatureRuneStatsBoard")
+	forestRuneBlock = workspace:FindFirstChild("ForestRuneBlock")
+	forestRuneIndexBoard = workspace:FindFirstChild("ForestRuneIndexBoard")
+	forestRuneStatsBoard = workspace:FindFirstChild("ForestRuneStatsBoard")
+	natureRuneBlock = workspace:FindFirstChild("NatureRuneBlock")
+	natureRuneIndexBoard = workspace:FindFirstChild("NatureRuneIndexBoard")
+	natureRuneStatsBoard = workspace:FindFirstChild("NatureRuneStatsBoard")
 
 xpFolder = data:WaitForChild("XP")
 xpValue = xpFolder:WaitForChild("XPValue")
@@ -232,12 +235,27 @@ ICON_ASSET_IDS = {
 	HayAmountUpgrade = "rbxassetid://6031260785",
 	HayMultiplierUpgrade = "rbxassetid://6031260785",
 	HayCooldownUpgrade = "rbxassetid://6031260785",
-	ForestRuneBlock = "rbxassetid://6031079152",
-	ForestRuneIndexBoard = "rbxassetid://6031079152",
-	ForestRuneStatsBoard = "rbxassetid://6031079152",
-	ForestRuneGrass = "rbxassetid://6031079152",
-	ForestRuneDarkGrass = "rbxassetid://6031079152",
-	ForestRuneDandelion = "rbxassetid://6031079152",
+		ForestRuneBlock = "rbxassetid://6031079152",
+		ForestRuneIndexBoard = "rbxassetid://6031079152",
+		ForestRuneStatsBoard = "rbxassetid://6031079152",
+		ForestRune_Palka = "rbxassetid://6031079152",
+		ForestRune_ObrublennyKonec = "rbxassetid://6031079152",
+		ForestRune_VetvDereva = "rbxassetid://6031079152",
+		ForestRune_Brevno = "rbxassetid://6031079152",
+		ForestRune_Poleno = "rbxassetid://6031079152",
+		ForestRune_ObgorevshiyPen = "rbxassetid://6031079152",
+		NatureRuneBlock = "rbxassetid://6031079152",
+		NatureRuneIndexBoard = "rbxassetid://6031079152",
+		NatureRuneStatsBoard = "rbxassetid://6031079152",
+		NatureRune_Grass = "rbxassetid://6031079152",
+		NatureRune_DarkGrass = "rbxassetid://6031079152",
+		NatureRune_Dandelion = "rbxassetid://6031079152",
+		NatureRune_Flower = "rbxassetid://6031079152",
+		NatureRune_Violet = "rbxassetid://6031079152",
+		NatureRune_Rose = "rbxassetid://6031079152",
+		ForestRuneGrass = "rbxassetid://6031079152",
+		ForestRuneDarkGrass = "rbxassetid://6031079152",
+		ForestRuneDandelion = "rbxassetid://6031079152",
 	ForestRuneFlower = "rbxassetid://6031079152",
 	ForestRuneViolet = "rbxassetid://6031079152",
 	ForestRuneRose = "rbxassetid://6031079152",
@@ -315,6 +333,8 @@ AssetSlots = {
 	},
 	UiBackgrounds = {
 		RuneSession = "",
+		ForestRuneSession = "",
+		NatureRuneSession = "",
 	},
 	AdminEventIcons = {
 		StatsX2 = "rbxassetid://6031260785",
@@ -3492,6 +3512,9 @@ updateBoards = function()
 	setWorldNodeVisible(forestRuneBlock, secondUnlockedVisual)
 	setWorldNodeVisible(forestRuneIndexBoard, secondUnlockedVisual)
 	setWorldNodeVisible(forestRuneStatsBoard, secondUnlockedVisual)
+	setWorldNodeVisible(natureRuneBlock, secondUnlockedVisual)
+	setWorldNodeVisible(natureRuneIndexBoard, secondUnlockedVisual)
+	setWorldNodeVisible(natureRuneStatsBoard, secondUnlockedVisual)
 	setWorldNodeVisible(hayBlock, seventhUnlockedVisual)
 	setWorldNodeVisible(hayUpgradeBoardPart, seventhUnlockedVisual)
 	setWorldNodeVisible(hayAreaGate, not seventhUnlockedVisual)
