@@ -235,6 +235,10 @@ ICON_ASSET_IDS = {
 	HayAmountUpgrade = "rbxassetid://6031260785",
 	HayMultiplierUpgrade = "rbxassetid://6031260785",
 	HayCooldownUpgrade = "rbxassetid://6031260785",
+	HayIcon = "rbxassetid://6031068423",
+	HayAmountUpgradeIcon = "rbxassetid://6031260785",
+	HayMultiplierUpgradeIcon = "rbxassetid://6031260785",
+	HayCooldownUpgradeIcon = "rbxassetid://6031260785",
 		ForestRuneBlock = "rbxassetid://6031079152",
 		ForestRuneIndexBoard = "rbxassetid://6031079152",
 		ForestRuneStatsBoard = "rbxassetid://6031079152",
@@ -393,12 +397,12 @@ ROLL_ANIMATION_CONFIG = {
 }
 RUNE_DISPLAY_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
 RUNE_VISUALS = {
-	Grass = {name = "ТРАВА", chance = "≈69%", rowColor = Color3.fromRGB(61, 74, 79), accent = Color3.fromRGB(210, 210, 210), icon = "◈"},
-	DarkGrass = {name = "ТЁМНАЯ ТРАВА", chance = "≈17%", rowColor = Color3.fromRGB(34, 86, 44), accent = Color3.fromRGB(154, 255, 84), icon = "ᛒ"},
-	Dandelion = {name = "ОДУВАНЧИК", chance = "≈7%", rowColor = Color3.fromRGB(10, 73, 118), accent = Color3.fromRGB(78, 201, 255), icon = "ᛟ"},
-	Flower = {name = "ЦВЕТОК", chance = "≈3.5%", rowColor = Color3.fromRGB(72, 16, 110), accent = Color3.fromRGB(196, 86, 255), icon = "ᚲ"},
-	Violet = {name = "ФИАЛКА", chance = "≈1.4%", rowColor = Color3.fromRGB(96, 72, 22), accent = Color3.fromRGB(255, 205, 64), icon = "ᛋ"},
-	Rose = {name = "РОЗА", chance = "≈0.7%", rowColor = Color3.fromRGB(90, 18, 66), accent = Color3.fromRGB(255, 118, 220), icon = "✦"},
+	Grass = {name = "ТРАВА", chance = "1 к 1", baseDenominator = 1, rowColor = Color3.fromRGB(61, 74, 79), accent = Color3.fromRGB(210, 210, 210), icon = "◈"},
+	DarkGrass = {name = "ТЁМНАЯ ТРАВА", chance = "1 к 5", baseDenominator = 5, rowColor = Color3.fromRGB(34, 86, 44), accent = Color3.fromRGB(154, 255, 84), icon = "ᛒ"},
+	Dandelion = {name = "ОДУВАНЧИК", chance = "1 к 25", baseDenominator = 25, rowColor = Color3.fromRGB(10, 73, 118), accent = Color3.fromRGB(78, 201, 255), icon = "ᛟ"},
+	Flower = {name = "ЦВЕТОК", chance = "1 к 100", baseDenominator = 100, rowColor = Color3.fromRGB(72, 16, 110), accent = Color3.fromRGB(196, 86, 255), icon = "ᚲ"},
+	Violet = {name = "ФИАЛКА", chance = "1 к 250", baseDenominator = 250, rowColor = Color3.fromRGB(96, 72, 22), accent = Color3.fromRGB(255, 205, 64), icon = "ᛋ"},
+	Rose = {name = "РОЗА", chance = "1 к 1000", baseDenominator = 1000, rowColor = Color3.fromRGB(90, 18, 66), accent = Color3.fromRGB(255, 118, 220), icon = "✦"},
 }
 
 function roundToTenth(value)
@@ -2413,10 +2417,13 @@ createRuneUi()
 
 runeSessionCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0}
 runeRollingActive = false
+activeRuneSystem = "Nature"
+effectiveRuneDenominators = {}
 parseRuneState = function() return {counts = {}} end
 
 function createRuneOverlays()
 	runeUi.summaryRows = {}
+	runeUi.chanceRows = {}
 	runeUi.sessionRows = {}
 
 	function createRuneBillboard(adornee, name, size, offset, backgroundSlot)
@@ -2598,6 +2605,7 @@ function createRuneOverlays()
 			chanceValue.Parent = infoPanel
 
 			runeUi.summaryRows[runeId] = countValue
+			runeUi.chanceRows[runeId] = chanceValue
 		end
 
 		return gui
@@ -2740,9 +2748,14 @@ function updateRuneSummaryGui()
 	local counts = state.counts or {}
 	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
 		local label = runeUi.summaryRows and runeUi.summaryRows[runeId]
+		local chanceLabel = runeUi.chanceRows and runeUi.chanceRows[runeId]
 		if label then
 			local count = tonumber(counts[runeId]) or 0
 			label.Text = formatNumber(count)
+		end
+		if chanceLabel then
+			local denom = tonumber(effectiveRuneDenominators[runeId]) or tonumber(RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].baseDenominator) or 1
+			chanceLabel.Text = "1 к " .. tostring(math.max(1, math.floor(denom + 0.5)))
 		end
 	end
 end
@@ -2752,8 +2765,9 @@ function updateRuneWorldDisplay()
 	updateRuneSessionGui()
 end
 
-function startRuneRolling()
+function startRuneRolling(systemName)
 	runeRollingActive = true
+	activeRuneSystem = systemName or activeRuneSystem or "Nature"
 	runeSessionCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0}
 	if runeUi.sessionPanel then
 		runeUi.sessionPanel.Visible = true
@@ -2762,7 +2776,10 @@ function startRuneRolling()
 	updateRuneSummaryGui()
 end
 
-function stopRuneRolling()
+function stopRuneRolling(systemName)
+	if systemName and activeRuneSystem and systemName ~= activeRuneSystem then
+		return
+	end
 	runeRollingActive = false
 	if runeUi.sessionPanel then
 		runeUi.sessionPanel.Visible = false
@@ -2783,8 +2800,13 @@ parseRuneState = function()
 	local ok, decoded = pcall(function()
 		return HttpService:JSONDecode(runeStateJson.Value)
 	end)
-	if ok and type(decoded) == "table" and type(decoded.counts) == "table" then
-		return decoded
+	if ok and type(decoded) == "table" then
+		if type(decoded.natureCounts) == "table" then
+			decoded.counts = decoded.natureCounts
+		end
+		if type(decoded.counts) == "table" then
+			return decoded
+		end
 	end
 	return {counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0}}
 end
@@ -4317,11 +4339,18 @@ function registerNotifyEventListeners()
 			local rolled = payload.rolled or {}
 			showToast("Открыто рун: " .. tostring(#rolled))
 		elseif payload.kind == "rune_roll_state" then
-			if payload.active then startRuneRolling() else stopRuneRolling() end
+			if payload.system and payload.system ~= "Nature" then
+				return
+			end
+			if payload.active then startRuneRolling(payload.system) else stopRuneRolling(payload.system) end
 		elseif payload.kind == "rune_roll_tick" then
+			if payload.system and payload.system ~= "Nature" then
+				return
+			end
 			local session = payload.session or {}
+			effectiveRuneDenominators = payload.effectiveDenominators or effectiveRuneDenominators
 			for runeId, amount in pairs(session) do runeSessionCounts[runeId] = tonumber(amount) or 0 end
-			if not runeRollingActive then startRuneRolling() end
+			if not runeRollingActive then startRuneRolling(payload.system) end
 			updateRuneSessionGui()
 			updateRuneSummaryGui()
 			updateRuneWorldDisplay()

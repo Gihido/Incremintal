@@ -12,7 +12,22 @@ local coinTemplate = ServerStorage:WaitForChild("CoinPart")
 local rebirthWall = Workspace:WaitForChild("RebirthWall")
 local treeBlock = Workspace:WaitForChild("TreeBlock")
 local runeRollBlock = Workspace:FindFirstChild("RuneRollBlock")
+local forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
+local natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
 local hayBlock = Workspace:FindFirstChild("HayBlock")
+
+local function stripPromptsFromPart(part)
+	if not part then return end
+	for _, child in ipairs(part:GetDescendants()) do
+		if child:IsA("ProximityPrompt") then
+			child:Destroy()
+		end
+	end
+end
+
+stripPromptsFromPart(forestRuneBlock)
+stripPromptsFromPart(natureRuneBlock)
+stripPromptsFromPart(hayBlock)
 
 local SAVE_STORE_NAME = "IncrementalSave_v10"
 
@@ -508,6 +523,9 @@ local passiveRollCooldowns = {}
 local runeStates = {}
 local runeOpenCooldowns = {}
 local runeRollingSessions = {}
+local activeForestRuneRolls = {}
+local activeNatureRuneRolls = {}
+local activeHayCollection = {}
 local activeAdminEvents = {}
 local ADMIN_EVENT_DURATION = 300
 local ACTIVE_SERVER_EVENTS = {
@@ -910,6 +928,8 @@ end
 
 function emptyRuneState()
 	return {
+		natureCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
+		forestCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0},
 		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
@@ -1042,6 +1062,8 @@ end
 
 function emptyRuneState()
 	return {
+		natureCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
+		forestCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0},
 		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
@@ -1120,6 +1142,8 @@ end
 
 function emptyRuneState()
 	return {
+		natureCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
+		forestCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0},
 		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
@@ -1198,6 +1222,8 @@ end
 
 function emptyRuneState()
 	return {
+		natureCounts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
+		forestCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0},
 		counts = {Grass = 0, DarkGrass = 0, Dandelion = 0, Flower = 0, Violet = 0, Rose = 0},
 	}
 end
@@ -2226,76 +2252,124 @@ local function getRuneOpenDuration(player)
 	return math.max(5, t)
 end
 
-local function getRuneRollInterval(player)
-	local runeUpgrades = getRuneUpgradeFolder(player)
-	if not runeUpgrades then
-		return 1
-	end
-	local baseInterval = 1.0
-	local _, speed = getEffectiveRuneStats(player)
-	local interval = baseInterval / (1 + (speed * 0.5))
-	return math.max(0.01, interval)
+local FOREST_RUNE_ORDER = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}
+local NATURE_RUNE_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
+local RUNE_SET_DEFS = {
+	Forest = {
+		order = FOREST_RUNE_ORDER,
+		unlockRebirth = 6,
+		currency = "Paper",
+		cost = 50,
+		block = forestRuneBlock,
+		insufficientText = "Недостаточно Paper",
+		baseDenominators = {Palka = 1, ObrublennyKonec = 5, VetvDereva = 25, Brevno = 100, Poleno = 250, ObgorevshiyPen = 1000},
+	},
+	Nature = {
+		order = NATURE_RUNE_ORDER,
+		unlockRebirth = 2,
+		currency = "Coins",
+		cost = 500,
+		block = natureRuneBlock or runeRollBlock,
+		insufficientText = "Недостаточно Coins",
+		baseDenominators = {Grass = 1, DarkGrass = 5, Dandelion = 25, Flower = 100, Violet = 250, Rose = 1000},
+	},
+}
+
+local function getEffectiveRuneChanceDenominator(baseDenominator, runeLuck)
+	local base = math.max(1, math.floor(tonumber(baseDenominator) or 1))
+	local luck = math.max(1, tonumber(runeLuck) or 1)
+	local effective = math.floor(base / luck + 0.5)
+	return math.max(1, effective)
 end
 
-local function rollRuneForPlayer(player)
-	if not getRuneUpgradeFolder(player) then
+local function isCharacterOnBlock(player, block, tolerance)
+	if not block then
+		return false
+	end
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then
+		return false
+	end
+	local hrp = character and character:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		return false
+	end
+	local tol = tolerance or Vector3.new(1.2, 3.5, 1.2)
+	local localPos = block.CFrame:PointToObjectSpace(hrp.Position)
+	local half = block.Size * 0.5
+	return math.abs(localPos.X) <= (half.X + tol.X)
+		and math.abs(localPos.Z) <= (half.Z + tol.Z)
+		and math.abs(localPos.Y) <= (half.Y + tol.Y)
+end
+
+local function rollFromSet(player, setName)
+	local setDef = RUNE_SET_DEFS[setName]
+	if not setDef then
 		return nil
 	end
-	local luck, _, bulkLevel = getEffectiveRuneStats(player)
-	local bulk = 1 + bulkLevel
 	local state = getRuneState(player)
+	state.natureCounts = state.natureCounts or {}
+	state.forestCounts = state.forestCounts or {}
+	local targetCounts = setName == "Forest" and state.forestCounts or state.natureCounts
+	local luck, _, bulkLevel = getEffectiveRuneStats(player)
+	local bulk = math.max(1, 1 + math.floor(tonumber(bulkLevel) or 0))
 	local rolled = {}
-	for _ = 1, bulk do
-		local runeId = chooseRuneType(luck)
-		state.counts[runeId] = (state.counts[runeId] or 0) + 1
-		table.insert(rolled, runeId)
+	local denominators = {}
+	for _, runeId in ipairs(setDef.order) do
+		denominators[runeId] = getEffectiveRuneChanceDenominator(setDef.baseDenominators[runeId], luck)
 	end
+	for _ = 1, bulk do
+		local chosen = setDef.order[1]
+		for i = #setDef.order, 1, -1 do
+			local runeId = setDef.order[i]
+			if math.random(1, denominators[runeId]) == 1 then
+				chosen = runeId
+				break
+			end
+		end
+		targetCounts[chosen] = (targetCounts[chosen] or 0) + 1
+		table.insert(rolled, chosen)
+	end
+	state.counts = state.natureCounts
 	writeRuneStateValue(player)
 	markDirty(player)
-	return rolled, state
+	return rolled, state, denominators
 end
 
-local function startRuneRolling(player)
-	local session = runeRollingSessions[player]
-	if session and session.active then
+local function getRuneRollInterval(player)
+	local _, speed = getEffectiveRuneStats(player)
+	local baseInterval = 1.2
+	local interval = baseInterval / math.max(1, speed)
+	return math.max(0.2, interval)
+end
+
+local function startRuneRolling(player, setName)
+	local session = runeRollingSessions[player] or {}
+	if session.active and session.setName == setName then
 		return
 	end
 	runeRollingSessions[player] = {
 		active = true,
+		setName = setName,
 		lastRollAt = 0,
-		sessionCounts = {Common = 0, Uncommon = 0, Rare = 0, Epic = 0, Legendary = 0},
+		sessionCounts = {},
 	}
-	notifyEvent:FireClient(player, {kind = "rune_roll_state", active = true})
+	notifyEvent:FireClient(player, {kind = "rune_roll_state", active = true, system = setName})
 end
 
-local function stopRuneRolling(player)
+local function stopRuneRolling(player, setName)
 	local session = runeRollingSessions[player]
-	if not session or not session.active then
+	if not session or not session.active or (setName and session.setName ~= setName) then
 		return
 	end
 	session.active = false
 	notifyEvent:FireClient(player, {
 		kind = "rune_roll_state",
 		active = false,
+		system = session.setName,
 		session = session.sessionCounts,
 	})
-end
-
-local function isCharacterOnRuneBlock(player)
-	if not runeRollBlock then
-		return false
-	end
-	local character = player.Character
-	local hrp = character and character:FindFirstChild("HumanoidRootPart")
-	if not hrp then
-		return false
-	end
-	local localPos = runeRollBlock.CFrame:PointToObjectSpace(hrp.Position)
-	local half = runeRollBlock.Size * 0.5
-	local tolerance = Vector3.new(1.2, 3.5, 1.2)
-	return math.abs(localPos.X) <= (half.X + tolerance.X)
-		and math.abs(localPos.Z) <= (half.Z + tolerance.Z)
-		and math.abs(localPos.Y) <= (half.Y + tolerance.Y)
 end
 
 local function isCharacterOnHayBlock(player)
@@ -2306,14 +2380,7 @@ local function isCharacterOnHayBlock(player)
 	if not rebirth or (tonumber(rebirth.Count.Value) or 0) < 7 then
 		return false
 	end
-	local character = player.Character
-	local hrp = character and character:FindFirstChild("HumanoidRootPart")
-	if not hrp then
-		return false
-	end
-	local localPos = hayBlock.CFrame:PointToObjectSpace(hrp.Position)
-	local half = hayBlock.Size * 0.5
-	return math.abs(localPos.X) <= half.X and math.abs(localPos.Y) <= half.Y + 3 and math.abs(localPos.Z) <= half.Z
+	return isCharacterOnBlock(player, hayBlock, Vector3.new(0.2, 3, 0.2))
 end
 
 local function tryBuyRuneUpgrade(player, upgradeKey, silent)
@@ -2379,44 +2446,11 @@ local function handleRuneAction(player, actionName)
 	if not rebirth or not runeUpgrades or not wood then return end
 
 	if actionName == "Open" or actionName == "OpenNature" then
-		if (tonumber(rebirth.Count.Value) or 0) < NATURE_RUNE_CONFIG.unlockRebirth then
-			fireSimple(player, "Система Nature Rune откроется после 2-го перерождения")
-			return
-		end
-		local coins = getCoinsObject(player)
-		if not coins or coins.Value < NATURE_RUNE_CONFIG.openCostCoins then
-			fireSimple(player, "Нужно 500 Coins для открытия Nature Rune")
-			return
-		end
-		if not spendCurrency(coins, NATURE_RUNE_CONFIG.openCostCoins) then
-			return
-		end
-		local rolled, state = rollRuneForPlayer(player)
-		if rolled and #rolled > 0 then
-			notifyEvent:FireClient(player, {
-				kind = "rune_roll_tick",
-				rolled = rolled,
-				session = {},
-					state = state,
-				})
-				fireSimple(player, "Nature Rune открыта")
-				markDirty(player)
-			end
+		fireSimple(player, "Nature Rune работает автоматически, пока стоишь на NatureRuneBlock")
+		return
 	elseif actionName == "OpenForest" then
-		if (tonumber(rebirth.Count.Value) or 0) < FOREST_RUNE_CONFIG.unlockRebirth then
-			fireSimple(player, "Система Forest Rune откроется после 6-го перерождения")
-			return
-		end
-		local paper = getPaperCurrencyObject(player)
-		if not paper or safeNumber(paper.Value, 0) < FOREST_RUNE_CONFIG.openCostPaper then
-			fireSimple(player, "Нужно 50 Paper для открытия Forest Rune")
-			return
-		end
-		if not spendCurrency(paper, FOREST_RUNE_CONFIG.openCostPaper) then
-			return
-		end
-		fireSimple(player, "Forest Rune открыта")
-		markDirty(player)
+		fireSimple(player, "Forest Rune работает автоматически, пока стоишь на ForestRuneBlock")
+		return
 	elseif not rebirth.SecondAreaUnlocked.Value then
 		fireSimple(player, "Система Nature Rune откроется после 2-го перерождения")
 		return
@@ -2913,11 +2947,18 @@ local function loadPlayerData(player)
 	writePassiveStateValue(player)
 
 	local savedRunes = data.Runes
-	if type(savedRunes) == "table" and type(savedRunes.counts) == "table" then
-		runeStates[player] = {counts = {}}
-		for runeId, _ in pairs(RUNE_TYPES) do
-			runeStates[player].counts[runeId] = math.max(0, tonumber(savedRunes.counts[runeId]) or 0)
+	if type(savedRunes) == "table" then
+		local loaded = emptyRuneState()
+		local savedNature = type(savedRunes.natureCounts) == "table" and savedRunes.natureCounts or (type(savedRunes.counts) == "table" and savedRunes.counts or {})
+		local savedForest = type(savedRunes.forestCounts) == "table" and savedRunes.forestCounts or {}
+		for runeId, _ in pairs(loaded.natureCounts) do
+			loaded.natureCounts[runeId] = math.max(0, tonumber(savedNature[runeId]) or 0)
+			loaded.counts[runeId] = loaded.natureCounts[runeId]
 		end
+		for runeId, _ in pairs(loaded.forestCounts) do
+			loaded.forestCounts[runeId] = math.max(0, tonumber(savedForest[runeId]) or 0)
+		end
+		runeStates[player] = loaded
 	else
 		runeStates[player] = emptyRuneState()
 	end
@@ -3138,6 +3179,9 @@ Players.PlayerRemoving:Connect(function(player)
 	passiveStates[player] = nil
 	runeStates[player] = nil
 	runeRollingSessions[player] = nil
+	activeForestRuneRolls[player] = nil
+	activeNatureRuneRolls[player] = nil
+	activeHayCollection[player] = nil
 end)
 
 task.spawn(function()
@@ -3207,6 +3251,7 @@ task.spawn(function()
 					end
 
 					if isCharacterOnHayBlock(player) then
+						activeHayCollection[player] = true
 						local nextHayAt = hayCooldowns[player.UserId] or 0
 						if now >= nextHayAt then
 							local hayReward = getHayReward(player)
@@ -3218,35 +3263,66 @@ task.spawn(function()
 							hayCooldowns[player.UserId] = now + getHayCooldown(player)
 						end
 					else
+						activeHayCollection[player] = nil
 						hayCooldowns[player.UserId] = now
 					end
 
-						if rebirth and rebirth.SecondAreaUnlocked.Value and runeRollBlock then
-					if isCharacterOnRuneBlock(player) then
-						startRuneRolling(player)
+					local function processRuneSet(setName, activeTable)
+						local cfg = RUNE_SET_DEFS[setName]
+						if not cfg or not cfg.block then
+							activeTable[player] = nil
+							stopRuneRolling(player, setName)
+							return
+						end
+						local rebirthCount = tonumber(rebirth and rebirth.Count.Value) or 0
+						if rebirthCount < cfg.unlockRebirth then
+							activeTable[player] = nil
+							stopRuneRolling(player, setName)
+							return
+						end
+						if not isCharacterOnBlock(player, cfg.block, Vector3.new(0.8, 3.2, 0.8)) then
+							activeTable[player] = nil
+							stopRuneRolling(player, setName)
+							return
+						end
+						activeTable[player] = true
+						startRuneRolling(player, setName)
 						local session = runeRollingSessions[player]
 						local interval = getRuneRollInterval(player)
 						if session and (now - (session.lastRollAt or 0)) >= interval then
 							session.lastRollAt = now
-							local rolled, state = rollRuneForPlayer(player)
+							local currencyObject = cfg.currency == "Paper" and getPaperCurrencyObject(player) or getCoinsObject(player)
+							if not currencyObject or safeNumber(currencyObject.Value, 0) < cfg.cost then
+								local key = "rune_no_" .. setName
+								local cd = runeOpenCooldowns[player.UserId .. key] or 0
+								if now >= cd then
+									fireSimple(player, cfg.insufficientText)
+									runeOpenCooldowns[player.UserId .. key] = now + 2
+								end
+								return
+							end
+							if not spendCurrency(currencyObject, cfg.cost) then
+								return
+							end
+							local rolled, state, denoms = rollFromSet(player, setName)
 							if rolled then
 								for _, runeId in ipairs(rolled) do
 									session.sessionCounts[runeId] = (session.sessionCounts[runeId] or 0) + 1
 								end
 								notifyEvent:FireClient(player, {
 									kind = "rune_roll_tick",
+									system = setName,
 									rolled = rolled,
 									session = session.sessionCounts,
 									state = state,
+									effectiveDenominators = denoms,
 								})
 							end
 						end
-					else
-						stopRuneRolling(player)
 					end
-				else
-					stopRuneRolling(player)
-				end
+
+					processRuneSet("Forest", activeForestRuneRolls)
+					processRuneSet("Nature", activeNatureRuneRolls)
 			end
 		end
 end)
