@@ -149,7 +149,7 @@ xpBoostNextCost = xpBoostFolder:WaitForChild("NextCost")
 
 local ADMIN_NAME = "Doter24_7"
 local MAX_COIN_SPAWN_SPEED_LEVEL = 3
-local MAX_REBIRTH_COUNT = 6
+local MAX_REBIRTH_COUNT = 7
 local PASSIVE_ROLL_COST = 50
 local PASSIVE_INVENTORY_CAPACITY = 10
 local isRovRolling = false
@@ -623,6 +623,7 @@ unlockDebugLabel.TextSize = 13
 unlockDebugLabel.Text = "unlock debug..."
 unlockDebugLabel.BorderSizePixel = 0
 unlockDebugLabel.Parent = screenGui
+unlockDebugLabel.Visible = false
 createCorner(unlockDebugLabel, 10)
 createStroke(unlockDebugLabel, Color3.fromRGB(128, 168, 255), 1, 0.45)
 
@@ -1329,7 +1330,7 @@ local coinWoodBoostCard = createUpgradeCard(
 )
 
 local _, rebirthBoard = createWorldBoard("RebirthBoardSurfaceGui", rebirthDoska, Enum.NormalId.Front, 78)
-createHeader(rebirthBoard, "REBIRTH", "Теперь 5 стадий")
+createHeader(rebirthBoard, "REBIRTH", "Теперь 7 стадий")
 
 local rebirthPanel = Instance.new("Frame")
 rebirthPanel.Size = UDim2.new(1, 0, 1, -68)
@@ -1349,7 +1350,7 @@ local rebirthLevelText = Instance.new("TextLabel")
 rebirthLevelText.BackgroundTransparency = 1
 rebirthLevelText.Size = UDim2.new(1, -12, 0, 28)
 rebirthLevelText.Position = UDim2.new(0, 6, 0, 88)
-rebirthLevelText.Text = "Rebirth 0/5"
+rebirthLevelText.Text = "Rebirth 0/7"
 rebirthLevelText.TextColor3 = Color3.fromRGB(249, 251, 255)
 rebirthLevelText.Font = Enum.Font.GothamBlack
 rebirthLevelText.TextScaled = true
@@ -1557,7 +1558,7 @@ local paperProductionText = createStatRow(factoryStats, "Производств�
 
 local productionBarBg = Instance.new("Frame")
 productionBarBg.Size = UDim2.new(1, 0, 0, 16)
-productionBarBg.Position = UDim2.new(0, 0, 0, 176)
+productionBarBg.Position = UDim2.new(0, 0, 0, 206)
 productionBarBg.BackgroundColor3 = Color3.fromRGB(53, 66, 98)
 productionBarBg.BorderSizePixel = 0
 productionBarBg.Parent = factoryBoard
@@ -1574,7 +1575,7 @@ createGradient(productionBarFill, Color3.fromRGB(164, 216, 255), Color3.fromRGB(
 local factoryButtonsFrame = Instance.new("Frame")
 factoryButtonsFrame.BackgroundTransparency = 1
 factoryButtonsFrame.Size = UDim2.new(1, 0, 0, 36)
-factoryButtonsFrame.Position = UDim2.new(0, 0, 1, -38)
+factoryButtonsFrame.Position = UDim2.new(0, 0, 1, -42)
 factoryButtonsFrame.Parent = factoryBoard
 
 local addFuelButton = Instance.new("TextButton")
@@ -1725,7 +1726,7 @@ if runeIndexBlock then
 		row.BackgroundColor3 = Color3.fromRGB(43, 67, 96)
 		row.BorderSizePixel = 0
 		row.Parent = list
-		createCorner(row, 10)
+		createCorner(row, 12)
 		local text = Instance.new("TextLabel")
 		text.Size = UDim2.new(1, -12, 1, -8)
 		text.Position = UDim2.new(0, 6, 0, 4)
@@ -1733,7 +1734,8 @@ if runeIndexBlock then
 		text.TextXAlignment = Enum.TextXAlignment.Left
 		text.TextYAlignment = Enum.TextYAlignment.Top
 		text.TextWrapped = true
-		text.TextScaled = true
+		text.TextSize = 14
+		text.TextTruncate = Enum.TextTruncate.AtEnd
 		text.Font = Enum.Font.GothamBold
 		text.TextColor3 = Color3.fromRGB(236, 245, 255)
 		text.Text = runeId
@@ -2819,7 +2821,7 @@ local getActiveAdminEventUpgrades
 local function getClientEffectiveRuneStats()
 	local baseLuck = 1 + runeLuckLevel.Value + runeLuckXpLevel.Value
 	local baseSpeed = 1 + runeSpeedLevel.Value + runeSpeedXpLevel.Value
-	local baseBulk = 1 + runeBulkLevel.Value + runeBulkXpLevel.Value
+	local baseBulkBonus = runeBulkLevel.Value + runeBulkXpLevel.Value
 	local runeState = parseRuneState()
 	local runeCounts = runeState.counts or {}
 	local mythicCount = tonumber(runeCounts.Mythic) or 0
@@ -2834,7 +2836,9 @@ local function getClientEffectiveRuneStats()
 	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = getActiveAdminEventUpgrades()
 	local luck = math.floor(baseLuck * passiveLuckMul * passiveGlobalMul * mythicLuckSpeedMul * eventLuckMul + 0.5)
 	local speed = math.floor(baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul * mythicLuckSpeedMul * eventSpeedMul + 0.5)
-	local bulk = math.floor(baseBulk * passiveBulkMul * passiveGlobalMul * eventBulkMul + 0.5) + mythicBulkAdd + eventBulkAdd
+	local bulkBonus = math.floor((baseBulkBonus + mythicBulkAdd) * passiveBulkMul * passiveGlobalMul + 0.5)
+	bulkBonus = math.floor(bulkBonus * eventBulkMul + 0.5) + eventBulkAdd
+	local bulk = math.max(1, 1 + bulkBonus)
 	return luck, speed, bulk
 end
 
@@ -2916,46 +2920,73 @@ getActiveAdminEventUpgrades = function()
 	return luckMul, speedMul, bulkMul, bulkAdd
 end
 
+local function formatAdminEventTime(timeLeft)
+	local total = math.max(0, math.floor(tonumber(timeLeft) or 0))
+	if total < 60 then
+		return tostring(total) .. "с"
+	end
+	local minutes = math.floor(total / 60)
+	local seconds = total % 60
+	if minutes < 60 then
+		return string.format("%dм %dс", minutes, seconds)
+	end
+	local hours = math.floor(minutes / 60)
+	local remMinutes = minutes % 60
+	return string.format("%dч %dм", hours, remMinutes)
+end
+
 local function renderAdminEvents(events)
 	for _, child in ipairs(adminEventGui:GetChildren()) do
 		if child:IsA("Frame") then child:Destroy() end
 	end
 	for _, ev in ipairs(events or {}) do
 		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, 0, 0, 32)
-		row.BackgroundColor3 = Color3.fromRGB(42, 68, 108)
+		row.Size = UDim2.new(1, -4, 0, 42)
+		row.BackgroundColor3 = Color3.fromRGB(35, 56, 92)
 		row.BorderSizePixel = 0
 		row.Parent = adminEventGui
-		createCorner(row, 10)
-		createGradient(row, Color3.fromRGB(78, 115, 178), Color3.fromRGB(38, 56, 96), 0)
+		createCorner(row, 12)
+		createGradient(row, Color3.fromRGB(88, 128, 194), Color3.fromRGB(36, 52, 90), 0)
 		createStroke(row, Color3.fromRGB(255, 255, 255), 1.1, 0.25)
 		local icon = Instance.new("ImageLabel")
-		icon.Size = UDim2.new(0, 24, 0, 24)
-		icon.Position = UDim2.new(0, 4, 0.5, -12)
+		icon.Size = UDim2.new(0, 28, 0, 28)
+		icon.Position = UDim2.new(0, 8, 0.5, -14)
 		icon.BackgroundTransparency = 1
 		icon.Image = getAssetOrEmpty(AssetSlots.AdminEventIcons[ev.key] or "")
 		icon.Parent = row
 		local text = Instance.new("TextLabel")
-		text.Size = UDim2.new(1, -40, 1, 0)
-		text.Position = UDim2.new(0, 38, 0, 0)
+		text.Size = UDim2.new(1, -96, 1, -8)
+		text.Position = UDim2.new(0, 40, 0, 4)
 		text.BackgroundTransparency = 1
 		text.TextXAlignment = Enum.TextXAlignment.Left
 		local upgradeLabel = (ADMIN_EVENT_UPGRADES[ev.key] and ADMIN_EVENT_UPGRADES[ev.key].adminUpgradeLabel) or ""
-		text.Text = (adminEventTitles[ev.key] or ev.key) .. (upgradeLabel ~= "" and (" [" .. upgradeLabel .. "]") or "") .. "  " .. tostring(ev.timeLeft or 0) .. "s"
+		local prettyTime = formatAdminEventTime(ev.timeLeft)
+		text.Text = (adminEventTitles[ev.key] or ev.key) .. (upgradeLabel ~= "" and (" [" .. upgradeLabel .. "]") or "")
 		text.TextColor3 = Color3.fromRGB(236, 245, 255)
 		text.Font = Enum.Font.GothamBold
-		text.TextScaled = true
+		text.TextSize = 14
+		text.TextTruncate = Enum.TextTruncate.AtEnd
 		text.Parent = row
+		local timer = Instance.new("TextLabel")
+		timer.Size = UDim2.new(0, 54, 0, 20)
+		timer.Position = UDim2.new(1, -62, 0.5, -10)
+		timer.BackgroundTransparency = 1
+		timer.Text = prettyTime
+		timer.TextColor3 = Color3.fromRGB(214, 246, 255)
+		timer.TextXAlignment = Enum.TextXAlignment.Right
+		timer.Font = Enum.Font.GothamBlack
+		timer.TextSize = 14
+		timer.Parent = row
 		local bar = Instance.new("Frame")
-		bar.Size = UDim2.new(math.clamp((tonumber(ev.timeLeft) or 0) / 3600, 0.04, 1), 0, 0, 2)
-		bar.Position = UDim2.new(0, 0, 1, -2)
+		bar.Size = UDim2.new(math.clamp((tonumber(ev.timeLeft) or 0) / 3600, 0.05, 1), 0, 0, 3)
+		bar.Position = UDim2.new(0, 8, 1, -5)
 		bar.BackgroundColor3 = Color3.fromRGB(162, 236, 255)
 		bar.BorderSizePixel = 0
 		bar.Parent = row
 		row.MouseEnter:Connect(function()
 			adminEventTooltip.Visible = true
 			adminEventTooltip.Position = UDim2.new(0, 270, 1, -130)
-			adminEventTooltip.Text = (adminEventTitles[ev.key] or ev.key) .. "\n" .. (adminEventDescs[ev.key] or ev.tooltip or "") .. "\nОсталось: " .. tostring(ev.timeLeft or 0) .. "с"
+			adminEventTooltip.Text = (adminEventTitles[ev.key] or ev.key) .. "\n" .. (adminEventDescs[ev.key] or ev.tooltip or "") .. "\nОсталось: " .. formatAdminEventTime(ev.timeLeft)
 		end)
 		row.MouseLeave:Connect(function() adminEventTooltip.Visible = false end)
 	end
@@ -3321,15 +3352,39 @@ updateBoards = function()
 	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
 	local fifthUnlockedVisual = fifthSystemsUnlocked.Value or rebirthCount.Value >= 5
 	local sixthUnlockedVisual = sixthSystemsUnlocked.Value or rebirthCount.Value >= 6
+
+	local function setWorldNodeVisible(node, visible)
+		if not node then return end
+		if node:IsA("BasePart") then
+			node.Transparency = visible and 0 or 1
+			node.CanCollide = visible
+			node.CanTouch = visible
+		elseif node:IsA("Model") then
+			for _, d in ipairs(node:GetDescendants()) do
+				if d:IsA("BasePart") then
+					d.Transparency = visible and 0 or 1
+					d.CanCollide = visible
+					d.CanTouch = visible
+				end
+			end
+		end
+	end
+
+	setWorldNodeVisible(treeBlock, secondUnlockedVisual)
+	setWorldNodeVisible(treeDoska, secondUnlockedVisual)
+	setWorldNodeVisible(treeUpgradeDoska, secondUnlockedVisual)
+	setWorldNodeVisible(paperFactoryDoska, fourthUnlockedVisual)
+	setWorldNodeVisible(paperUpgradeDoska, fourthUnlockedVisual)
+	setWorldNodeVisible(passiveRollBlock, fifthUnlockedVisual)
+	setWorldNodeVisible(passiveInventoryBlock, fifthUnlockedVisual)
+	setWorldNodeVisible(runeRollBlock, sixthUnlockedVisual)
+	setWorldNodeVisible(runeIndexBlock, sixthUnlockedVisual)
+	setWorldNodeVisible(runeStatsIndexBlock, sixthUnlockedVisual)
+	setWorldNodeVisible(runeUpgradeBlock, sixthUnlockedVisual)
+	setWorldNodeVisible(runeUpgradeDoska, sixthUnlockedVisual)
+
 	local function updateUnlockDebug()
-		local lines = {
-			string.format("Rebirth=%d | S2=%s S3=%s S4=%s S5=%s S6=%s", rebirthCount.Value, tostring(secondUnlockedVisual), tostring(thirdUnlockedVisual), tostring(fourthUnlockedVisual), tostring(fifthUnlockedVisual), tostring(sixthUnlockedVisual)),
-			string.format("CoinWoodBoost lock=%s | TreeCoinBoost lock=%s", tostring(not thirdUnlockedVisual), tostring(not thirdUnlockedVisual)),
-			string.format("PaperBoard lock=%s | XP lock=%s | Rune lock=%s", tostring(not fourthUnlockedVisual), tostring(not secondUnlockedVisual), tostring(not sixthUnlockedVisual)),
-			string.format("Rune events: Luck=%s Speed=%s Bulk=%s", tostring(isAdminEventActive("RuneLuckX2")), tostring(isAdminEventActive("RuneSpeedX2")), tostring(isAdminEventActive("RuneBulkX5"))),
-			string.format("Bools raw: [%s,%s,%s,%s,%s]", tostring(secondAreaUnlocked.Value), tostring(thirdUpgradeUnlocked.Value), tostring(fourthSystemsUnlocked.Value), tostring(fifthSystemsUnlocked.Value), tostring(sixthSystemsUnlocked.Value)),
-		}
-		unlockDebugLabel.Text = table.concat(lines, "\n")
+		-- debug panel removed in production build
 	end
 
 	coinValueLabel.Text = formatNumber(coins.Value)
@@ -3628,13 +3683,14 @@ updateBoards = function()
 		local function stacks(v)
 			return math.min(10, tonumber(v) or 0)
 		end
+		local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
 		if runeUi.indexText then
 			runeUi.indexText.Text = "Обычная: " .. formatNumber(c.Common or 0) .. " (эф. " .. formatNumber(stacks(c.Common)) .. ")\n"
 				.. "Необычная: " .. formatNumber(c.Uncommon or 0) .. " (эф. " .. formatNumber(stacks(c.Uncommon)) .. ")\n"
 				.. "Редкая: " .. formatNumber(c.Rare or 0) .. " (эф. " .. formatNumber(stacks(c.Rare)) .. ")\n"
 				.. "Эпическая: " .. formatNumber(c.Epic or 0) .. " (эф. " .. formatNumber(stacks(c.Epic)) .. ")\n"
 				.. "Легендарная: " .. formatNumber(c.Legendary or 0) .. " (эф. " .. formatNumber(stacks(c.Legendary)) .. ")\n\n"
-				.. "Luck x" .. formatNumber(runeLuckLevel.Value) .. " | Speed x" .. formatNumber(runeSpeedLevel.Value) .. " | Bulk +" .. formatNumber(runeBulkLevel.Value)
+				.. "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(math.max(0, effBulk - 1))
 		end
 		if runeUi.openBtn then
 			setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ РУНЫ (50 дерева)", woodCurrency.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
@@ -3646,11 +3702,12 @@ updateBoards = function()
 		updateRuneWorldDisplay()
 		if runeStatsRows and runeStatsRows.luck then
 			local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+			local effBulkBonus = math.max(0, effBulk - 1)
 			local speedSeconds = math.max(0.01, 10 / math.max(1, effSpeed))
 			runeStatsRows.luck.Text = "x" .. formatNumber(effLuck)
-			runeStatsRows.bulk.Text = "+" .. formatNumber(effBulk)
+			runeStatsRows.bulk.Text = "+" .. formatNumber(effBulkBonus)
 			runeStatsRows.speed.Text = string.format("1 rune / %.2fs", speedSeconds)
-			runeStatsRows.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulk)
+			runeStatsRows.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulkBonus)
 		end
 	end
 
