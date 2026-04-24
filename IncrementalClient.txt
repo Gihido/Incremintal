@@ -3426,8 +3426,9 @@ updateBoards = function()
 					c.Enabled = visible
 				elseif c:IsA("Highlight") then
 					c.Enabled = visible
-				elseif c:IsA("BillboardGui") then
+				elseif c:IsA("BillboardGui") or c:IsA("SurfaceGui") then
 					c.Enabled = visible
+					c.Active = visible
 				end
 			end
 		elseif node:IsA("Model") then
@@ -3443,8 +3444,9 @@ updateBoards = function()
 					d.Enabled = visible
 				elseif d:IsA("Highlight") then
 					d.Enabled = visible
-				elseif d:IsA("BillboardGui") then
+				elseif d:IsA("BillboardGui") or d:IsA("SurfaceGui") then
 					d.Enabled = visible
+					d.Active = visible
 				end
 			end
 		end
