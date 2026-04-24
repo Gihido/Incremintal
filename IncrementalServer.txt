@@ -2332,8 +2332,14 @@ local function spawnCoin()
 		coin.CanTouch = false
 
 			local reward = getCoinReward(player)
-			addCurrency(getCoinsObject(player), reward)
 			local rebirth = getRebirthFolder(player)
+			if rebirth then
+				local floorReward = computeRebirthCoinMultiplier(rebirth.Count.Value)
+				if reward < floorReward then
+					reward = floorReward
+				end
+			end
+			addCurrency(getCoinsObject(player), reward)
 			if rebirth and rebirth.SecondAreaUnlocked.Value then
 				local xpUpgrades = getXPUpgradesFolder(player)
 				local xpPerCoin = 1 + (xpUpgrades and xpUpgrades:FindFirstChild("XPMultiplierLevel") and xpUpgrades.XPMultiplierLevel.Value or 0)
