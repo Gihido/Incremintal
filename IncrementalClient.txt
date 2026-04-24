@@ -133,6 +133,7 @@ xpUpgradeDoska = workspace:FindFirstChild("XPUpgradeDoska")
 xpProgressDoska = workspace:FindFirstChild("XPProgressDoska")
 hayBlock = workspace:FindFirstChild("HayBlock")
 hayUpgradeBoardPart = workspace:FindFirstChild("HayUpgradeBoard")
+hayIndexBoardPart = workspace:FindFirstChild("HayIndexBoard")
 hayAreaGate = workspace:FindFirstChild("HayAreaGate") or workspace:FindFirstChild("Rebirth7Gate")
 	forestRuneBlock = workspace:FindFirstChild("ForestRuneBlock")
 	forestRuneIndexBoard = workspace:FindFirstChild("ForestRuneIndexBoard")
@@ -1813,9 +1814,9 @@ RUNE_EFFECT_INFO = {
 function createRuneIndexBoard(runeSystemConfig)
 	if not runeSystemConfig.partIndex then return nil end
 	local _, board = createWorldBoard(runeSystemConfig.indexGuiName, runeSystemConfig.partIndex, Enum.NormalId.Front, 72)
-	createHeader(board, runeSystemConfig.id .. " RUNE INDEX", "Иконка / шанс / эффекты / cap")
+	createHeader(board, runeSystemConfig.id .. " RUNE INDEX", "Выбери руну для деталей")
 	local list = Instance.new("ScrollingFrame")
-	list.Size = UDim2.new(1, 0, 1, -66)
+	list.Size = UDim2.new(0.45, 0, 1, -66)
 	list.Position = UDim2.new(0, 0, 0, 66)
 	list.BackgroundTransparency = 1
 	list.BorderSizePixel = 0
@@ -1827,12 +1828,33 @@ function createRuneIndexBoard(runeSystemConfig)
 	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		list.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
 	end)
+	local details = Instance.new("TextLabel")
+	details.Size = UDim2.new(0.55, -6, 1, -66)
+	details.Position = UDim2.new(0.45, 6, 0, 66)
+	details.BackgroundColor3 = Color3.fromRGB(34, 55, 82)
+	details.TextColor3 = Color3.fromRGB(236, 245, 255)
+	details.Font = Enum.Font.GothamSemibold
+	details.TextSize = 12
+	details.TextWrapped = true
+	details.TextXAlignment = Enum.TextXAlignment.Left
+	details.TextYAlignment = Enum.TextYAlignment.Top
+	details.BorderSizePixel = 0
+	details.Text = "Выбери руну слева"
+	details.Parent = board
+	createCorner(details, 12)
+
 	local rows = {}
+	local function setDetail(runeId)
+		local info = RUNE_EFFECT_INFO[runeId] or RUNE_EFFECT_INFO.Grass
+		local stat = rows[runeId] and rows[runeId]:GetAttribute("RuntimeText") or ""
+		details.Text = (runeSystemConfig.names[runeId] or runeId) .. "\n\n" .. stat .. "\n\nЗа 1 руну: " .. tostring(info.per) .. "\nCap: x" .. formatNumber(info.cap or 1)
+	end
 	for _, runeId in ipairs(runeSystemConfig.displayOrder) do
-		local row = Instance.new("Frame")
+		local row = Instance.new("TextButton")
 		row.Size = UDim2.new(1, 0, 0, 76)
 		row.BackgroundColor3 = Color3.fromRGB(43, 67, 96)
 		row.BorderSizePixel = 0
+		row.Text = ""
 		row.Parent = list
 		createCorner(row, 12)
 		local icon = Instance.new("ImageLabel")
@@ -1854,8 +1876,12 @@ function createRuneIndexBoard(runeSystemConfig)
 		text.Text = runeSystemConfig.names[runeId] or runeId
 		text.Parent = row
 		rows[runeId] = text
+		row.MouseButton1Click:Connect(function()
+			setDetail(runeId)
+		end)
 	end
-	return {rows = rows}
+	setDetail(runeSystemConfig.displayOrder[1])
+	return {rows = rows, details = details}
 end
 
 function createRuneStatsBoard(runeSystemConfig)
@@ -1889,12 +1915,17 @@ runeIndexBoardRows = runeSystemBoards.Nature and runeSystemBoards.Nature.index a
 runeStatsRows = runeSystemBoards.Nature and runeSystemBoards.Nature.stats or {}
 
 hayUiRows = {}
-if hayBlock then
-	local _, hayInfoBoard = createWorldBoard("HayBlockInfoSurfaceGui", hayBlock, Enum.NormalId.Front, 66)
-	createHeader(hayInfoBoard, "HAY BLOCK", "Стой на блоке для сбора")
-	hayUiRows.gain = createStatRow(hayInfoBoard, "За цикл")
-	hayUiRows.cooldown = createStatRow(hayInfoBoard, "Cooldown")
+if hayIndexBoardPart then
+	local _, hayInfoBoard = createWorldBoard("HayIndexBoardSurfaceGui", hayIndexBoardPart, Enum.NormalId.Front, 72)
+	createHeader(hayInfoBoard, "HAY INDEX", "Текущие параметры Hay")
 	hayUiRows.currency = createStatRow(hayInfoBoard, "Hay")
+	hayUiRows.gain = createStatRow(hayInfoBoard, "Gain per cycle")
+	hayUiRows.multiplier = createStatRow(hayInfoBoard, "Multiplier")
+	hayUiRows.cooldown = createStatRow(hayInfoBoard, "Cooldown")
+	hayUiRows.amountLvl = createStatRow(hayInfoBoard, "Amount Upgrade")
+	hayUiRows.multLvl = createStatRow(hayInfoBoard, "Multiplier Upgrade")
+	hayUiRows.cdLvl = createStatRow(hayInfoBoard, "Cooldown Upgrade")
+	hayUiRows.formula = createStatRow(hayInfoBoard, "Formula")
 end
 
 hayUpgradeRows = {}
@@ -1911,7 +1942,7 @@ if hayUpgradeBoardPart then
 	list.Parent = body
 	local function makeHayUpgradeRow(name, iconKey)
 		local row = Instance.new("TextButton")
-		row.Size = UDim2.new(1, 0, 0, 58)
+		row.Size = UDim2.new(1, 0, 0, 74)
 		row.AutoButtonColor = false
 		row.BackgroundColor3 = Color3.fromRGB(61, 84, 40)
 		row.Text = ""
@@ -1935,7 +1966,27 @@ if hayUpgradeBoardPart then
 		text.TextSize = 12
 		text.Text = name
 		text.Parent = row
-		return {button = row, text = text}
+		local buyBtn = Instance.new("TextButton")
+		buyBtn.Size = UDim2.new(0, 48, 0, 24)
+		buyBtn.Position = UDim2.new(1, -104, 1, -28)
+		buyBtn.Text = "BUY"
+		buyBtn.TextScaled = true
+		buyBtn.Font = Enum.Font.GothamBlack
+		buyBtn.BackgroundColor3 = Color3.fromRGB(111, 217, 126)
+		buyBtn.TextColor3 = Color3.fromRGB(22, 45, 24)
+		buyBtn.Parent = row
+		createCorner(buyBtn, 8)
+		local maxBtn = Instance.new("TextButton")
+		maxBtn.Size = UDim2.new(0, 48, 0, 24)
+		maxBtn.Position = UDim2.new(1, -52, 1, -28)
+		maxBtn.Text = "MAX"
+		maxBtn.TextScaled = true
+		maxBtn.Font = Enum.Font.GothamBlack
+		maxBtn.BackgroundColor3 = Color3.fromRGB(187, 148, 246)
+		maxBtn.TextColor3 = Color3.fromRGB(36, 25, 56)
+		maxBtn.Parent = row
+		createCorner(maxBtn, 8)
+		return {button = row, text = text, buyButton = buyBtn, maxButton = maxBtn}
 	end
 	hayUpgradeRows.HayAmount = makeHayUpgradeRow("Hay Amount", "HayAmountUpgradeIcon")
 	hayUpgradeRows.HayMultiplier = makeHayUpgradeRow("Hay Multiplier", "HayMultiplierUpgradeIcon")
@@ -2860,17 +2911,23 @@ forestRuneSessionPanel = nil
 do
 	local panel = Instance.new("Frame")
 	panel.Name = "ForestRuneSessionGui"
-	panel.Size = UDim2.new(0, 240, 0, 262)
+	panel.Size = UDim2.new(0, 210, 0, 262)
 	panel.AnchorPoint = Vector2.new(1, 1)
-	panel.Position = UDim2.new(1, -230, 1, -14)
+	panel.Position = UDim2.new(1, -14, 1, -14)
 	panel.BackgroundColor3 = Color3.fromRGB(73, 57, 31)
 	panel.Visible = false
 	panel.Parent = screenGui
 	createCorner(panel, 14)
 	createStroke(panel, Color3.fromRGB(205, 174, 118), 3, 0)
+	local listHolder = Instance.new("ScrollingFrame")
+	listHolder.Size = UDim2.new(1, -10, 1, -42)
+	listHolder.Position = UDim2.new(0, 5, 0, 36)
+	listHolder.BackgroundTransparency = 1
+	listHolder.BorderSizePixel = 0
+	listHolder.Parent = panel
 	local list = Instance.new("UIListLayout")
 	list.Padding = UDim.new(0, 4)
-	list.Parent = panel
+	list.Parent = listHolder
 	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	list.VerticalAlignment = Enum.VerticalAlignment.Top
 	local title = Instance.new("TextLabel")
@@ -2883,14 +2940,14 @@ do
 	title.Parent = panel
 	for _, runeId in ipairs({"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}) do
 		local row = Instance.new("TextLabel")
-		row.Size = UDim2.new(1, -10, 0, 32)
+		row.Size = UDim2.new(1, 0, 0, 32)
 		row.BackgroundTransparency = 0.2
 		row.BackgroundColor3 = Color3.fromRGB(48, 36, 22)
 		row.TextColor3 = Color3.fromRGB(255, 234, 194)
 		row.Font = Enum.Font.GothamBold
 		row.TextScaled = true
-		row.Text = (RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId) .. ": +0"
-		row.Parent = panel
+		row.Text = "🌲 " .. (RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId) .. ": +0"
+		row.Parent = listHolder
 		forestRuneSessionRows[runeId] = row
 	end
 	forestRuneSessionPanel = panel
@@ -3700,6 +3757,7 @@ updateBoards = function()
 	setWorldNodeVisible(natureRuneIndexBoard, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneStatsBoard, secondUnlockedVisual)
 	setWorldNodeVisible(hayBlock, seventhUnlockedVisual)
+	setWorldNodeVisible(hayIndexBoardPart, seventhUnlockedVisual)
 	setWorldNodeVisible(hayUpgradeBoardPart, seventhUnlockedVisual)
 	setWorldNodeVisible(hayAreaGate, not seventhUnlockedVisual)
 
@@ -3727,7 +3785,7 @@ updateBoards = function()
 	setWorldBoardGuiVisible("NatureRuneStatsBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("ForestRuneIndexBoardSurfaceGui", sixthUnlockedVisual)
 	setWorldBoardGuiVisible("ForestRuneStatsBoardSurfaceGui", sixthUnlockedVisual)
-	setWorldBoardGuiVisible("HayBlockInfoSurfaceGui", seventhUnlockedVisual)
+	setWorldBoardGuiVisible("HayIndexBoardSurfaceGui", seventhUnlockedVisual)
 	setWorldBoardGuiVisible("HayUpgradeBoardSurfaceGui", seventhUnlockedVisual)
 
 	function updateUnlockDebug()
@@ -4043,7 +4101,9 @@ updateBoards = function()
 						local total = eff * info.base
 						local denom = tonumber((effectiveRuneDenominators or {})[runeId]) or tonumber(RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].baseDenominator) or (runeId == "Palka" and 1 or runeId == "ObrublennyKonec" and 5 or runeId == "VetvDereva" and 25 or runeId == "Brevno" and 100 or runeId == "Poleno" and 250 or runeId == "ObgorevshiyPen" and 1000 or 1)
 						local chance = "1 к " .. tostring(math.max(1, math.floor(denom + 0.5)))
-						label.Text = string.format("%s | Кол-во: %s | Шанс: %s\nЗа 1: %s | Суммарно: +%.2fx %s (cap x%.1f)", tostring(cfg.names[runeId] or runeId), formatNumber(count), chance, info.per, total, info.target, capMul)
+						local runtime = string.format("Количество: %s\nШанс: %s\nСуммарно: +%.2fx %s", formatNumber(count), chance, total, info.target)
+						label:SetAttribute("RuntimeText", runtime)
+						label.Text = string.format("%s\n%s\nЗа 1: %s | cap x%.1f", tostring(cfg.names[runeId] or runeId), runtime, info.per, capMul)
 					end
 				end
 			end
@@ -4055,7 +4115,11 @@ updateBoards = function()
 				bundle.stats.luck.Text = "x" .. formatNumber(effLuck)
 				bundle.stats.bulk.Text = "+" .. formatNumber(effBulkBonus)
 				bundle.stats.speed.Text = string.format("%.2fs/roll | Overflow Bulk +%s", speedSeconds, formatNumber(speedOverflowBulk))
-				bundle.stats.passive.Text = "x" .. formatNumber(1 + (tonumber((counts.Rose or 0) + (counts.ObgorevshiyPen or 0)) * 0.1))
+				local roseStacks = math.min(20, tonumber(counts.Rose) or 0)
+				local obgPenStacks = math.min(20, tonumber(counts.ObgorevshiyPen) or 0)
+				local runePassive = 1 + roseStacks * 0.1 + obgPenStacks * 0.1
+				local eventPassive = (activeAdminEvents and activeAdminEvents.PassiveLuckX3) and 3 or 1
+				bundle.stats.passive.Text = "x" .. formatNumber(runePassive * eventPassive) .. string.format(" (Rune x%s, Event x%s)", formatNumber(runePassive), formatNumber(eventPassive))
 				bundle.stats.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulkBonus)
 			end
 		end
@@ -4095,14 +4159,25 @@ updateBoards = function()
 		if hayUiRows.gain then
 			local gain = (1 + hayAmountLevel.Value) * (1 + hayMultiplierLevel.Value * 0.5)
 			local cooldown = math.max(0.8, 5 - hayCooldownLevel.Value * 0.1)
-			hayUiRows.gain.Text = "+" .. formatNumber(gain)
-			hayUiRows.cooldown.Text = formatNumber(cooldown) .. "s"
 			hayUiRows.currency.Text = formatNumber(hayCurrency.Value)
+			hayUiRows.gain.Text = "+" .. formatNumber(gain)
+			hayUiRows.multiplier.Text = "x" .. formatNumber(1 + hayMultiplierLevel.Value * 0.5)
+			hayUiRows.cooldown.Text = formatNumber(cooldown) .. "s"
+			hayUiRows.amountLvl.Text = tostring(hayAmountLevel.Value) .. "/250"
+			hayUiRows.multLvl.Text = tostring(hayMultiplierLevel.Value) .. "/50"
+			hayUiRows.cdLvl.Text = tostring(hayCooldownLevel.Value) .. "/25"
+			hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevel.Value, hayMultiplierLevel.Value)
 		end
 		if hayUpgradeRows.HayAmount then
 			hayUpgradeRows.HayAmount.text.Text = string.format("Hay Amount | LVL %d/250 | Cost: %s\nЭффект: +1 Hay за цикл", hayAmountLevel.Value, hayAmountCost.Value <= 0 and "MAX" or formatNumber(hayAmountCost.Value))
 			hayUpgradeRows.HayMultiplier.text.Text = string.format("Hay Multiplier | LVL %d/50 | Cost: %s\nЭффект: +0.5x multiplier", hayMultiplierLevel.Value, hayMultiplierCost.Value <= 0 and "MAX" or formatNumber(hayMultiplierCost.Value))
 			hayUpgradeRows.HayCooldown.text.Text = string.format("Hay Cooldown | LVL %d/25 | Cost: %s\nЭффект: -0.1s cooldown", hayCooldownLevel.Value, hayCooldownCost.Value <= 0 and "MAX" or formatNumber(hayCooldownCost.Value))
+			setButtonVisual(hayUpgradeRows.HayAmount.buyButton, "BUY", seventhUnlockedVisual and hayAmountCost.Value > 0 and hayCurrency.Value >= hayAmountCost.Value, hayAmountCost.Value <= 0, Color3.fromRGB(111, 217, 126), Color3.fromRGB(96, 108, 96), Color3.fromRGB(22, 45, 24), not seventhUnlockedVisual)
+			setButtonVisual(hayUpgradeRows.HayAmount.maxButton, "MAX", seventhUnlockedVisual and hayAmountCost.Value > 0 and hayCurrency.Value >= hayAmountCost.Value, hayAmountCost.Value <= 0, Color3.fromRGB(187, 148, 246), Color3.fromRGB(96, 108, 96), Color3.fromRGB(36, 25, 56), not seventhUnlockedVisual)
+			setButtonVisual(hayUpgradeRows.HayMultiplier.buyButton, "BUY", seventhUnlockedVisual and hayMultiplierCost.Value > 0 and hayCurrency.Value >= hayMultiplierCost.Value, hayMultiplierCost.Value <= 0, Color3.fromRGB(111, 217, 126), Color3.fromRGB(96, 108, 96), Color3.fromRGB(22, 45, 24), not seventhUnlockedVisual)
+			setButtonVisual(hayUpgradeRows.HayMultiplier.maxButton, "MAX", seventhUnlockedVisual and hayMultiplierCost.Value > 0 and hayCurrency.Value >= hayMultiplierCost.Value, hayMultiplierCost.Value <= 0, Color3.fromRGB(187, 148, 246), Color3.fromRGB(96, 108, 96), Color3.fromRGB(36, 25, 56), not seventhUnlockedVisual)
+			setButtonVisual(hayUpgradeRows.HayCooldown.buyButton, "BUY", seventhUnlockedVisual and hayCooldownCost.Value > 0 and hayCurrency.Value >= hayCooldownCost.Value, hayCooldownCost.Value <= 0, Color3.fromRGB(111, 217, 126), Color3.fromRGB(96, 108, 96), Color3.fromRGB(22, 45, 24), not seventhUnlockedVisual)
+			setButtonVisual(hayUpgradeRows.HayCooldown.maxButton, "MAX", seventhUnlockedVisual and hayCooldownCost.Value > 0 and hayCurrency.Value >= hayCooldownCost.Value, hayCooldownCost.Value <= 0, Color3.fromRGB(187, 148, 246), Color3.fromRGB(96, 108, 96), Color3.fromRGB(36, 25, 56), not seventhUnlockedVisual)
 		end
 	end
 
@@ -4482,18 +4557,27 @@ function bindPassiveAndRuneButtons()
 	if runeUi.speedBtn then runeUi.speedBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeSpeed") end) end
 	if runeUi.bulkBtn then runeUi.bulkBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeBulk") end) end
 	if hayUpgradeRows.HayAmount then
-		hayUpgradeRows.HayAmount.button.MouseButton1Click:Connect(function()
+		hayUpgradeRows.HayAmount.buyButton.MouseButton1Click:Connect(function()
 			purchaseUpgradeEvent:FireServer("Hay", "HayAmount", "Buy")
+		end)
+		hayUpgradeRows.HayAmount.maxButton.MouseButton1Click:Connect(function()
+			purchaseUpgradeEvent:FireServer("Hay", "HayAmount", "Max")
 		end)
 	end
 	if hayUpgradeRows.HayMultiplier then
-		hayUpgradeRows.HayMultiplier.button.MouseButton1Click:Connect(function()
+		hayUpgradeRows.HayMultiplier.buyButton.MouseButton1Click:Connect(function()
 			purchaseUpgradeEvent:FireServer("Hay", "HayMultiplier", "Buy")
+		end)
+		hayUpgradeRows.HayMultiplier.maxButton.MouseButton1Click:Connect(function()
+			purchaseUpgradeEvent:FireServer("Hay", "HayMultiplier", "Max")
 		end)
 	end
 	if hayUpgradeRows.HayCooldown then
-		hayUpgradeRows.HayCooldown.button.MouseButton1Click:Connect(function()
+		hayUpgradeRows.HayCooldown.buyButton.MouseButton1Click:Connect(function()
 			purchaseUpgradeEvent:FireServer("Hay", "HayCooldown", "Buy")
+		end)
+		hayUpgradeRows.HayCooldown.maxButton.MouseButton1Click:Connect(function()
+			purchaseUpgradeEvent:FireServer("Hay", "HayCooldown", "Max")
 		end)
 	end
 end

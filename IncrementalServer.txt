@@ -1137,6 +1137,21 @@ function getRuneBonusMultipliers(player)
 		runeBulkAdd += safeNumber(runeDef.runeBulkBonus, 0) * stacks
 		passiveLuckMul += safeNumber(runeDef.passiveLuckBonus, 0) * stacks
 	end
+	local forest = state and state.forestCounts or {}
+	local palka = math.min(15, safeNumber(forest.Palka, 0))
+	local obrub = math.min(56, safeNumber(forest.ObrublennyKonec, 0))
+	local vetv = math.min(40, safeNumber(forest.VetvDereva, 0))
+	local brevno = math.min(20, safeNumber(forest.Brevno, 0))
+	local poleno = math.min(40, safeNumber(forest.Poleno, 0))
+	local obgPen = math.min(20, safeNumber(forest.ObgorevshiyPen, 0))
+	coinMul += (palka * 0.1) + (obrub * 0.25)
+	xpMul += vetv * 0.1
+	runeLuckMul += brevno * 0.1
+	runeSpeedMul += brevno * 0.1
+	runeBulkAdd += math.min(5, brevno)
+	paperMul += poleno * 0.1
+	woodMul += poleno * 0.1
+	passiveLuckMul += obgPen * 0.1
 	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
 end
 
@@ -1217,6 +1232,21 @@ function getRuneBonusMultipliers(player)
 		runeBulkAdd += safeNumber(runeDef.runeBulkBonus, 0) * stacks
 		passiveLuckMul += safeNumber(runeDef.passiveLuckBonus, 0) * stacks
 	end
+	local forest = state and state.forestCounts or {}
+	local palka = math.min(15, safeNumber(forest.Palka, 0))
+	local obrub = math.min(56, safeNumber(forest.ObrublennyKonec, 0))
+	local vetv = math.min(40, safeNumber(forest.VetvDereva, 0))
+	local brevno = math.min(20, safeNumber(forest.Brevno, 0))
+	local poleno = math.min(40, safeNumber(forest.Poleno, 0))
+	local obgPen = math.min(20, safeNumber(forest.ObgorevshiyPen, 0))
+	coinMul += (palka * 0.1) + (obrub * 0.25)
+	xpMul += vetv * 0.1
+	runeLuckMul += brevno * 0.1
+	runeSpeedMul += brevno * 0.1
+	runeBulkAdd += math.min(5, brevno)
+	paperMul += poleno * 0.1
+	woodMul += poleno * 0.1
+	passiveLuckMul += obgPen * 0.1
 	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
 end
 
@@ -1296,6 +1326,21 @@ function getRuneBonusMultipliers(player)
 		runeBulkAdd += safeNumber(runeDef.runeBulkBonus, 0) * stacks
 		passiveLuckMul += safeNumber(runeDef.passiveLuckBonus, 0) * stacks
 	end
+	local forest = state and state.forestCounts or {}
+	local palka = math.min(15, safeNumber(forest.Palka, 0))
+	local obrub = math.min(56, safeNumber(forest.ObrublennyKonec, 0))
+	local vetv = math.min(40, safeNumber(forest.VetvDereva, 0))
+	local brevno = math.min(20, safeNumber(forest.Brevno, 0))
+	local poleno = math.min(40, safeNumber(forest.Poleno, 0))
+	local obgPen = math.min(20, safeNumber(forest.ObgorevshiyPen, 0))
+	coinMul += (palka * 0.1) + (obrub * 0.25)
+	xpMul += vetv * 0.1
+	runeLuckMul += brevno * 0.1
+	runeSpeedMul += brevno * 0.1
+	runeBulkAdd += math.min(5, brevno)
+	paperMul += poleno * 0.1
+	woodMul += poleno * 0.1
+	passiveLuckMul += obgPen * 0.1
 	return coinMul, woodMul, paperMul, xpMul, runeLuckMul, runeSpeedMul, runeBulkAdd, passiveLuckMul
 end
 
