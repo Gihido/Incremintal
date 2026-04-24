@@ -66,6 +66,15 @@ paperSpeedCost = paperUpgrades:WaitForChild("PaperSpeedCost")
 paperValueActive = paperUpgrades:WaitForChild("PaperValueActive")
 paperMultiplierActive = paperUpgrades:WaitForChild("PaperMultiplierActive")
 paperSpeedActive = paperUpgrades:WaitForChild("PaperSpeedActive")
+hayFolder = data:WaitForChild("Hay")
+hayCurrency = hayFolder:WaitForChild("HayCurrency")
+hayUpgrades = hayFolder:WaitForChild("HayUpgrades")
+hayAmountLevel = hayUpgrades:WaitForChild("HayAmountLevel")
+hayMultiplierLevel = hayUpgrades:WaitForChild("HayMultiplierLevel")
+hayCooldownLevel = hayUpgrades:WaitForChild("HayCooldownLevel")
+hayAmountCost = hayUpgrades:WaitForChild("HayAmountCost")
+hayMultiplierCost = hayUpgrades:WaitForChild("HayMultiplierCost")
+hayCooldownCost = hayUpgrades:WaitForChild("HayCooldownCost")
 
 rebirthFolder = data:WaitForChild("Rebirth")
 rebirthCount = rebirthFolder:WaitForChild("Count")
@@ -1762,64 +1771,175 @@ if xpProgressDoska then
 end
 
 runeIndexBoardRows = {}
-if runeIndexBlock then
-	local _, runeIndexBoard = createWorldBoard("RuneIndexBoardSurfaceGui", runeIndexBlock, Enum.NormalId.Front, 72)
-	createHeader(runeIndexBoard, "RUNE INDEX", "Инфо по эффектам рун")
+runeStatsRows = {}
+runeSystemBoards = {}
+
+RUNE_SYSTEM_UI_CONFIG = {
+	Nature = {
+		id = "Nature",
+		partIndex = natureRuneIndexBoard,
+		partStats = natureRuneStatsBoard,
+		indexGuiName = "NatureRuneIndexBoardSurfaceGui",
+		statsGuiName = "NatureRuneStatsBoardSurfaceGui",
+		displayOrder = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"},
+		names = {Grass = "Трава", DarkGrass = "Тёмная трава", Dandelion = "Одуванчик", Flower = "Цветок", Violet = "Фиалка", Rose = "Роза"},
+	},
+	Forest = {
+		id = "Forest",
+		partIndex = forestRuneIndexBoard,
+		partStats = forestRuneStatsBoard,
+		indexGuiName = "ForestRuneIndexBoardSurfaceGui",
+		statsGuiName = "ForestRuneStatsBoardSurfaceGui",
+		displayOrder = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"},
+		names = {Palka = "Палка", ObrublennyKonec = "Обрубленный конец", VetvDereva = "Ветвь дерева", Brevno = "Бревно", Poleno = "Полено", ObgorevshiyPen = "Обгоревший пень"},
+	},
+}
+
+RUNE_EFFECT_INFO = {
+	Grass = {per = "+0.10x Coins", base = 0.10, cap = 2.5, target = "Coins"},
+	DarkGrass = {per = "+0.25x Coins", base = 0.25, cap = 15, target = "Coins"},
+	Dandelion = {per = "+0.10x XP", base = 0.10, cap = 5, target = "XP"},
+	Flower = {per = "+0.10x Rune Luck/Speed, +1 Bulk", base = 0.10, cap = 3, target = "Rune stats"},
+	Violet = {per = "+0.10x Paper, +0.10x Wood", base = 0.10, cap = 5, target = "Paper/Wood"},
+	Rose = {per = "+0.10x Passive Luck", base = 0.10, cap = 3, target = "Passive Luck"},
+	Palka = {per = "+0.10x Coins", base = 0.10, cap = 2.5, target = "Coins"},
+	ObrublennyKonec = {per = "+0.25x Coins", base = 0.25, cap = 15, target = "Coins"},
+	VetvDereva = {per = "+0.10x XP", base = 0.10, cap = 5, target = "XP"},
+	Brevno = {per = "+0.10x Rune Luck/Speed, +1 Bulk", base = 0.10, cap = 3, target = "Rune stats"},
+	Poleno = {per = "+0.10x Paper, +0.10x Wood", base = 0.10, cap = 5, target = "Paper/Wood"},
+	ObgorevshiyPen = {per = "+0.10x Passive Luck", base = 0.10, cap = 3, target = "Passive Luck"},
+}
+
+function createRuneIndexBoard(runeSystemConfig)
+	if not runeSystemConfig.partIndex then return nil end
+	local _, board = createWorldBoard(runeSystemConfig.indexGuiName, runeSystemConfig.partIndex, Enum.NormalId.Front, 72)
+	createHeader(board, runeSystemConfig.id .. " RUNE INDEX", "Иконка / шанс / эффекты / cap")
 	local list = Instance.new("ScrollingFrame")
 	list.Size = UDim2.new(1, 0, 1, -66)
 	list.Position = UDim2.new(0, 0, 0, 66)
 	list.BackgroundTransparency = 1
 	list.BorderSizePixel = 0
 	list.ScrollBarThickness = 8
-	list.CanvasSize = UDim2.new(0, 0, 0, 0)
-	list.Parent = runeIndexBoard
+	list.Parent = board
 	local layout = Instance.new("UIListLayout")
 	layout.Padding = UDim.new(0, 6)
 	layout.Parent = list
 	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		list.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
 	end)
-	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
+	local rows = {}
+	for _, runeId in ipairs(runeSystemConfig.displayOrder) do
 		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, 0, 0, 72)
+		row.Size = UDim2.new(1, 0, 0, 76)
 		row.BackgroundColor3 = Color3.fromRGB(43, 67, 96)
 		row.BorderSizePixel = 0
 		row.Parent = list
 		createCorner(row, 12)
+		local icon = Instance.new("ImageLabel")
+		icon.Size = UDim2.new(0, 44, 0, 44)
+		icon.Position = UDim2.new(0, 6, 0, 16)
+		icon.BackgroundTransparency = 1
+		icon.Image = getAssetOrEmpty(AssetSlots.RuneIcons[runeId] or ICON_ASSET_IDS.RuneCommon)
+		icon.Parent = row
 		local text = Instance.new("TextLabel")
-		text.Size = UDim2.new(1, -12, 1, -8)
-		text.Position = UDim2.new(0, 6, 0, 4)
+		text.Size = UDim2.new(1, -58, 1, -8)
+		text.Position = UDim2.new(0, 54, 0, 4)
 		text.BackgroundTransparency = 1
 		text.TextXAlignment = Enum.TextXAlignment.Left
 		text.TextYAlignment = Enum.TextYAlignment.Top
 		text.TextWrapped = true
-		text.TextSize = 14
-		text.TextTruncate = Enum.TextTruncate.AtEnd
 		text.Font = Enum.Font.GothamBold
+		text.TextSize = 13
 		text.TextColor3 = Color3.fromRGB(236, 245, 255)
-		text.Text = runeId
+		text.Text = runeSystemConfig.names[runeId] or runeId
 		text.Parent = row
-		runeIndexBoardRows[runeId] = text
+		rows[runeId] = text
 	end
+	return {rows = rows}
 end
 
-
-runeStatsRows = {}
-if runeStatsIndexBlock then
-	local _, runeStatsBoard = createWorldBoard("RuneStatsIndexBoardSurfaceGui", runeStatsIndexBlock, Enum.NormalId.Front, 72)
-	createHeader(runeStatsBoard, "RUNE STATS", "Luck / Bulk / Speed")
+function createRuneStatsBoard(runeSystemConfig)
+	if not runeSystemConfig.partStats then return nil end
+	local _, board = createWorldBoard(runeSystemConfig.statsGuiName, runeSystemConfig.partStats, Enum.NormalId.Front, 72)
+	createHeader(board, runeSystemConfig.id .. " RUNE STATS", "Luck / Speed / Bulk / interval")
 	local body = Instance.new("Frame")
 	body.Size = UDim2.new(1, -12, 1, -72)
 	body.Position = UDim2.new(0, 6, 0, 66)
 	body.BackgroundTransparency = 1
-	body.Parent = runeStatsBoard
+	body.Parent = board
 	local layout = Instance.new("UIListLayout")
 	layout.Padding = UDim.new(0, 6)
 	layout.Parent = body
-	runeStatsRows.luck = createStatRow(body, "Rune Luck")
-	runeStatsRows.bulk = createStatRow(body, "Rune Bulk")
-	runeStatsRows.speed = createStatRow(body, "Rune Speed")
-	runeStatsRows.total = createStatRow(body, "Итоговый рун-стат")
+	return {
+		luck = createStatRow(body, "Rune Luck"),
+		bulk = createStatRow(body, "Rune Bulk"),
+		speed = createStatRow(body, "Rune Speed"),
+		passive = createStatRow(body, "Passive Luck"),
+		total = createStatRow(body, "Итог"),
+	}
+end
+
+for systemId, cfg in pairs(RUNE_SYSTEM_UI_CONFIG) do
+	local indexBoard = createRuneIndexBoard(cfg)
+	local statsBoard = createRuneStatsBoard(cfg)
+	runeSystemBoards[systemId] = {index = indexBoard, stats = statsBoard}
+end
+
+runeIndexBoardRows = runeSystemBoards.Nature and runeSystemBoards.Nature.index and runeSystemBoards.Nature.index.rows or {}
+runeStatsRows = runeSystemBoards.Nature and runeSystemBoards.Nature.stats or {}
+
+hayUiRows = {}
+if hayBlock then
+	local _, hayInfoBoard = createWorldBoard("HayBlockInfoSurfaceGui", hayBlock, Enum.NormalId.Front, 66)
+	createHeader(hayInfoBoard, "HAY BLOCK", "Стой на блоке для сбора")
+	hayUiRows.gain = createStatRow(hayInfoBoard, "За цикл")
+	hayUiRows.cooldown = createStatRow(hayInfoBoard, "Cooldown")
+	hayUiRows.currency = createStatRow(hayInfoBoard, "Hay")
+end
+
+hayUpgradeRows = {}
+if hayUpgradeBoardPart then
+	local _, hayUpgradeBoard = createWorldBoard("HayUpgradeBoardSurfaceGui", hayUpgradeBoardPart, Enum.NormalId.Front, 72)
+	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
+	local body = Instance.new("Frame")
+	body.Size = UDim2.new(1, 0, 1, -66)
+	body.Position = UDim2.new(0, 0, 0, 66)
+	body.BackgroundTransparency = 1
+	body.Parent = hayUpgradeBoard
+	local list = Instance.new("UIListLayout")
+	list.Padding = UDim.new(0, 6)
+	list.Parent = body
+	local function makeHayUpgradeRow(name, iconKey)
+		local row = Instance.new("TextButton")
+		row.Size = UDim2.new(1, 0, 0, 58)
+		row.AutoButtonColor = false
+		row.BackgroundColor3 = Color3.fromRGB(61, 84, 40)
+		row.Text = ""
+		row.Parent = body
+		createCorner(row, 10)
+		local icon = Instance.new("ImageLabel")
+		icon.Size = UDim2.new(0, 32, 0, 32)
+		icon.Position = UDim2.new(0, 8, 0.5, -16)
+		icon.BackgroundTransparency = 1
+		icon.Image = getAssetOrEmpty(ICON_ASSET_IDS[iconKey])
+		icon.Parent = row
+		local text = Instance.new("TextLabel")
+		text.Size = UDim2.new(1, -48, 1, -8)
+		text.Position = UDim2.new(0, 44, 0, 4)
+		text.BackgroundTransparency = 1
+		text.TextXAlignment = Enum.TextXAlignment.Left
+		text.TextYAlignment = Enum.TextYAlignment.Top
+		text.TextWrapped = true
+		text.TextColor3 = Color3.fromRGB(245, 246, 210)
+		text.Font = Enum.Font.GothamBold
+		text.TextSize = 12
+		text.Text = name
+		text.Parent = row
+		return {button = row, text = text}
+	end
+	hayUpgradeRows.HayAmount = makeHayUpgradeRow("Hay Amount", "HayAmountUpgradeIcon")
+	hayUpgradeRows.HayMultiplier = makeHayUpgradeRow("Hay Multiplier", "HayMultiplierUpgradeIcon")
+	hayUpgradeRows.HayCooldown = makeHayUpgradeRow("Hay Cooldown", "HayCooldownUpgradeIcon")
 end
 treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
@@ -2734,6 +2854,48 @@ end
 
 createRuneOverlays()
 
+forestRuneSessionCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0}
+forestRuneSessionRows = {}
+forestRuneSessionPanel = nil
+do
+	local panel = Instance.new("Frame")
+	panel.Name = "ForestRuneSessionGui"
+	panel.Size = UDim2.new(0, 240, 0, 262)
+	panel.AnchorPoint = Vector2.new(1, 1)
+	panel.Position = UDim2.new(1, -230, 1, -14)
+	panel.BackgroundColor3 = Color3.fromRGB(73, 57, 31)
+	panel.Visible = false
+	panel.Parent = screenGui
+	createCorner(panel, 14)
+	createStroke(panel, Color3.fromRGB(205, 174, 118), 3, 0)
+	local list = Instance.new("UIListLayout")
+	list.Padding = UDim.new(0, 4)
+	list.Parent = panel
+	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	list.VerticalAlignment = Enum.VerticalAlignment.Top
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -8, 0, 24)
+	title.BackgroundTransparency = 1
+	title.Text = "FOREST SESSION"
+	title.Font = Enum.Font.GothamBlack
+	title.TextScaled = true
+	title.TextColor3 = Color3.fromRGB(255, 244, 220)
+	title.Parent = panel
+	for _, runeId in ipairs({"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}) do
+		local row = Instance.new("TextLabel")
+		row.Size = UDim2.new(1, -10, 0, 32)
+		row.BackgroundTransparency = 0.2
+		row.BackgroundColor3 = Color3.fromRGB(48, 36, 22)
+		row.TextColor3 = Color3.fromRGB(255, 234, 194)
+		row.Font = Enum.Font.GothamBold
+		row.TextScaled = true
+		row.Text = (RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId) .. ": +0"
+		row.Parent = panel
+		forestRuneSessionRows[runeId] = row
+	end
+	forestRuneSessionPanel = panel
+end
+
 function updateRuneSessionGui()
 	for _, runeId in ipairs(RUNE_DISPLAY_ORDER) do
 		local label = runeUi.sessionRows and runeUi.sessionRows[runeId]
@@ -3531,9 +3693,9 @@ updateBoards = function()
 	setWorldNodeVisible(runeUpgradeDoska, secondUnlockedVisual)
 	setWorldNodeVisible(xpUpgradeDoska, secondUnlockedVisual)
 	setWorldNodeVisible(xpProgressDoska, secondUnlockedVisual)
-	setWorldNodeVisible(forestRuneBlock, secondUnlockedVisual)
-	setWorldNodeVisible(forestRuneIndexBoard, secondUnlockedVisual)
-	setWorldNodeVisible(forestRuneStatsBoard, secondUnlockedVisual)
+	setWorldNodeVisible(forestRuneBlock, sixthUnlockedVisual)
+	setWorldNodeVisible(forestRuneIndexBoard, sixthUnlockedVisual)
+	setWorldNodeVisible(forestRuneStatsBoard, sixthUnlockedVisual)
 	setWorldNodeVisible(natureRuneBlock, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneIndexBoard, secondUnlockedVisual)
 	setWorldNodeVisible(natureRuneStatsBoard, secondUnlockedVisual)
@@ -3561,6 +3723,12 @@ updateBoards = function()
 	setWorldBoardGuiVisible("XPProgressBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("RuneIndexBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("RuneStatsIndexBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("NatureRuneIndexBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("NatureRuneStatsBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("ForestRuneIndexBoardSurfaceGui", sixthUnlockedVisual)
+	setWorldBoardGuiVisible("ForestRuneStatsBoardSurfaceGui", sixthUnlockedVisual)
+	setWorldBoardGuiVisible("HayBlockInfoSurfaceGui", seventhUnlockedVisual)
+	setWorldBoardGuiVisible("HayUpgradeBoardSurfaceGui", seventhUnlockedVisual)
 
 	function updateUnlockDebug()
 		-- debug panel removed in production build
@@ -3857,25 +4025,39 @@ updateBoards = function()
 			end
 		end
 
-	if next(runeIndexBoardRows) ~= nil then
+	do
 		local rs = parseRuneState()
-		local c = rs.counts or {}
-			local bonuses = {
-				Grass = {per = "+0.10x монет", base = 0.10, target = "монет", cap = 2.5},
-				DarkGrass = {per = "+0.25x монет", base = 0.25, target = "монет", cap = 15},
-				Dandelion = {per = "+0.10x XP", base = 0.10, target = "XP", cap = 5},
-				Flower = {per = "+0.10x Luck/Speed, +1 Bulk", base = 0.10, target = "Forest Rune stats", cap = 3},
-				Violet = {per = "+0.10x дерева, +0.05x бумаги", base = 0.10, target = "ресурсов", cap = 2},
-				Rose = {per = "+0.10x Passive Luck", base = 0.10, target = "пассивной удачи", cap = 3},
-			}
-		for runeId, label in pairs(runeIndexBoardRows) do
-			local count = tonumber(c[runeId]) or 0
-				local info = bonuses[runeId] or bonuses.Grass
-			local capMul = (info.cap or 10)
-			local eff = math.min(math.floor((capMul / math.max(info.base, 0.0001)) + 0.5), count)
-			local total = eff * info.base
-			local chance = (RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].chance) or "?"
-			label.Text = string.format("%s | Кол-во: %s | Шанс: %s\nЗа 1: %s | Суммарно: +%.2fx %s (cap x%.1f)", tostring(runeId), formatNumber(count), chance, info.per, total, info.target, capMul)
+		local natureCounts = rs.natureCounts or rs.counts or {}
+		local forestCounts = rs.forestCounts or {}
+		for systemId, bundle in pairs(runeSystemBoards) do
+			local counts = systemId == "Forest" and forestCounts or natureCounts
+			local cfg = RUNE_SYSTEM_UI_CONFIG[systemId]
+			if bundle.index and bundle.index.rows and cfg then
+				for _, runeId in ipairs(cfg.displayOrder) do
+					local label = bundle.index.rows[runeId]
+					if label then
+						local count = tonumber(counts[runeId]) or 0
+						local info = RUNE_EFFECT_INFO[runeId] or RUNE_EFFECT_INFO.Grass
+						local capMul = (info.cap or 10)
+						local eff = math.min(math.floor((capMul / math.max(info.base, 0.0001)) + 0.5), count)
+						local total = eff * info.base
+						local denom = tonumber((effectiveRuneDenominators or {})[runeId]) or tonumber(RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].baseDenominator) or (runeId == "Palka" and 1 or runeId == "ObrublennyKonec" and 5 or runeId == "VetvDereva" and 25 or runeId == "Brevno" and 100 or runeId == "Poleno" and 250 or runeId == "ObgorevshiyPen" and 1000 or 1)
+						local chance = "1 к " .. tostring(math.max(1, math.floor(denom + 0.5)))
+						label.Text = string.format("%s | Кол-во: %s | Шанс: %s\nЗа 1: %s | Суммарно: +%.2fx %s (cap x%.1f)", tostring(cfg.names[runeId] or runeId), formatNumber(count), chance, info.per, total, info.target, capMul)
+					end
+				end
+			end
+			if bundle.stats and bundle.stats.luck then
+				local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+				local speedOverflowBulk = getRuneSpeedOverflowBulk(effSpeed)
+				local effBulkBonus = math.max(0, effBulk - 1)
+				local speedSeconds = getRuneRollIntervalFromSpeed(effSpeed)
+				bundle.stats.luck.Text = "x" .. formatNumber(effLuck)
+				bundle.stats.bulk.Text = "+" .. formatNumber(effBulkBonus)
+				bundle.stats.speed.Text = string.format("%.2fs/roll | Overflow Bulk +%s", speedSeconds, formatNumber(speedOverflowBulk))
+				bundle.stats.passive.Text = "x" .. formatNumber(1 + (tonumber((counts.Rose or 0) + (counts.ObgorevshiyPen or 0)) * 0.1))
+				bundle.stats.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulkBonus)
+			end
 		end
 	end
 
@@ -3910,15 +4092,17 @@ updateBoards = function()
 		if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
-		if runeStatsRows and runeStatsRows.luck then
-			local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
-			local speedOverflowBulk = getRuneSpeedOverflowBulk(effSpeed)
-			local effBulkBonus = math.max(0, effBulk - 1)
-			local speedSeconds = getRuneRollIntervalFromSpeed(effSpeed)
-			runeStatsRows.luck.Text = "x" .. formatNumber(effLuck)
-			runeStatsRows.bulk.Text = "+" .. formatNumber(effBulkBonus)
-			runeStatsRows.speed.Text = string.format("%.2fs/roll | Overflow Bulk +%s", speedSeconds, formatNumber(speedOverflowBulk))
-			runeStatsRows.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulkBonus)
+		if hayUiRows.gain then
+			local gain = (1 + hayAmountLevel.Value) * (1 + hayMultiplierLevel.Value * 0.5)
+			local cooldown = math.max(0.8, 5 - hayCooldownLevel.Value * 0.1)
+			hayUiRows.gain.Text = "+" .. formatNumber(gain)
+			hayUiRows.cooldown.Text = formatNumber(cooldown) .. "s"
+			hayUiRows.currency.Text = formatNumber(hayCurrency.Value)
+		end
+		if hayUpgradeRows.HayAmount then
+			hayUpgradeRows.HayAmount.text.Text = string.format("Hay Amount | LVL %d/250 | Cost: %s\nЭффект: +1 Hay за цикл", hayAmountLevel.Value, hayAmountCost.Value <= 0 and "MAX" or formatNumber(hayAmountCost.Value))
+			hayUpgradeRows.HayMultiplier.text.Text = string.format("Hay Multiplier | LVL %d/50 | Cost: %s\nЭффект: +0.5x multiplier", hayMultiplierLevel.Value, hayMultiplierCost.Value <= 0 and "MAX" or formatNumber(hayMultiplierCost.Value))
+			hayUpgradeRows.HayCooldown.text.Text = string.format("Hay Cooldown | LVL %d/25 | Cost: %s\nЭффект: -0.1s cooldown", hayCooldownLevel.Value, hayCooldownCost.Value <= 0 and "MAX" or formatNumber(hayCooldownCost.Value))
 		end
 	end
 
@@ -3998,6 +4182,15 @@ end
 if runeUpgradeBlock and runeUpgradeBlock:IsA("BasePart") then
 	table.insert(passiveEffectParts, runeUpgradeBlock)
 end
+if natureRuneBlock and natureRuneBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, natureRuneBlock)
+end
+if forestRuneBlock and forestRuneBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, forestRuneBlock)
+end
+if hayBlock and hayBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, hayBlock)
+end
 for i = 1, #passiveEffectParts do
 	(function(p)
 		if not p:FindFirstChild("PassiveFxLight") then
@@ -4012,8 +4205,8 @@ for i = 1, #passiveEffectParts do
 			local h = Instance.new("Highlight")
 			h.Name = "PassiveFxHighlight"
 			h.Adornee = p
-			h.FillColor = p == runeRollBlock and Color3.fromRGB(122, 255, 220) or Color3.fromRGB(168, 199, 255)
-			h.OutlineColor = p == runeRollBlock and Color3.fromRGB(224, 255, 244) or Color3.fromRGB(245, 249, 255)
+			h.FillColor = (p == hayBlock and Color3.fromRGB(255, 229, 128)) or ((p == runeRollBlock or p == natureRuneBlock) and Color3.fromRGB(122, 255, 220)) or (p == forestRuneBlock and Color3.fromRGB(165, 255, 145)) or Color3.fromRGB(168, 199, 255)
+			h.OutlineColor = (p == hayBlock and Color3.fromRGB(255, 247, 196)) or ((p == runeRollBlock or p == natureRuneBlock) and Color3.fromRGB(224, 255, 244)) or (p == forestRuneBlock and Color3.fromRGB(218, 255, 203)) or Color3.fromRGB(245, 249, 255)
 			h.FillTransparency = 0.7
 			h.OutlineTransparency = 0.02
 			h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
@@ -4036,13 +4229,23 @@ for i = 1, #passiveEffectParts do
 	end)(passiveEffectParts[i])
 end
 
-function triggerRuneBurst()
-	if not runeRollBlock or not runeRollBlock:IsA("BasePart") then
+function triggerRuneBurst(systemName)
+	local target = runeRollBlock
+	if systemName == "Forest" and forestRuneBlock and forestRuneBlock:IsA("BasePart") then
+		target = forestRuneBlock
+	elseif systemName == "Nature" and natureRuneBlock and natureRuneBlock:IsA("BasePart") then
+		target = natureRuneBlock
+	end
+	if not target or not target:IsA("BasePart") then
 		return
 	end
 	local burst = Instance.new("ParticleEmitter")
 	burst.Texture = getAssetOrEmpty(AssetSlots.RuneIcons.Grass)
-	burst.Color = ColorSequence.new(Color3.fromRGB(122, 255, 116), Color3.fromRGB(66, 184, 82))
+	if systemName == "Forest" then
+		burst.Color = ColorSequence.new(Color3.fromRGB(176, 121, 76), Color3.fromRGB(97, 73, 45))
+	else
+		burst.Color = ColorSequence.new(Color3.fromRGB(122, 255, 116), Color3.fromRGB(66, 184, 82))
+	end
 	burst.Speed = NumberRange.new(4, 7)
 	burst.Lifetime = NumberRange.new(0.2, 0.35)
 	burst.Rate = 0
@@ -4051,11 +4254,25 @@ function triggerRuneBurst()
 		NumberSequenceKeypoint.new(0, 0.35),
 		NumberSequenceKeypoint.new(1, 0),
 	})
-	burst.Parent = runeRollBlock
+	burst.Parent = target
 	burst:Emit(14)
 	task.delay(0.4, function()
 		burst:Destroy()
 	end)
+end
+
+function triggerHayBurst()
+	if not hayBlock or not hayBlock:IsA("BasePart") then return end
+	local burst = Instance.new("ParticleEmitter")
+	burst.Color = ColorSequence.new(Color3.fromRGB(255, 231, 133), Color3.fromRGB(232, 186, 79))
+	burst.Speed = NumberRange.new(3, 6)
+	burst.Lifetime = NumberRange.new(0.2, 0.35)
+	burst.Rate = 0
+	burst.SpreadAngle = Vector2.new(360, 360)
+	burst.Size = NumberSequence.new(0.25, 0)
+	burst.Parent = hayBlock
+	burst:Emit(16)
+	task.delay(0.4, function() burst:Destroy() end)
 end
 
 function getButtonPurchaseContext(button)
@@ -4264,6 +4481,21 @@ function bindPassiveAndRuneButtons()
 	if runeUi.luckBtn then runeUi.luckBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeLuck") end) end
 	if runeUi.speedBtn then runeUi.speedBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeSpeed") end) end
 	if runeUi.bulkBtn then runeUi.bulkBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeBulk") end) end
+	if hayUpgradeRows.HayAmount then
+		hayUpgradeRows.HayAmount.button.MouseButton1Click:Connect(function()
+			purchaseUpgradeEvent:FireServer("Hay", "HayAmount", "Buy")
+		end)
+	end
+	if hayUpgradeRows.HayMultiplier then
+		hayUpgradeRows.HayMultiplier.button.MouseButton1Click:Connect(function()
+			purchaseUpgradeEvent:FireServer("Hay", "HayMultiplier", "Buy")
+		end)
+	end
+	if hayUpgradeRows.HayCooldown then
+		hayUpgradeRows.HayCooldown.button.MouseButton1Click:Connect(function()
+			purchaseUpgradeEvent:FireServer("Hay", "HayCooldown", "Buy")
+		end)
+	end
 end
 
 function bindAdminPanelActions()
@@ -4324,6 +4556,9 @@ function registerNotifyEventListeners()
 			local ok = pcall(function()
 				showPickup(payload.icon or "Coin", payload.amount or 0)
 			end)
+			if tostring(payload.icon or "") == "Hay" then
+				triggerHayBurst()
+			end
 			if not ok then
 				showToast("+" .. tostring(payload.amount or 0))
 			end
@@ -4339,22 +4574,36 @@ function registerNotifyEventListeners()
 			local rolled = payload.rolled or {}
 			showToast("Открыто рун: " .. tostring(#rolled))
 		elseif payload.kind == "rune_roll_state" then
-			if payload.system and payload.system ~= "Nature" then
-				return
+			if payload.system == "Forest" then
+				if payload.active then
+					for k in pairs(forestRuneSessionCounts) do forestRuneSessionCounts[k] = 0 end
+					if forestRuneSessionPanel then forestRuneSessionPanel.Visible = true end
+				else
+					if forestRuneSessionPanel then forestRuneSessionPanel.Visible = false end
+				end
+			else
+				if payload.active then startRuneRolling(payload.system) else stopRuneRolling(payload.system) end
 			end
-			if payload.active then startRuneRolling(payload.system) else stopRuneRolling(payload.system) end
 		elseif payload.kind == "rune_roll_tick" then
 			if payload.system and payload.system ~= "Nature" then
 				return
 			end
 			local session = payload.session or {}
 			effectiveRuneDenominators = payload.effectiveDenominators or effectiveRuneDenominators
-			for runeId, amount in pairs(session) do runeSessionCounts[runeId] = tonumber(amount) or 0 end
-			if not runeRollingActive then startRuneRolling(payload.system) end
-			updateRuneSessionGui()
-			updateRuneSummaryGui()
-			updateRuneWorldDisplay()
-			triggerRuneBurst()
+			if payload.system == "Forest" then
+				for runeId, amount in pairs(session) do forestRuneSessionCounts[runeId] = tonumber(amount) or 0 end
+				for runeId, label in pairs(forestRuneSessionRows) do
+					label.Text = (RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId) .. ": +" .. formatNumber(forestRuneSessionCounts[runeId] or 0)
+				end
+				if forestRuneSessionPanel then forestRuneSessionPanel.Visible = true end
+			else
+				for runeId, amount in pairs(session) do runeSessionCounts[runeId] = tonumber(amount) or 0 end
+				if not runeRollingActive then startRuneRolling(payload.system) end
+				updateRuneSessionGui()
+				updateRuneSummaryGui()
+				updateRuneWorldDisplay()
+			end
+			triggerRuneBurst(payload.system)
 		elseif payload.kind == "admin_event_state" then
 			activeAdminEvents = normalizeAdminEvents(payload.events)
 			renderAdminEvents(activeAdminEvents)
