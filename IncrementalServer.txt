@@ -348,12 +348,16 @@ local HAY_UPGRADE_KEYS = {"HayAmount", "HayMultiplier", "HayCooldown"}
 
 local function normalizeHaySaveData(savedHay)
 	local hayTable = type(savedHay) == "table" and savedHay or {}
-	local nestedUpgrades = type(hayTable.HayUpgrades) == "table" and hayTable.HayUpgrades or {}
+	hayTable.HayUpgrades = type(hayTable.HayUpgrades) == "table" and hayTable.HayUpgrades or {}
+	local nestedUpgrades = hayTable.HayUpgrades
 	local normalizedLevels = {}
 	for _, key in ipairs(HAY_UPGRADE_KEYS) do
 		local levelName = HAY_UPGRADES[key].levelName
 		normalizedLevels[levelName] = tonumber(hayTable[levelName]) or tonumber(nestedUpgrades[key]) or 0
 	end
+	nestedUpgrades.HayAmount = normalizedLevels.HayAmountLevel or 0
+	nestedUpgrades.HayMultiplier = normalizedLevels.HayMultiplierLevel or 0
+	nestedUpgrades.HayCooldown = normalizedLevels.HayCooldownLevel or 0
 
 	return {
 		HayCurrency = tonumber(hayTable.HayCurrency) or 0,
@@ -363,6 +367,11 @@ local function normalizeHaySaveData(savedHay)
 		HayAmountCost = tonumber(hayTable.HayAmountCost),
 		HayMultiplierCost = tonumber(hayTable.HayMultiplierCost),
 		HayCooldownCost = tonumber(hayTable.HayCooldownCost),
+		HayUpgrades = {
+			HayAmount = nestedUpgrades.HayAmount,
+			HayMultiplier = nestedUpgrades.HayMultiplier,
+			HayCooldown = nestedUpgrades.HayCooldown,
+		},
 	}
 end
 
@@ -3010,6 +3019,11 @@ local function loadPlayerData(player)
 	paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
 	paperFactory.IsRunning.Value = false
 
+	data.Hay = type(data.Hay) == "table" and data.Hay or {}
+	data.Hay.HayUpgrades = type(data.Hay.HayUpgrades) == "table" and data.Hay.HayUpgrades or {}
+	data.Hay.HayUpgrades.HayAmount = tonumber(data.Hay.HayUpgrades.HayAmount) or tonumber(data.Hay.HayAmountLevel) or 0
+	data.Hay.HayUpgrades.HayMultiplier = tonumber(data.Hay.HayUpgrades.HayMultiplier) or tonumber(data.Hay.HayMultiplierLevel) or 0
+	data.Hay.HayUpgrades.HayCooldown = tonumber(data.Hay.HayUpgrades.HayCooldown) or tonumber(data.Hay.HayCooldownLevel) or 0
 	local savedHay = normalizeHaySaveData(data.Hay)
 	hayCurrency.Value = roundToTenth(savedHay.HayCurrency or 0)
 	hayUpgrades.HayAmountLevel.Value = math.clamp(tonumber(savedHay.HayAmountLevel) or 0, 0, HAY_UPGRADES.HayAmount.maxLevel)
