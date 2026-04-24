@@ -3851,7 +3851,7 @@ updateBoards = function()
 		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, nil)
 		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, nil)
 		if xpUpgradeLockedOverlay then
-			xpUpgradeLockedOverlay.Visible = not xpUnlocked
+			xpUpgradeLockedOverlay.Visible = false
 		end
 	end
 
