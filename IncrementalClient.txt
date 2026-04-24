@@ -1796,7 +1796,16 @@ if xpProgressDoska then
 	buyBtn.Parent = xpProgressBoard
 	createCorner(buyBtn, 12)
 	addScaleHover(buyBtn)
-	xpProgressUi = {valueText = valueRow, costText = costRow, barFill = barFill, buyButton = buyBtn}
+	local currentXpRow = createStatRow(xpProgressBoard, "XP сейчас")
+	local collectXpRow = createStatRow(xpProgressBoard, "XP за сбор")
+	xpProgressUi = {
+		valueText = valueRow,
+		costText = costRow,
+		currentText = currentXpRow,
+		collectText = collectXpRow,
+		barFill = barFill,
+		buyButton = buyBtn
+	}
 	xpProgressLockedOverlay = createLockedOverlay(xpProgressBoard, "Откроется на 2-м перерождении")
 end
 
@@ -1957,24 +1966,23 @@ if hayIndexBoardPart then
 	hayUiRows.formula = createStatRow(hayInfoBoard, "Formula")
 end
 
-HAY_UPGRADE_ORDER = {"Amount", "Multiplier", "Cooldown"}
-HAY_SERVER_UPGRADE_KEYS = {
-	Amount = "HayAmount",
-	Multiplier = "HayMultiplier",
-	Cooldown = "HayCooldown",
-}
+HAY_UPGRADE_ORDER = {"HayAmount", "HayMultiplier", "HayCooldown"}
+local hayUpgradeIcons = {}
+if type(AssetSlots) == "table" and type(AssetSlots.UpgradeIcons) == "table" then
+	hayUpgradeIcons = AssetSlots.UpgradeIcons
+end
 HAY_UPGRADE_DEFS = {
-	Amount = {title = "Hay Amount", maxLevel = 250, baseCost = 1, costMultiplier = 3, effectText = "+1 Hay за цикл", bonusText = "+1", fallbackText = "H", iconAssetId = ICON_ASSET_IDS.HayAmountUpgradeIcon or ""},
-	Multiplier = {title = "Hay Multiplier", maxLevel = 50, baseCost = 25, costMultiplier = 3, effectText = "+0.5x Hay multiplier", bonusText = "+0.5x", fallbackText = "M", iconAssetId = ICON_ASSET_IDS.HayMultiplierUpgradeIcon or ""},
-	Cooldown = {title = "Hay Cooldown", maxLevel = 25, baseCost = 500, costMultiplier = 2.5, effectText = "-0.1s cooldown", bonusText = "-0.1s", fallbackText = "C", iconAssetId = ICON_ASSET_IDS.HayCooldownUpgradeIcon or ""},
+	HayAmount = {title = "Hay Amount", maxLevel = 250, baseCost = 1, costMultiplier = 3, effectText = "+1 Hay за цикл", bonusText = "+1", fallbackText = "H", icon = tostring(hayUpgradeIcons.HayAmount or ICON_ASSET_IDS.HayAmountUpgradeIcon or "")},
+	HayMultiplier = {title = "Hay Multiplier", maxLevel = 50, baseCost = 25, costMultiplier = 3, effectText = "+0.5x Hay multiplier", bonusText = "+0.5x", fallbackText = "M", icon = tostring(hayUpgradeIcons.HayMultiplier or ICON_ASSET_IDS.HayMultiplierUpgradeIcon or "")},
+	HayCooldown = {title = "Hay Cooldown", maxLevel = 25, baseCost = 500, costMultiplier = 2.5, effectText = "-0.1s cooldown", bonusText = "-0.1s", fallbackText = "C", icon = tostring(hayUpgradeIcons.HayCooldown or ICON_ASSET_IDS.HayCooldownUpgradeIcon or "")},
 }
 hayUpgradeCardsByKey = {}
 
 function getHayUpgradeDefSafe(cardKey)
 	local fallbackDefs = {
-		Amount = {title = "Hay Amount", maxLevel = 250, baseCost = 1, effectText = "+1 Hay за цикл", bonusText = "+1", fallbackText = "H", iconAssetId = ICON_ASSET_IDS.HayAmountUpgradeIcon or ""},
-		Multiplier = {title = "Hay Multiplier", maxLevel = 50, baseCost = 25, effectText = "+0.5x Hay multiplier", bonusText = "+0.5x", fallbackText = "M", iconAssetId = ICON_ASSET_IDS.HayMultiplierUpgradeIcon or ""},
-		Cooldown = {title = "Hay Cooldown", maxLevel = 25, baseCost = 500, effectText = "-0.1s cooldown", bonusText = "-0.1s", fallbackText = "C", iconAssetId = ICON_ASSET_IDS.HayCooldownUpgradeIcon or ""},
+		HayAmount = {title = "Hay Amount", maxLevel = 250, baseCost = 1, costMultiplier = 3, effectText = "+1 Hay за цикл", bonusText = "+1", fallbackText = "H", icon = tostring(ICON_ASSET_IDS.HayAmountUpgradeIcon or "")},
+		HayMultiplier = {title = "Hay Multiplier", maxLevel = 50, baseCost = 25, costMultiplier = 3, effectText = "+0.5x Hay multiplier", bonusText = "+0.5x", fallbackText = "M", icon = tostring(ICON_ASSET_IDS.HayMultiplierUpgradeIcon or "")},
+		HayCooldown = {title = "Hay Cooldown", maxLevel = 25, baseCost = 500, costMultiplier = 2.5, effectText = "-0.1s cooldown", bonusText = "-0.1s", fallbackText = "C", icon = tostring(ICON_ASSET_IDS.HayCooldownUpgradeIcon or "")},
 	}
 	local defs = type(HAY_UPGRADE_DEFS) == "table" and HAY_UPGRADE_DEFS or fallbackDefs
 	local def = defs[cardKey]
@@ -1985,44 +1993,45 @@ function getHayUpgradeDefSafe(cardKey)
 		title = tostring(def.title or cardKey),
 		maxLevel = tonumber(def.maxLevel) or 1,
 		baseCost = tonumber(def.baseCost) or 1,
+		costMultiplier = tonumber(def.costMultiplier) or 1,
 		effectText = tostring(def.effectText or ""),
 		bonusText = tostring(def.bonusText or ""),
 		fallbackText = tostring(def.fallbackText or "H"),
-		iconAssetId = tostring(def.iconAssetId or ""),
+		icon = tostring(def.icon or ""),
 	}
 end
 
 function getSafeHayUpgrades(data)
 	local root = type(data) == "table" and data or {}
-	local upgrades = type(root.HayUpgrades) == "table" and root.HayUpgrades or {}
-	local amountValue = tonumber(upgrades.Amount)
-	if amountValue == nil then amountValue = tonumber(rawget(upgrades, "HayAmount")) end
-	local multiplierValue = tonumber(upgrades.Multiplier)
-	if multiplierValue == nil then multiplierValue = tonumber(rawget(upgrades, "HayMultiplier")) end
-	local cooldownValue = tonumber(upgrades.Cooldown)
-	if cooldownValue == nil then cooldownValue = tonumber(rawget(upgrades, "HayCooldown")) end
+	if type(root.HayUpgrades) ~= "table" then
+		root.HayUpgrades = {}
+	end
+	local upgrades = root.HayUpgrades
+	local amountValue = tonumber(upgrades.HayAmount)
+	local multiplierValue = tonumber(upgrades.HayMultiplier)
+	local cooldownValue = tonumber(upgrades.HayCooldown)
 	return {
-		Amount = amountValue or 0,
-		Multiplier = multiplierValue or 0,
-		Cooldown = cooldownValue or 0,
+		HayAmount = amountValue or 0,
+		HayMultiplier = multiplierValue or 0,
+		HayCooldown = cooldownValue or 0,
 	}
 end
 
 function buildStableHaySnapshot()
-	local amountDef = getHayUpgradeDefSafe("Amount")
-	local multiplierDef = getHayUpgradeDefSafe("Multiplier")
-	local cooldownDef = getHayUpgradeDefSafe("Cooldown")
+	local amountDef = getHayUpgradeDefSafe("HayAmount")
+	local multiplierDef = getHayUpgradeDefSafe("HayMultiplier")
+	local cooldownDef = getHayUpgradeDefSafe("HayCooldown")
 	local safeData = {
 		HayCurrency = getValueOrDefault(hayCurrency, 0),
 		HayUpgrades = {
-			Amount = getValueOrDefault(hayAmountLevel, 0),
-			Multiplier = getValueOrDefault(hayMultiplierLevel, 0),
-			Cooldown = getValueOrDefault(hayCooldownLevel, 0),
+			HayAmount = getValueOrDefault(hayAmountLevel, 0),
+			HayMultiplier = getValueOrDefault(hayMultiplierLevel, 0),
+			HayCooldown = getValueOrDefault(hayCooldownLevel, 0),
 		},
 		HayCosts = {
-			Amount = getValueOrDefault(hayAmountCost, amountDef.baseCost),
-			Multiplier = getValueOrDefault(hayMultiplierCost, multiplierDef.baseCost),
-			Cooldown = getValueOrDefault(hayCooldownCost, cooldownDef.baseCost),
+			HayAmount = getValueOrDefault(hayAmountCost, amountDef.baseCost),
+			HayMultiplier = getValueOrDefault(hayMultiplierCost, multiplierDef.baseCost),
+			HayCooldown = getValueOrDefault(hayCooldownCost, cooldownDef.baseCost),
 		},
 	}
 	local safeUpgrades = getSafeHayUpgrades(safeData)
@@ -2030,9 +2039,9 @@ function buildStableHaySnapshot()
 		HayCurrency = tonumber(safeData.HayCurrency) or 0,
 		HayUpgrades = safeUpgrades,
 		HayCosts = {
-			Amount = tonumber(safeData.HayCosts.Amount) or amountDef.baseCost,
-			Multiplier = tonumber(safeData.HayCosts.Multiplier) or multiplierDef.baseCost,
-			Cooldown = tonumber(safeData.HayCosts.Cooldown) or cooldownDef.baseCost,
+			HayAmount = tonumber(safeData.HayCosts.HayAmount) or amountDef.baseCost,
+			HayMultiplier = tonumber(safeData.HayCosts.HayMultiplier) or multiplierDef.baseCost,
+			HayCooldown = tonumber(safeData.HayCosts.HayCooldown) or cooldownDef.baseCost,
 		},
 	}
 end
@@ -2061,9 +2070,9 @@ if hayUpgradeBoardPart then
 	createHeader(hayUpgradeBoard, "HAY UPGRADES", "Amount / Multiplier / Cooldown")
 	local hayScroll = createHorizontalScroller(hayUpgradeBoard, 66, 12)
 	local hayCardPaletteByKey = {
-		Amount = {card1 = Color3.fromRGB(121, 215, 158), card2 = Color3.fromRGB(73, 175, 120), inner1 = Color3.fromRGB(176, 241, 200), inner2 = Color3.fromRGB(105, 202, 148), icon1 = Color3.fromRGB(255, 238, 159), icon2 = Color3.fromRGB(232, 186, 79)},
-		Multiplier = {card1 = Color3.fromRGB(98, 161, 236), card2 = Color3.fromRGB(71, 123, 196), inner1 = Color3.fromRGB(160, 205, 255), inner2 = Color3.fromRGB(113, 166, 234), icon1 = Color3.fromRGB(214, 230, 255), icon2 = Color3.fromRGB(145, 173, 245)},
-		Cooldown = {card1 = Color3.fromRGB(182, 140, 236), card2 = Color3.fromRGB(146, 97, 213), inner1 = Color3.fromRGB(224, 192, 255), inner2 = Color3.fromRGB(177, 129, 236), icon1 = Color3.fromRGB(255, 222, 244), icon2 = Color3.fromRGB(232, 174, 255)},
+		HayAmount = {card1 = Color3.fromRGB(121, 215, 158), card2 = Color3.fromRGB(73, 175, 120), inner1 = Color3.fromRGB(176, 241, 200), inner2 = Color3.fromRGB(105, 202, 148), icon1 = Color3.fromRGB(255, 238, 159), icon2 = Color3.fromRGB(232, 186, 79)},
+		HayMultiplier = {card1 = Color3.fromRGB(98, 161, 236), card2 = Color3.fromRGB(71, 123, 196), inner1 = Color3.fromRGB(160, 205, 255), inner2 = Color3.fromRGB(113, 166, 234), icon1 = Color3.fromRGB(214, 230, 255), icon2 = Color3.fromRGB(145, 173, 245)},
+		HayCooldown = {card1 = Color3.fromRGB(182, 140, 236), card2 = Color3.fromRGB(146, 97, 213), inner1 = Color3.fromRGB(224, 192, 255), inner2 = Color3.fromRGB(177, 129, 236), icon1 = Color3.fromRGB(255, 222, 244), icon2 = Color3.fromRGB(232, 174, 255)},
 	}
 	for idx = 1, #HAY_UPGRADE_ORDER do
 		local key = HAY_UPGRADE_ORDER[idx]
@@ -2073,7 +2082,7 @@ if hayUpgradeBoardPart then
 			def.title,
 			def.effectText,
 			def.bonusText,
-			def.iconAssetId,
+			def.icon,
 			def.fallbackText,
 			hayCardPaletteByKey[key]
 		)
@@ -3005,10 +3014,18 @@ createRuneOverlays()
 forestRuneSessionCounts = {Palka = 0, ObrublennyKonec = 0, VetvDereva = 0, Brevno = 0, Poleno = 0, ObgorevshiyPen = 0}
 forestRuneSessionRows = {}
 forestRuneSessionPanel = nil
+FOREST_SESSION_ICON_ASSETS = {
+	Palka = "", -- вставь rbxassetid://...
+	ObrublennyKonec = "",
+	VetvDereva = "",
+	Brevno = "",
+	Poleno = "",
+	ObgorevshiyPen = "",
+}
 do
 	local panel = Instance.new("Frame")
 	panel.Name = "ForestRuneSessionGui"
-	panel.Size = UDim2.new(0, 210, 0, 262)
+	panel.Size = UDim2.new(0, 246, 0, 292)
 	panel.AnchorPoint = Vector2.new(1, 1)
 	panel.Position = UDim2.new(1, -14, 1, -14)
 	panel.BackgroundColor3 = Color3.fromRGB(73, 57, 31)
@@ -3017,16 +3034,22 @@ do
 	createCorner(panel, 14)
 	createStroke(panel, Color3.fromRGB(205, 174, 118), 3, 0)
 	local listHolder = Instance.new("ScrollingFrame")
-	listHolder.Size = UDim2.new(1, -10, 1, -42)
+	listHolder.Size = UDim2.new(1, -12, 1, -46)
 	listHolder.Position = UDim2.new(0, 5, 0, 36)
 	listHolder.BackgroundTransparency = 1
 	listHolder.BorderSizePixel = 0
+	listHolder.ScrollBarThickness = 7
+	listHolder.ScrollBarImageColor3 = Color3.fromRGB(214, 186, 136)
+	listHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
 	listHolder.Parent = panel
 	local list = Instance.new("UIListLayout")
 	list.Padding = UDim.new(0, 4)
 	list.Parent = listHolder
 	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	list.VerticalAlignment = Enum.VerticalAlignment.Top
+	list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		listHolder.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 8)
+	end)
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, -8, 0, 24)
 	title.BackgroundTransparency = 1
@@ -3035,17 +3058,59 @@ do
 	title.TextScaled = true
 	title.TextColor3 = Color3.fromRGB(255, 244, 220)
 	title.Parent = panel
+	local runeIcons = type(AssetSlots) == "table" and type(AssetSlots.RuneIcons) == "table" and AssetSlots.RuneIcons or {}
 	for _, runeId in ipairs({"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}) do
-		local row = Instance.new("TextLabel")
-		row.Size = UDim2.new(1, 0, 0, 32)
-		row.BackgroundTransparency = 0.2
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, 0, 0, 36)
 		row.BackgroundColor3 = Color3.fromRGB(48, 36, 22)
-		row.TextColor3 = Color3.fromRGB(255, 234, 194)
-		row.Font = Enum.Font.GothamBold
-		row.TextScaled = true
-		row.Text = "🌲 " .. (RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId) .. ": +0"
+		row.BackgroundTransparency = 0.2
+		row.BorderSizePixel = 0
 		row.Parent = listHolder
-		forestRuneSessionRows[runeId] = row
+		createCorner(row, 8)
+
+		local iconWrap = Instance.new("Frame")
+		iconWrap.Size = UDim2.new(0, 26, 0, 26)
+		iconWrap.Position = UDim2.new(0, 6, 0.5, -13)
+		iconWrap.BackgroundColor3 = Color3.fromRGB(35, 26, 17)
+		iconWrap.BackgroundTransparency = 0.1
+		iconWrap.BorderSizePixel = 0
+		iconWrap.Parent = row
+		createCorner(iconWrap, 999)
+		createStroke(iconWrap, Color3.fromRGB(160, 128, 82), 1.2, 0.2)
+
+		local icon = Instance.new("ImageLabel")
+		icon.Size = UDim2.new(1, -6, 1, -6)
+		icon.Position = UDim2.new(0, 3, 0, 3)
+		icon.BackgroundTransparency = 1
+		icon.ScaleType = Enum.ScaleType.Fit
+		icon.Image = getAssetOrEmpty((FOREST_SESSION_ICON_ASSETS and FOREST_SESSION_ICON_ASSETS[runeId]) or runeIcons[runeId] or "")
+		icon.Parent = iconWrap
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(1, -120, 1, 0)
+		nameLabel.Position = UDim2.new(0, 36, 0, 0)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+		nameLabel.TextColor3 = Color3.fromRGB(255, 234, 194)
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.TextSize = 14
+		nameLabel.Text = tostring(RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId)
+		nameLabel.Parent = row
+
+		local gainLabel = Instance.new("TextLabel")
+		gainLabel.Size = UDim2.new(0, 74, 1, -6)
+		gainLabel.Position = UDim2.new(1, -78, 0, 3)
+		gainLabel.BackgroundColor3 = Color3.fromRGB(58, 42, 24)
+		gainLabel.BackgroundTransparency = 0.25
+		gainLabel.TextXAlignment = Enum.TextXAlignment.Right
+		gainLabel.TextColor3 = Color3.fromRGB(255, 234, 194)
+		gainLabel.Font = Enum.Font.GothamBlack
+		gainLabel.TextSize = 13
+		gainLabel.Text = "+0"
+		gainLabel.Parent = row
+		createCorner(gainLabel, 7)
+		forestRuneSessionRows[runeId] = gainLabel
 	end
 	forestRuneSessionPanel = panel
 end
@@ -3198,6 +3263,15 @@ function getWoodCooldown()
 		value = 0.5
 	end
 	return roundToTenth(value / math.max(1, passiveSpeed))
+end
+
+function getClientXpPerCollectEstimate()
+	local passive = getEquippedPassiveDef()
+	local passiveXpMul = passive and (passive.xpMultiplier or 1) or 1
+	local baseXpPerCoin = 1 + (tonumber(xpMultiplierLevel and xpMultiplierLevel.Value) or 0)
+	local boostMul = 1 + (tonumber(xpBoostLevel and xpBoostLevel.Value) or 0)
+	local eventMul = isAdminEventActive("StatsX2") and 2 or 1
+	return roundToTenth(baseXpPerCoin * boostMul * passiveXpMul * eventMul)
 end
 
 function isAdminEventActive(eventKey)
@@ -4256,9 +4330,9 @@ updateBoards = function()
 		updateRuneSummaryGui()
 		updateRuneWorldDisplay()
 		local safeHayState = buildStableHaySnapshot()
-		local hayAmountLevelValue = readHayUpgradeLevel(safeHayState, "Amount")
-		local hayMultiplierLevelValue = readHayUpgradeLevel(safeHayState, "Multiplier")
-		local hayCooldownLevelValue = readHayUpgradeLevel(safeHayState, "Cooldown")
+		local hayAmountLevelValue = readHayUpgradeLevel(safeHayState, "HayAmount")
+		local hayMultiplierLevelValue = readHayUpgradeLevel(safeHayState, "HayMultiplier")
+		local hayCooldownLevelValue = readHayUpgradeLevel(safeHayState, "HayCooldown")
 		local hayCurrencyValue = tonumber(type(safeHayState) == "table" and safeHayState.HayCurrency or 0) or 0
 		if hayUiRows.gain then
 			local gain = (1 + hayAmountLevelValue) * (1 + hayMultiplierLevelValue * 0.5)
@@ -4317,6 +4391,12 @@ updateBoards = function()
 		local boostValue = 1 + xpBoostLevel.Value
 		xpProgressUi.valueText.Text = "x" .. formatNumber(boostValue)
 		xpProgressUi.costText.Text = xpBoostNextCost.Value <= 0 and "MAX" or formatNumber(math.floor(xpBoostNextCost.Value + 0.5))
+		if xpProgressUi.currentText then
+			xpProgressUi.currentText.Text = formatNumber(xpValue.Value)
+		end
+		if xpProgressUi.collectText then
+			xpProgressUi.collectText.Text = "+" .. formatNumber(getClientXpPerCollectEstimate()) .. " XP"
+		end
 		local progress = xpBoostNextCost.Value > 0 and math.clamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
 		TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
 		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
@@ -4605,9 +4685,8 @@ function bindUpgradeBoards()
 	for idx = 1, #HAY_UPGRADE_ORDER do
 		local key = HAY_UPGRADE_ORDER[idx]
 		local card = getHayUpgradeCard(key)
-		local serverKey = HAY_SERVER_UPGRADE_KEYS[key] or key
 		if card then
-			bindUpgradeCard(card, "Hay", serverKey)
+			bindUpgradeCard(card, "Hay", key)
 		end
 	end
 
@@ -4677,30 +4756,6 @@ function bindPassiveAndRuneButtons()
 	if runeUi.luckBtn then runeUi.luckBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeLuck") end) end
 	if runeUi.speedBtn then runeUi.speedBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeSpeed") end) end
 	if runeUi.bulkBtn then runeUi.bulkBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeBulk") end) end
-	if hayUpgradeRows.HayAmount then
-		hayUpgradeRows.HayAmount.buyButton.MouseButton1Click:Connect(function()
-			purchaseUpgradeEvent:FireServer("Hay", "HayAmount", "Buy")
-		end)
-		hayUpgradeRows.HayAmount.maxButton.MouseButton1Click:Connect(function()
-			purchaseUpgradeEvent:FireServer("Hay", "HayAmount", "Max")
-		end)
-	end
-	if hayUpgradeRows.HayMultiplier then
-		hayUpgradeRows.HayMultiplier.buyButton.MouseButton1Click:Connect(function()
-			purchaseUpgradeEvent:FireServer("Hay", "HayMultiplier", "Buy")
-		end)
-		hayUpgradeRows.HayMultiplier.maxButton.MouseButton1Click:Connect(function()
-			purchaseUpgradeEvent:FireServer("Hay", "HayMultiplier", "Max")
-		end)
-	end
-	if hayUpgradeRows.HayCooldown then
-		hayUpgradeRows.HayCooldown.buyButton.MouseButton1Click:Connect(function()
-			purchaseUpgradeEvent:FireServer("Hay", "HayCooldown", "Buy")
-		end)
-		hayUpgradeRows.HayCooldown.maxButton.MouseButton1Click:Connect(function()
-			purchaseUpgradeEvent:FireServer("Hay", "HayCooldown", "Max")
-		end)
-	end
 end
 
 function bindAdminPanelActions()
@@ -4782,6 +4837,9 @@ function registerNotifyEventListeners()
 			if payload.system == "Forest" then
 				if payload.active then
 					for k in pairs(forestRuneSessionCounts) do forestRuneSessionCounts[k] = 0 end
+					for _, label in pairs(forestRuneSessionRows) do
+						label.Text = "+0"
+					end
 					if forestRuneSessionPanel then forestRuneSessionPanel.Visible = true end
 				else
 					if forestRuneSessionPanel then forestRuneSessionPanel.Visible = false end
@@ -4790,7 +4848,7 @@ function registerNotifyEventListeners()
 				if payload.active then startRuneRolling(payload.system) else stopRuneRolling(payload.system) end
 			end
 		elseif payload.kind == "rune_roll_tick" then
-			if payload.system and payload.system ~= "Nature" then
+			if payload.system and payload.system ~= "Nature" and payload.system ~= "Forest" then
 				return
 			end
 			local session = payload.session or {}
@@ -4798,7 +4856,7 @@ function registerNotifyEventListeners()
 			if payload.system == "Forest" then
 				for runeId, amount in pairs(session) do forestRuneSessionCounts[runeId] = tonumber(amount) or 0 end
 				for runeId, label in pairs(forestRuneSessionRows) do
-					label.Text = (RUNE_SYSTEM_UI_CONFIG.Forest.names[runeId] or runeId) .. ": +" .. formatNumber(forestRuneSessionCounts[runeId] or 0)
+					label.Text = "+" .. formatNumber(forestRuneSessionCounts[runeId] or 0)
 				end
 				if forestRuneSessionPanel then forestRuneSessionPanel.Visible = true end
 			else
