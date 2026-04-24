@@ -53,7 +53,7 @@ local ADMIN_NAME = "Doter24_7"
 local SAVE_INTERVAL = 45
 local SAVE_COOLDOWN = 20
 
-local MAX_REBIRTH_COUNT = 6
+local MAX_REBIRTH_COUNT = 7
 local RUNE_OPEN_WOOD_COST = 50
 local RUNE_OPEN_BASE_TIME = 10
 local RUNE_MAX_EFFECTIVE_STACKS = 10
@@ -150,6 +150,18 @@ local REBIRTH_STAGES = {
 		},
 		[6] = {
 			cost = 500,
+			currency = "Paper",
+			coinMultiplier = 1,
+			spawnBonus = 0,
+			woodMultiplier = 1,
+			unlockTree = true,
+			unlockThirdUpgrades = true,
+			unlockFourthSystems = true,
+			unlockFifthSystems = true,
+			unlockSixthSystems = true,
+		},
+		[7] = {
+			cost = 2500,
 			currency = "Paper",
 			coinMultiplier = 1,
 			spawnBonus = 0,
@@ -929,6 +941,15 @@ local function getXPBoostMultiplier(player)
 	return 1 + math.max(0, tonumber(lvl and lvl.Value) or 0)
 end
 
+local function getRuneSpeedOverflowBulk(speedStat)
+	local interval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
+	if interval >= 0.01 then
+		return 0
+	end
+	local overflowFactor = math.min(250, 0.01 / math.max(0.000001, interval))
+	return math.max(0, math.floor((overflowFactor - 1) * 2 + 0.5))
+end
+
 local function getEffectiveRuneStats(player)
 	local runeUpgrades = getRuneUpgradeFolder(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
@@ -948,6 +969,11 @@ local function getEffectiveRuneStats(player)
 	speed = math.floor(speed * eventSpeedMul + 0.5)
 	bulk = math.floor(bulk * eventBulkMul + 0.5)
 	bulk += eventBulkAdd
+	local rebirth = getRebirthFolder(player)
+	if rebirth and rebirth.Count.Value >= 7 then
+		luck = math.floor(luck * 1.5 + 0.5)
+	end
+	bulk += getRuneSpeedOverflowBulk(speed)
 	return luck, speed, bulk
 end
 
@@ -1299,6 +1325,21 @@ local function applyCharacterCollisionGroup(player, character)
 	characterConnections[player] = character.DescendantAdded:Connect(applyPart)
 end
 
+local function computeRebirthCoinMultiplier(count)
+	local c = math.max(0, math.floor(tonumber(count) or 0))
+	local mul = 1
+	for i = 1, c do
+		local stage = REBIRTH_STAGES[i]
+		if stage then
+			mul *= (tonumber(stage.coinMultiplier) or 1)
+		end
+	end
+	if c >= 3 and mul < 100 then
+		mul = 100
+	end
+	return mul
+end
+
 local function recalculateRebirthStats(player)
 	local rebirth = getRebirthFolder(player)
 	if not rebirth then
@@ -1341,7 +1382,8 @@ local function recalculateRebirthStats(player)
 			end
 		end
 
-	rebirth.CoinMultiplierBonus.Value = totalCoinMultiplier
+
+	rebirth.CoinMultiplierBonus.Value = computeRebirthCoinMultiplier(count)
 	rebirth.SpawnSpeedBonus.Value = totalSpawnBonus
 	rebirth.WoodMultiplierBonus.Value = totalWoodMultiplier
 	rebirth.SecondAreaUnlocked.Value = secondUnlocked
@@ -1541,7 +1583,7 @@ local function getCoinReward(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
 
-	if not coinUpgrades or not woodUpgrades or not rebirth then
+	if not coinUpgrades or not rebirth then
 		return 1
 	end
 
@@ -1550,11 +1592,14 @@ local function getCoinReward(player)
 
 	local baseValue = 1 + coinUpgrades.CoinValueLevel.Value
 	local baseMultiplier = 1 + (coinUpgrades.MultiplierLevel.Value * 0.1)
-	local woodCoinBoostMultiplier = 1.1 ^ woodUpgrades.CoinBoostLevel.Value
+	local woodCoinBoostLevel = woodUpgrades and woodUpgrades:FindFirstChild("CoinBoostLevel") and woodUpgrades.CoinBoostLevel.Value or 0
+	local woodCoinBoostMultiplier = 1.1 ^ woodCoinBoostLevel
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
-	return roundToTenth(baseValue * baseMultiplier * rebirth.CoinMultiplierBonus.Value * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
+	local count = tonumber(rebirth.Count.Value) or 0
+	local rebirthCoinMul = computeRebirthCoinMultiplier(count)
+	return roundToTenth(baseValue * baseMultiplier * rebirthCoinMul * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
 end
 
 local function getCoinRespawnDelay(player)
