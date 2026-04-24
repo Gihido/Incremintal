@@ -53,7 +53,7 @@ local ADMIN_NAME = "Doter24_7"
 local SAVE_INTERVAL = 45
 local SAVE_COOLDOWN = 20
 
-local MAX_REBIRTH_COUNT = 6
+local MAX_REBIRTH_COUNT = 7
 local RUNE_OPEN_WOOD_COST = 50
 local RUNE_OPEN_BASE_TIME = 10
 local RUNE_MAX_EFFECTIVE_STACKS = 10
@@ -150,6 +150,18 @@ local REBIRTH_STAGES = {
 		},
 		[6] = {
 			cost = 500,
+			currency = "Paper",
+			coinMultiplier = 1,
+			spawnBonus = 0,
+			woodMultiplier = 1,
+			unlockTree = true,
+			unlockThirdUpgrades = true,
+			unlockFourthSystems = true,
+			unlockFifthSystems = true,
+			unlockSixthSystems = true,
+		},
+		[7] = {
+			cost = 2500,
 			currency = "Paper",
 			coinMultiplier = 1,
 			spawnBonus = 0,
