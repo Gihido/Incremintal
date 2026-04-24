@@ -1340,6 +1340,29 @@ local function computeRebirthCoinMultiplier(count)
 	return mul
 end
 
+local function getExpectedRebirthCoinMultiplier(count)
+	local c = math.max(0, math.floor(tonumber(count) or 0))
+	if c == 0 then return 1 end
+	if c == 1 then return 2 end
+	if c == 2 then return 10 end
+	if c == 3 then return 100 end
+	return computeRebirthCoinMultiplier(c)
+end
+
+local function ensureRebirthCoinMultiplierConsistency(player)
+	local rebirth = getRebirthFolder(player)
+	if not rebirth then return 1 end
+	local count = tonumber(rebirth.Count.Value) or 0
+	local computed = computeRebirthCoinMultiplier(count)
+	local expected = getExpectedRebirthCoinMultiplier(count)
+	local finalMul = math.max(computed, expected)
+	if rebirth.CoinMultiplierBonus.Value ~= finalMul then
+		rebirth.CoinMultiplierBonus.Value = finalMul
+		warn(string.format("[RebirthMultiplierFix] %s rebirth=%d computed=%s expected=%s -> set=%s", player.Name, count, tostring(computed), tostring(expected), tostring(finalMul)))
+	end
+	return finalMul
+end
+
 local function recalculateRebirthStats(player)
 	local rebirth = getRebirthFolder(player)
 	if not rebirth then
@@ -1383,7 +1406,7 @@ local function recalculateRebirthStats(player)
 		end
 
 
-	rebirth.CoinMultiplierBonus.Value = computeRebirthCoinMultiplier(count)
+	rebirth.CoinMultiplierBonus.Value = ensureRebirthCoinMultiplierConsistency(player)
 	rebirth.SpawnSpeedBonus.Value = totalSpawnBonus
 	rebirth.WoodMultiplierBonus.Value = totalWoodMultiplier
 	rebirth.SecondAreaUnlocked.Value = secondUnlocked
@@ -1598,7 +1621,7 @@ local function getCoinReward(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
 	local count = tonumber(rebirth.Count.Value) or 0
-	local rebirthCoinMul = computeRebirthCoinMultiplier(count)
+	local rebirthCoinMul = ensureRebirthCoinMultiplierConsistency(player)
 	return roundToTenth(baseValue * baseMultiplier * rebirthCoinMul * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul)
 end
 
