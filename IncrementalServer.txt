@@ -12,11 +12,11 @@ local coinTemplate = ServerStorage:WaitForChild("CoinPart")
 local rebirthWall = Workspace:WaitForChild("RebirthWall")
 local treeBlock = Workspace:WaitForChild("TreeBlock")
 local runeRollBlock = Workspace:FindFirstChild("RuneRollBlock")
-local forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
-local natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
+forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
+natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
 local hayBlock = Workspace:FindFirstChild("HayBlock")
 
-local function stripPromptsFromPart(part)
+function stripPromptsFromPart(part)
 	if not part then return end
 	for _, child in ipairs(part:GetDescendants()) do
 		if child:IsA("ProximityPrompt") then
@@ -523,9 +523,9 @@ local passiveRollCooldowns = {}
 local runeStates = {}
 local runeOpenCooldowns = {}
 local runeRollingSessions = {}
-local activeForestRuneRolls = {}
-local activeNatureRuneRolls = {}
-local activeHayCollection = {}
+activeForestRuneRolls = {}
+activeNatureRuneRolls = {}
+activeHayCollection = {}
 local activeAdminEvents = {}
 local ADMIN_EVENT_DURATION = 300
 local ACTIVE_SERVER_EVENTS = {
@@ -2252,9 +2252,9 @@ local function getRuneOpenDuration(player)
 	return math.max(5, t)
 end
 
-local FOREST_RUNE_ORDER = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}
-local NATURE_RUNE_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
-local RUNE_SET_DEFS = {
+FOREST_RUNE_ORDER = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}
+NATURE_RUNE_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
+RUNE_SET_DEFS = {
 	Forest = {
 		order = FOREST_RUNE_ORDER,
 		unlockRebirth = 6,
@@ -2275,7 +2275,7 @@ local RUNE_SET_DEFS = {
 	},
 }
 
-local function getEffectiveRuneChanceDenominator(baseDenominator, runeLuck)
+function getEffectiveRuneChanceDenominator(baseDenominator, runeLuck)
 	local base = math.max(1, math.floor(tonumber(baseDenominator) or 1))
 	local luck = math.max(1, tonumber(runeLuck) or 1)
 	local effective = math.floor(base / luck + 0.5)
