@@ -1957,6 +1957,13 @@ if hayUpgradeBoardPart then
 		}),
 	}
 end
+
+function getHayUpgradeCard(cardKey)
+	if type(hayUpgradeCards) ~= "table" then
+		return nil
+	end
+	return rawget(hayUpgradeCards, cardKey)
+end
 treeInfoLockedOverlay = createLockedOverlay(treeInfoBoard, "Откроется на 2-м перерождении")
 treeUpgradeLockedOverlay = createLockedOverlay(treeUpgradeBoard, "Откроется на 2-м перерождении")
 boostLockedOverlay = createLockedOverlay(boostBoard, "Откроется на 4-м перерождении")
@@ -4135,15 +4142,17 @@ updateBoards = function()
 			hayUiRows.cdLvl.Text = tostring(hayCooldownLevel.Value) .. "/25"
 			hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevel.Value, hayMultiplierLevel.Value)
 		end
-		local hayCards = hayUpgradeCards or {}
-		if hayCards.HayAmount then
-			updateCard(hayCards.HayAmount, hayAmountLevel.Value, hayAmountCost.Value, true, 250, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+		local hayAmountCard = getHayUpgradeCard("HayAmount")
+		local hayMultiplierCard = getHayUpgradeCard("HayMultiplier")
+		local hayCooldownCard = getHayUpgradeCard("HayCooldown")
+		if hayAmountCard then
+			updateCard(hayAmountCard, hayAmountLevel.Value, hayAmountCost.Value, true, 250, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
 		end
-		if hayCards.HayMultiplier then
-			updateCard(hayCards.HayMultiplier, hayMultiplierLevel.Value, hayMultiplierCost.Value, true, 50, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+		if hayMultiplierCard then
+			updateCard(hayMultiplierCard, hayMultiplierLevel.Value, hayMultiplierCost.Value, true, 50, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
 		end
-		if hayCards.HayCooldown then
-			updateCard(hayCards.HayCooldown, hayCooldownLevel.Value, hayCooldownCost.Value, true, 25, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
+		if hayCooldownCard then
+			updateCard(hayCooldownCard, hayCooldownLevel.Value, hayCooldownCost.Value, true, 25, hayCurrency.Value, not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil)
 		end
 	end
 
@@ -4459,10 +4468,12 @@ function bindUpgradeBoards()
 			bindUpgradeCard(binding[1], "XP", binding[2])
 		end
 	end
-	local hayCards = hayUpgradeCards or {}
-	if hayCards.HayAmount then bindUpgradeCard(hayCards.HayAmount, "Hay", "HayAmount") end
-	if hayCards.HayMultiplier then bindUpgradeCard(hayCards.HayMultiplier, "Hay", "HayMultiplier") end
-	if hayCards.HayCooldown then bindUpgradeCard(hayCards.HayCooldown, "Hay", "HayCooldown") end
+	local hayAmountCard = getHayUpgradeCard("HayAmount")
+	local hayMultiplierCard = getHayUpgradeCard("HayMultiplier")
+	local hayCooldownCard = getHayUpgradeCard("HayCooldown")
+	if hayAmountCard then bindUpgradeCard(hayAmountCard, "Hay", "HayAmount") end
+	if hayMultiplierCard then bindUpgradeCard(hayMultiplierCard, "Hay", "HayMultiplier") end
+	if hayCooldownCard then bindUpgradeCard(hayCooldownCard, "Hay", "HayCooldown") end
 
 	if xpProgressUi and xpProgressUi.buyButton then
 		xpProgressUi.buyButton.MouseButton1Click:Connect(function()
