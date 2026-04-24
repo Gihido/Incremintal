@@ -3415,10 +3415,16 @@ updateBoards = function()
 	function setWorldNodeVisible(node, visible)
 		if not node then return end
 		if node:IsA("BasePart") then
-			node.Transparency = visible and 0 or 1
-			node.CanCollide = visible
-			node.CanTouch = visible
-			node.CanQuery = visible
+			if node:GetAttribute("OrigTransparency") == nil then
+				node:SetAttribute("OrigTransparency", node.Transparency)
+				node:SetAttribute("OrigCanCollide", node.CanCollide)
+				node:SetAttribute("OrigCanTouch", node.CanTouch)
+				node:SetAttribute("OrigCanQuery", node.CanQuery)
+			end
+			node.Transparency = visible and (node:GetAttribute("OrigTransparency") or 0) or 1
+			node.CanCollide = visible and (node:GetAttribute("OrigCanCollide") ~= false) or false
+			node.CanTouch = visible and (node:GetAttribute("OrigCanTouch") ~= false) or false
+			node.CanQuery = visible and (node:GetAttribute("OrigCanQuery") ~= false) or false
 			for _, c in ipairs(node:GetDescendants()) do
 				if c:IsA("ParticleEmitter") or c:IsA("Beam") or c:IsA("Trail") then
 					c.Enabled = visible
@@ -3434,10 +3440,16 @@ updateBoards = function()
 		elseif node:IsA("Model") then
 			for _, d in ipairs(node:GetDescendants()) do
 				if d:IsA("BasePart") then
-					d.Transparency = visible and 0 or 1
-					d.CanCollide = visible
-					d.CanTouch = visible
-					d.CanQuery = visible
+					if d:GetAttribute("OrigTransparency") == nil then
+						d:SetAttribute("OrigTransparency", d.Transparency)
+						d:SetAttribute("OrigCanCollide", d.CanCollide)
+						d:SetAttribute("OrigCanTouch", d.CanTouch)
+						d:SetAttribute("OrigCanQuery", d.CanQuery)
+					end
+					d.Transparency = visible and (d:GetAttribute("OrigTransparency") or 0) or 1
+					d.CanCollide = visible and (d:GetAttribute("OrigCanCollide") ~= false) or false
+					d.CanTouch = visible and (d:GetAttribute("OrigCanTouch") ~= false) or false
+					d.CanQuery = visible and (d:GetAttribute("OrigCanQuery") ~= false) or false
 				elseif d:IsA("ParticleEmitter") or d:IsA("Beam") or d:IsA("Trail") then
 					d.Enabled = visible
 				elseif d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then

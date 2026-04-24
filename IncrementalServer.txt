@@ -1367,6 +1367,10 @@ local function recalculateRebirthStats(player)
 			end
 		end
 
+
+	if count >= 3 and totalCoinMultiplier < 100 then
+		totalCoinMultiplier = 100
+	end
 	rebirth.CoinMultiplierBonus.Value = totalCoinMultiplier
 	rebirth.SpawnSpeedBonus.Value = totalSpawnBonus
 	rebirth.WoodMultiplierBonus.Value = totalWoodMultiplier
