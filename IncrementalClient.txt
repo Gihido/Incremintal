@@ -3473,6 +3473,27 @@ updateBoards = function()
 	setWorldNodeVisible(hayUpgradeBoardPart, seventhUnlockedVisual)
 	setWorldNodeVisible(hayAreaGate, not seventhUnlockedVisual)
 
+	function setWorldBoardGuiVisible(guiName, visible)
+		local gui = playerGui:FindFirstChild(guiName)
+		if gui and gui:IsA("SurfaceGui") then
+			gui.Enabled = visible
+			gui.Active = visible
+		end
+	end
+	setWorldBoardGuiVisible("CoinsBoardSurfaceGui", true)
+	setWorldBoardGuiVisible("UpgradeBoardSurfaceGui", true)
+	setWorldBoardGuiVisible("RebirthBoardSurfaceGui", true)
+	setWorldBoardGuiVisible("TreeBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("TreeUpgradeBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("BoostBoardSurfaceGui", fourthUnlockedVisual)
+	setWorldBoardGuiVisible("PaperFactoryBoardSurfaceGui", fourthUnlockedVisual)
+	setWorldBoardGuiVisible("PaperUpgradeBoardSurfaceGui", fourthUnlockedVisual)
+	setWorldBoardGuiVisible("RuneUpgradeBoardSurfaceGui", sixthUnlockedVisual)
+	setWorldBoardGuiVisible("XPUpgradeBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("XPProgressBoardSurfaceGui", secondUnlockedVisual)
+	setWorldBoardGuiVisible("RuneIndexBoardSurfaceGui", sixthUnlockedVisual)
+	setWorldBoardGuiVisible("RuneStatsIndexBoardSurfaceGui", sixthUnlockedVisual)
+
 	function updateUnlockDebug()
 		-- debug panel removed in production build
 	end
