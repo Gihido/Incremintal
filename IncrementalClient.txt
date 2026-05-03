@@ -617,24 +617,42 @@ function createWorldBoard(name, adorneePart, face, pixelsPerStud)
 	surfaceGui.ResetOnSpawn = false
 	surfaceGui.Parent = playerGui
 
+	local BOARD_THEMES = {
+		Coins = {a=Color3.fromRGB(52,38,12), b=Color3.fromRGB(24,18,8), s=Color3.fromRGB(255,216,102)},
+		Tree = {a=Color3.fromRGB(24,44,24), b=Color3.fromRGB(10,20,10), s=Color3.fromRGB(140,255,120)},
+		Paper = {a=Color3.fromRGB(30,36,44), b=Color3.fromRGB(14,18,24), s=Color3.fromRGB(188,224,255)},
+		Rune = {a=Color3.fromRGB(24,44,28), b=Color3.fromRGB(10,20,12), s=Color3.fromRGB(166,255,94)},
+		XP = {a=Color3.fromRGB(28,30,56), b=Color3.fromRGB(12,14,28), s=Color3.fromRGB(166,188,255)},
+		Hay = {a=Color3.fromRGB(52,44,18), b=Color3.fromRGB(26,20,8), s=Color3.fromRGB(255,226,126)},
+		Passive = {a=Color3.fromRGB(22,24,34), b=Color3.fromRGB(10,12,18), s=Color3.fromRGB(198,166,255)},
+	}
+	local theme = BOARD_THEMES.Rune
+	if string.find(name, "Coin") then theme = BOARD_THEMES.Coins
+	elseif string.find(name, "Tree") then theme = BOARD_THEMES.Tree
+	elseif string.find(name, "Paper") then theme = BOARD_THEMES.Paper
+	elseif string.find(name, "XP") then theme = BOARD_THEMES.XP
+	elseif string.find(name, "Hay") then theme = BOARD_THEMES.Hay
+	elseif string.find(name, "Passive") then theme = BOARD_THEMES.Passive
+	end
+
 	local root = Instance.new("Frame")
 	root.Size = UDim2.new(1, 0, 1, 0)
-	root.BackgroundColor3 = Color3.fromRGB(12, 18, 14)
+	root.BackgroundColor3 = theme.a
 	root.BorderSizePixel = 0
 	root.Parent = surfaceGui
-	createGradient(root, Color3.fromRGB(24, 44, 28), Color3.fromRGB(8, 16, 10), 90)
-	createStroke(root, Color3.fromRGB(166, 255, 94), 2, 0.08)
+	createGradient(root, theme.a, theme.b, 90)
+	createStroke(root, theme.s, 2, 0.08)
 	createDecorDots(root, 10)
 
 	local inner = Instance.new("Frame")
 	inner.Size = UDim2.new(1, -12, 1, -12)
 	inner.Position = UDim2.new(0, 6, 0, 6)
-	inner.BackgroundColor3 = Color3.fromRGB(18, 30, 20)
+	inner.BackgroundColor3 = theme.b
 	inner.BorderSizePixel = 0
 	inner.Parent = root
 	createCorner(inner, 18)
-	createGradient(inner, Color3.fromRGB(36, 60, 40), Color3.fromRGB(14, 24, 16), 90)
-	createStroke(inner, Color3.fromRGB(142, 255, 108), 1.4, 0.12)
+	createGradient(inner, theme.a, theme.b, 90)
+	createStroke(inner, theme.s, 1.4, 0.12)
 
 	local content = Instance.new("Frame")
 	content.Size = UDim2.new(1, -16, 1, -16)
@@ -1239,12 +1257,12 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	createGradient(topHeader, Color3.fromRGB(64, 102, 56), Color3.fromRGB(30, 50, 33), 0)
 
 	local icon = createIcon(inner, iconImageId, fallbackText, palette.icon1, palette.icon2)
-	icon.Position = UDim2.new(0.5, -34, 0, 8)
+	icon.Position = UDim2.new(0, 10, 0, 46)
 
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
-	title.Size = UDim2.new(1, -12, 0, 24)
-	title.Position = UDim2.new(0, 10, 0, 12)
+	title.Size = UDim2.new(1, -96, 0, 24)
+	title.Position = UDim2.new(0, 84, 0, 50)
 	title.Text = titleText
 	title.TextColor3 = Color3.fromRGB(229, 255, 217)
 	title.Font = Enum.Font.GothamBlack
@@ -1254,7 +1272,7 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	local levelLabel = Instance.new("TextLabel")
 	levelLabel.BackgroundTransparency = 1
 	levelLabel.Size = UDim2.new(1, -12, 0, 18)
-	levelLabel.Position = UDim2.new(0, 6, 0, 82)
+	levelLabel.Position = UDim2.new(0, 84, 0, 76)
 	levelLabel.Text = "Level 0/∞"
 	levelLabel.TextColor3 = Color3.fromRGB(201, 248, 189)
 	levelLabel.Font = Enum.Font.GothamBold
@@ -1263,7 +1281,8 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 
 	local bonusPill = Instance.new("Frame")
 	bonusPill.Size = UDim2.new(0.62, 0, 0, 28)
-	bonusPill.Position = UDim2.new(0.19, 0, 0, 104)
+	bonusPill.Position = UDim2.new(0, 84, 0, 100)
+	bonusPill.Size = UDim2.new(1, -94, 0, 26)
 	bonusPill.BackgroundColor3 = palette.icon1
 	bonusPill.BorderSizePixel = 0
 	bonusPill.Parent = inner
@@ -1282,8 +1301,8 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 
 	local desc = Instance.new("TextLabel")
 	desc.BackgroundTransparency = 1
-	desc.Size = UDim2.new(1, -14, 0, 50)
-	desc.Position = UDim2.new(0, 7, 0, 138)
+	desc.Size = UDim2.new(1, -14, 0, 56)
+	desc.Position = UDim2.new(0, 7, 0, 132)
 	desc.Text = descriptionText
 	desc.TextColor3 = Color3.fromRGB(226, 240, 226)
 	desc.Font = Enum.Font.GothamBold
@@ -1294,7 +1313,7 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	local costLabel = Instance.new("TextLabel")
 	costLabel.BackgroundTransparency = 1
 	costLabel.Size = UDim2.new(1, -14, 0, 20)
-	costLabel.Position = UDim2.new(0, 7, 0, 196)
+	costLabel.Position = UDim2.new(0, 7, 0, 192)
 	costLabel.Text = "Cost: 0"
 	costLabel.TextColor3 = Color3.fromRGB(255, 231, 120)
 	costLabel.Font = Enum.Font.GothamBlack
@@ -1304,7 +1323,7 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.BackgroundTransparency = 1
 	statusLabel.Size = UDim2.new(1, -14, 0, 18)
-	statusLabel.Position = UDim2.new(0, 7, 0, 218)
+	statusLabel.Position = UDim2.new(0, 7, 0, 214)
 	statusLabel.Text = "Status: Inactive"
 	statusLabel.TextColor3 = Color3.fromRGB(213, 245, 201)
 	statusLabel.Font = Enum.Font.GothamBold
@@ -2377,9 +2396,21 @@ function createPassiveUi()
 	grid.CellSize = UDim2.new(0, 122, 0, 116)
 	grid.CellPadding = UDim2.new(0, 10, 0, 12)
 	grid.Parent = indexList
+	local function refreshIndexGrid()
+		local view = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280,720)
+		local columns = view.X < 700 and 2 or (view.X < 1100 and 3 or 5)
+		local width = math.floor((indexList.AbsoluteSize.X - (columns - 1) * 10 - 8) / columns)
+		width = math.max(98, width)
+		grid.CellSize = UDim2.new(0, width, 0, 116)
+	end
 	grid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		indexList.CanvasSize = UDim2.new(0, 0, 0, grid.AbsoluteContentSize.Y + 12)
 	end)
+	indexList:GetPropertyChangedSignal("AbsoluteSize"):Connect(refreshIndexGrid)
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(refreshIndexGrid)
+	end
+	refreshIndexGrid()
 
 	for passiveId, passiveDef in pairs(PASSIVE_DEFS) do
 			local b = Instance.new("TextButton")
@@ -2508,6 +2539,7 @@ function createPassiveUi()
 	closeInvBtn.TextScaled = true
 	closeInvBtn.Parent = ui.inventoryPanel
 	closeInvBtn.BorderSizePixel = 0
+	closeInvBtn.ZIndex = 30
 	createCorner(closeInvBtn, 999)
 	createStroke(closeInvBtn, Color3.fromRGB(255,214,214), 1.6, 0.1)
 	addScaleHover(closeInvBtn)
@@ -2544,12 +2576,24 @@ function createPassiveUi()
 	ui.slotsList.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
 	ui.slotsList.CanvasSize = UDim2.new(0, 0, 0, 0)
 	ui.slotsList.Parent = ui.inventoryPanel
-	local listLayout = Instance.new("UIListLayout")
-	listLayout.Padding = UDim.new(0, 6)
-	listLayout.Parent = ui.slotsList
-	listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		ui.slotsList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 8)
+	local slotGrid = Instance.new("UIGridLayout")
+	slotGrid.CellPadding = UDim2.new(0, 6, 0, 6)
+	slotGrid.Parent = ui.slotsList
+	local function refreshSlotGrid()
+		local view = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280,720)
+		local columns = view.X < 700 and 1 or (view.X < 1100 and 2 or 3)
+		local width = math.floor((ui.slotsList.AbsoluteSize.X - (columns - 1) * 6 - 6) / columns)
+		width = math.max(120, width)
+		slotGrid.CellSize = UDim2.new(0, width, 0, 104)
+	end
+	slotGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		ui.slotsList.CanvasSize = UDim2.new(0, 0, 0, slotGrid.AbsoluteContentSize.Y + 8)
 	end)
+	ui.slotsList:GetPropertyChangedSignal("AbsoluteSize"):Connect(refreshSlotGrid)
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(refreshSlotGrid)
+	end
+	refreshSlotGrid()
 
 	ui.emptyState = Instance.new("Frame")
 	ui.emptyState.Size = UDim2.new(1, -8, 0, 190)
@@ -2690,6 +2734,8 @@ function createPassiveUi()
 	backToIndex.Font = Enum.Font.GothamBlack
 	backToIndex.TextScaled = true
 	backToIndex.Parent = ui.inventoryPanel
+	backToIndex.ZIndex = 31
+	backToIndex.Position = UDim2.new(1, -188, 0, 8)
 	createCorner(backToIndex, 10)
 
 	openInvButton.MouseButton1Click:Connect(function()
