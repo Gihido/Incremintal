@@ -548,13 +548,28 @@ function addScaleHover(button)
 		TweenService:Create(scale, TweenInfo.new(0.12), {Scale = 1}):Play()
 	end)
 
-	button.MouseButton1Down:Connect(function()
-		TweenService:Create(scale, TweenInfo.new(0.08), {Scale = 0.96}):Play()
-	end)
+	if button:IsA("GuiButton") then
+		button.MouseButton1Down:Connect(function()
+			TweenService:Create(scale, TweenInfo.new(0.08), {Scale = 0.96}):Play()
+		end)
 
-	button.MouseButton1Up:Connect(function()
-		TweenService:Create(scale, TweenInfo.new(0.08), {Scale = 1.05}):Play()
-	end)
+		button.MouseButton1Up:Connect(function()
+			TweenService:Create(scale, TweenInfo.new(0.08), {Scale = 1.05}):Play()
+		end)
+	end
+end
+
+function animatePanelVisibility(panel, visible)
+	if not panel then return end
+	if visible then
+		panel.Visible = true
+		panel.BackgroundTransparency = 1
+		TweenService:Create(panel, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+	else
+		local tw = TweenService:Create(panel, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+		tw:Play()
+		tw.Completed:Connect(function() panel.Visible = false panel.BackgroundTransparency = 0 end)
+	end
 end
 
 function animatePanelVisibility(panel, visible)
@@ -691,6 +706,22 @@ local function applyResponsiveScale(targetGui)
 end
 
 applyResponsiveScale(screenGui)
+
+local function applyResponsivePanel(panel, ratioX, ratioY, maxWidth, maxHeight, position)
+	local function refresh()
+		local view = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+		local w = math.floor(math.clamp(view.X * (ratioX or 0.7), 460, maxWidth or 900))
+		local h = math.floor(math.clamp(view.Y * (ratioY or 0.7), 320, maxHeight or 620))
+		panel.Size = UDim2.new(0, w, 0, h)
+		if position then
+			panel.Position = position
+		end
+	end
+	refresh()
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(refresh)
+	end
+end
 staleDebug = screenGui:FindFirstChild("UnlockDebugLabel")
 if staleDebug then
 	staleDebug:Destroy()
@@ -763,6 +794,7 @@ adminFrame.Visible = player.Name == ADMIN_NAME
 adminFrame.BackgroundColor3 = Color3.fromRGB(84, 76, 128)
 adminFrame.BorderSizePixel = 0
 adminFrame.Parent = screenGui
+applyResponsivePanel(adminFrame, 0.3, 0.55, 420, 520)
 createCorner(adminFrame, 16)
 createGradient(adminFrame, Color3.fromRGB(133, 109, 175), Color3.fromRGB(87, 79, 133), 90)
 createStroke(adminFrame, Color3.fromRGB(255, 215, 215), 2, 0.12)
@@ -2286,6 +2318,7 @@ function createPassiveUi()
 	ui.indexPanel.BackgroundColor3 = Color3.fromRGB(12, 22, 14)
 	ui.indexPanel.BorderSizePixel = 0
 	ui.indexPanel.Parent = screenGui
+	applyResponsivePanel(ui.indexPanel, 0.74, 0.76, 980, 620, UDim2.new(0.5, 0, 0.55, 0))
 	createCorner(ui.indexPanel, 20)
 	createGradient(ui.indexPanel, Color3.fromRGB(40, 66, 44), Color3.fromRGB(14, 24, 16), 90)
 	createStroke(ui.indexPanel, Color3.fromRGB(152, 255, 102), 2, 0.08)
@@ -2456,6 +2489,7 @@ function createPassiveUi()
 	ui.inventoryPanel.BackgroundColor3 = Color3.fromRGB(12, 22, 14)
 	ui.inventoryPanel.BorderSizePixel = 0
 	ui.inventoryPanel.Parent = screenGui
+	applyResponsivePanel(ui.inventoryPanel, 0.74, 0.76, 980, 620, UDim2.new(0.5, 0, 0.55, 0))
 	createCorner(ui.inventoryPanel, 20)
 	createGradient(ui.inventoryPanel, Color3.fromRGB(40, 66, 44), Color3.fromRGB(14, 24, 16), 90)
 	createStroke(ui.inventoryPanel, Color3.fromRGB(152, 255, 102), 2, 0.08)
