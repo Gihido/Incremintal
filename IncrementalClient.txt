@@ -521,6 +521,19 @@ function safeClamp(value, minValue, maxValue)
 	return math.clamp(value, minValue, maxValue)
 end
 
+function getDeviceProfile()
+	local view = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+	local touch = UserInputService.TouchEnabled
+	local keyboard = UserInputService.KeyboardEnabled
+	local minAxis = math.min(view.X, view.Y)
+	if touch and not keyboard and minAxis <= 820 then
+		return "mobile"
+	elseif touch and minAxis <= 1100 then
+		return "tablet"
+	end
+	return "desktop"
+end
+
 function createCorner(parent, radius)
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, radius or 12)
@@ -622,16 +635,22 @@ function createWorldBoard(name, adorneePart, face, pixelsPerStud)
 		Tree = {a=Color3.fromRGB(24,44,24), b=Color3.fromRGB(10,20,10), s=Color3.fromRGB(140,255,120)},
 		Paper = {a=Color3.fromRGB(30,36,44), b=Color3.fromRGB(14,18,24), s=Color3.fromRGB(188,224,255)},
 		Rune = {a=Color3.fromRGB(24,44,28), b=Color3.fromRGB(10,20,12), s=Color3.fromRGB(166,255,94)},
+		ForestRune = {a=Color3.fromRGB(34,46,24), b=Color3.fromRGB(16,24,12), s=Color3.fromRGB(154,220,118)},
+		NatureRune = {a=Color3.fromRGB(22,56,28), b=Color3.fromRGB(10,28,14), s=Color3.fromRGB(120,255,132)},
 		XP = {a=Color3.fromRGB(28,30,56), b=Color3.fromRGB(12,14,28), s=Color3.fromRGB(166,188,255)},
 		Hay = {a=Color3.fromRGB(52,44,18), b=Color3.fromRGB(26,20,8), s=Color3.fromRGB(255,226,126)},
+		Rebirth = {a=Color3.fromRGB(56,26,58), b=Color3.fromRGB(24,10,28), s=Color3.fromRGB(255,156,236)},
 		Passive = {a=Color3.fromRGB(22,24,34), b=Color3.fromRGB(10,12,18), s=Color3.fromRGB(198,166,255)},
 	}
 	local theme = BOARD_THEMES.Rune
 	if string.find(name, "Coin") then theme = BOARD_THEMES.Coins
 	elseif string.find(name, "Tree") then theme = BOARD_THEMES.Tree
 	elseif string.find(name, "Paper") then theme = BOARD_THEMES.Paper
+	elseif string.find(name, "ForestRune") then theme = BOARD_THEMES.ForestRune
+	elseif string.find(name, "NatureRune") then theme = BOARD_THEMES.NatureRune
 	elseif string.find(name, "XP") then theme = BOARD_THEMES.XP
 	elseif string.find(name, "Hay") then theme = BOARD_THEMES.Hay
+	elseif string.find(name, "Rebirth") then theme = BOARD_THEMES.Rebirth
 	elseif string.find(name, "Passive") then theme = BOARD_THEMES.Passive
 	end
 
@@ -715,7 +734,14 @@ local function applyResponsiveScale(targetGui)
 	local function refresh()
 		local view = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920,1080)
 		local minAxis = math.max(640, math.min(view.X, view.Y))
-		scale.Scale = safeClamp(minAxis / 1080, 0.72, 1.05)
+		local profile = getDeviceProfile()
+		if profile == "mobile" then
+			scale.Scale = safeClamp(minAxis / 1080, 0.78, 0.92)
+		elseif profile == "tablet" then
+			scale.Scale = safeClamp(minAxis / 1080, 0.86, 1.0)
+		else
+			scale.Scale = 1
+		end
 	end
 	refresh()
 	if workspace.CurrentCamera then
@@ -728,8 +754,16 @@ applyResponsiveScale(screenGui)
 local function applyResponsivePanel(panel, ratioX, ratioY, maxWidth, maxHeight, position)
 	local function refresh()
 		local view = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+		local profile = getDeviceProfile()
 		local widthMax = maxWidth or 900
 		local heightMax = maxHeight or 620
+		if profile == "mobile" then
+			widthMax = math.floor(widthMax * 0.82)
+			heightMax = math.floor(heightMax * 0.78)
+		elseif profile == "tablet" then
+			widthMax = math.floor(widthMax * 0.92)
+			heightMax = math.floor(heightMax * 0.9)
+		end
 		local widthMin = math.min(460, widthMax)
 		local heightMin = math.min(320, heightMax)
 		local w = math.floor(safeClamp(view.X * (ratioX or 0.7), widthMin, widthMax))
@@ -1257,12 +1291,12 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	createGradient(topHeader, Color3.fromRGB(64, 102, 56), Color3.fromRGB(30, 50, 33), 0)
 
 	local icon = createIcon(inner, iconImageId, fallbackText, palette.icon1, palette.icon2)
-	icon.Position = UDim2.new(0, 10, 0, 46)
+	icon.Position = UDim2.new(0, 10, 0, 44)
 
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
-	title.Size = UDim2.new(1, -96, 0, 24)
-	title.Position = UDim2.new(0, 84, 0, 50)
+	title.Size = UDim2.new(1, -96, 0, 26)
+	title.Position = UDim2.new(0, 84, 0, 48)
 	title.Text = titleText
 	title.TextColor3 = Color3.fromRGB(229, 255, 217)
 	title.Font = Enum.Font.GothamBlack
@@ -1281,7 +1315,7 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 
 	local bonusPill = Instance.new("Frame")
 	bonusPill.Size = UDim2.new(0.62, 0, 0, 28)
-	bonusPill.Position = UDim2.new(0, 84, 0, 100)
+	bonusPill.Position = UDim2.new(0, 84, 0, 102)
 	bonusPill.Size = UDim2.new(1, -94, 0, 26)
 	bonusPill.BackgroundColor3 = palette.icon1
 	bonusPill.BorderSizePixel = 0
@@ -1301,8 +1335,8 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 
 	local desc = Instance.new("TextLabel")
 	desc.BackgroundTransparency = 1
-	desc.Size = UDim2.new(1, -14, 0, 56)
-	desc.Position = UDim2.new(0, 7, 0, 132)
+	desc.Size = UDim2.new(1, -14, 0, 48)
+	desc.Position = UDim2.new(0, 7, 0, 136)
 	desc.Text = descriptionText
 	desc.TextColor3 = Color3.fromRGB(226, 240, 226)
 	desc.Font = Enum.Font.GothamBold
@@ -1313,7 +1347,7 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	local costLabel = Instance.new("TextLabel")
 	costLabel.BackgroundTransparency = 1
 	costLabel.Size = UDim2.new(1, -14, 0, 20)
-	costLabel.Position = UDim2.new(0, 7, 0, 192)
+	costLabel.Position = UDim2.new(0, 7, 0, 188)
 	costLabel.Text = "Cost: 0"
 	costLabel.TextColor3 = Color3.fromRGB(255, 231, 120)
 	costLabel.Font = Enum.Font.GothamBlack
@@ -1323,7 +1357,7 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.BackgroundTransparency = 1
 	statusLabel.Size = UDim2.new(1, -14, 0, 18)
-	statusLabel.Position = UDim2.new(0, 7, 0, 214)
+	statusLabel.Position = UDim2.new(0, 7, 0, 210)
 	statusLabel.Text = "Status: Inactive"
 	statusLabel.TextColor3 = Color3.fromRGB(213, 245, 201)
 	statusLabel.Font = Enum.Font.GothamBold
@@ -1338,7 +1372,7 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 
 	local buyButton = Instance.new("TextButton")
 	buyButton.Size = UDim2.new(0.48, 0, 1, 0)
-	buyButton.BackgroundColor3 = Color3.fromRGB(104, 255, 121)
+	buyButton.BackgroundColor3 = palette.btn1 or Color3.fromRGB(104, 255, 121)
 	buyButton.TextColor3 = Color3.fromRGB(14, 36, 16)
 	buyButton.Text = "BUY"
 	buyButton.Font = Enum.Font.GothamBlack
@@ -1346,14 +1380,14 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	buyButton.Parent = buttonsFrame
 	buyButton.BorderSizePixel = 0
 	createCorner(buyButton, 10)
-	createGradient(buyButton, Color3.fromRGB(138, 255, 139), Color3.fromRGB(69, 220, 101), 90)
+	createGradient(buyButton, palette.btn1 or Color3.fromRGB(138, 255, 139), palette.btn2 or Color3.fromRGB(69, 220, 101), 90)
 	createStroke(buyButton, Color3.fromRGB(232, 255, 223), 1.2, 0.08)
 	addScaleHover(buyButton)
 
 	local maxButton = Instance.new("TextButton")
 	maxButton.Size = UDim2.new(0.48, 0, 1, 0)
 	maxButton.Position = UDim2.new(0.52, 0, 0, 0)
-	maxButton.BackgroundColor3 = Color3.fromRGB(81, 226, 109)
+	maxButton.BackgroundColor3 = palette.btnMax1 or Color3.fromRGB(81, 226, 109)
 	maxButton.TextColor3 = Color3.fromRGB(10, 28, 12)
 	maxButton.Text = "BUY MAX"
 	maxButton.Font = Enum.Font.GothamBlack
@@ -1361,7 +1395,7 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	maxButton.Parent = buttonsFrame
 	maxButton.BorderSizePixel = 0
 	createCorner(maxButton, 10)
-	createGradient(maxButton, Color3.fromRGB(116, 242, 131), Color3.fromRGB(50, 173, 77), 90)
+	createGradient(maxButton, palette.btnMax1 or Color3.fromRGB(116, 242, 131), palette.btnMax2 or Color3.fromRGB(50, 173, 77), 90)
 	createStroke(maxButton, Color3.fromRGB(218, 255, 213), 1.2, 0.1)
 	addScaleHover(maxButton)
 
@@ -2738,6 +2772,37 @@ function createPassiveUi()
 	backToIndex.Position = UDim2.new(1, -188, 0, 8)
 	createCorner(backToIndex, 10)
 
+	local function refreshPassivePanelsForDevice()
+		local profile = getDeviceProfile()
+		if profile == "mobile" then
+			closeInvBtn.Size = UDim2.new(0, 28, 0, 28)
+			closeInvBtn.Position = UDim2.new(1, -36, 0, 8)
+			backToIndex.Size = UDim2.new(0, 96, 0, 28)
+			backToIndex.Position = UDim2.new(1, -138, 0, 8)
+			ui.slotsList.Size = UDim2.new(1, -16, 0.48, -86)
+			ui.managePanel.Position = UDim2.new(0, 8, 0.52, 0)
+			ui.managePanel.Size = UDim2.new(1, -16, 0.48, -10)
+			ui.manageInfo.TextSize = 16
+			ui.equipBtn.Size = UDim2.new(1, -12, 0, 30)
+			ui.deleteBtn.Size = UDim2.new(1, -12, 0, 30)
+		else
+			closeInvBtn.Size = UDim2.new(0, 34, 0, 34)
+			closeInvBtn.Position = UDim2.new(1, -42, 0, 8)
+			backToIndex.Size = UDim2.new(0, 140, 0, 34)
+			backToIndex.Position = UDim2.new(1, -188, 0, 8)
+			ui.slotsList.Size = UDim2.new(0.48, -8, 1, -122)
+			ui.managePanel.Position = UDim2.new(0.48, 8, 0, 114)
+			ui.managePanel.Size = UDim2.new(0.52, -8, 1, -122)
+			ui.manageInfo.TextSize = 14
+			ui.equipBtn.Size = UDim2.new(1, -12, 0, 36)
+			ui.deleteBtn.Size = UDim2.new(1, -12, 0, 36)
+		end
+	end
+	refreshPassivePanelsForDevice()
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(refreshPassivePanelsForDevice)
+	end
+
 	openInvButton.MouseButton1Click:Connect(function()
 		animatePanelVisibility(ui.indexPanel, false)
 		animatePanelVisibility(ui.inventoryPanel, true)
@@ -3046,6 +3111,12 @@ function createRuneOverlays()
 		panel.Size = UDim2.new(0, 210, 0, 262)
 		panel.AnchorPoint = Vector2.new(1, 1)
 		panel.Position = UDim2.new(1, -14, 1, -14)
+		if getDeviceProfile() == "mobile" then
+			panel.Size = UDim2.new(0, 168, 0, 214)
+			panel.Position = UDim2.new(1, -8, 1, -8)
+		elseif getDeviceProfile() == "tablet" then
+			panel.Size = UDim2.new(0, 188, 0, 236)
+		end
 		panel.BackgroundColor3 = Color3.fromRGB(22, 80, 20)
 		panel.BorderSizePixel = 0
 		panel.Visible = false
@@ -3180,6 +3251,12 @@ do
 	panel.Size = UDim2.new(0, 246, 0, 292)
 	panel.AnchorPoint = Vector2.new(1, 1)
 	panel.Position = UDim2.new(1, -14, 1, -14)
+	if getDeviceProfile() == "mobile" then
+		panel.Size = UDim2.new(0, 194, 0, 234)
+		panel.Position = UDim2.new(1, -8, 1, -8)
+	elseif getDeviceProfile() == "tablet" then
+		panel.Size = UDim2.new(0, 220, 0, 258)
+	end
 	panel.BackgroundColor3 = Color3.fromRGB(73, 57, 31)
 	panel.Visible = false
 	panel.Parent = screenGui
