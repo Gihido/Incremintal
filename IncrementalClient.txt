@@ -557,6 +557,19 @@ function addScaleHover(button)
 	end)
 end
 
+function animatePanelVisibility(panel, visible)
+	if not panel then return end
+	if visible then
+		panel.Visible = true
+		panel.BackgroundTransparency = 1
+		TweenService:Create(panel, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+	else
+		local tw = TweenService:Create(panel, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+		tw:Play()
+		tw.Completed:Connect(function() panel.Visible = false panel.BackgroundTransparency = 0 end)
+	end
+end
+
 function createDecorDots(parent, count)
 	for _ = 1, count do
 		local dot = Instance.new("Frame")
@@ -591,22 +604,22 @@ function createWorldBoard(name, adorneePart, face, pixelsPerStud)
 
 	local root = Instance.new("Frame")
 	root.Size = UDim2.new(1, 0, 1, 0)
-	root.BackgroundColor3 = Color3.fromRGB(39, 56, 94)
+	root.BackgroundColor3 = Color3.fromRGB(12, 18, 14)
 	root.BorderSizePixel = 0
 	root.Parent = surfaceGui
-	createGradient(root, Color3.fromRGB(104, 150, 237), Color3.fromRGB(56, 81, 135), 90)
-	createStroke(root, Color3.fromRGB(232, 244, 255), 2, 0.15)
+	createGradient(root, Color3.fromRGB(24, 44, 28), Color3.fromRGB(8, 16, 10), 90)
+	createStroke(root, Color3.fromRGB(166, 255, 94), 2, 0.08)
 	createDecorDots(root, 10)
 
 	local inner = Instance.new("Frame")
 	inner.Size = UDim2.new(1, -12, 1, -12)
 	inner.Position = UDim2.new(0, 6, 0, 6)
-	inner.BackgroundColor3 = Color3.fromRGB(92, 125, 198)
+	inner.BackgroundColor3 = Color3.fromRGB(18, 30, 20)
 	inner.BorderSizePixel = 0
 	inner.Parent = root
 	createCorner(inner, 18)
-	createGradient(inner, Color3.fromRGB(150, 189, 255), Color3.fromRGB(91, 130, 209), 90)
-	createStroke(inner, Color3.fromRGB(255, 255, 255), 1, 0.18)
+	createGradient(inner, Color3.fromRGB(36, 60, 40), Color3.fromRGB(14, 24, 16), 90)
+	createStroke(inner, Color3.fromRGB(142, 255, 108), 1.4, 0.12)
 
 	local content = Instance.new("Frame")
 	content.Size = UDim2.new(1, -16, 1, -16)
@@ -627,7 +640,7 @@ function createHeader(parent, titleText, subtitleText)
 	title.BackgroundTransparency = 1
 	title.Size = UDim2.new(1, 0, 0, 28)
 	title.Text = titleText
-	title.TextColor3 = Color3.fromRGB(246, 250, 255)
+	title.TextColor3 = Color3.fromRGB(220, 255, 200)
 	title.Font = Enum.Font.GothamBlack
 	title.TextScaled = true
 	title.Parent = header
@@ -637,7 +650,7 @@ function createHeader(parent, titleText, subtitleText)
 	subtitle.Size = UDim2.new(1, 0, 0, 18)
 	subtitle.Position = UDim2.new(0, 0, 0, 32)
 	subtitle.Text = subtitleText
-	subtitle.TextColor3 = Color3.fromRGB(224, 236, 255)
+	subtitle.TextColor3 = Color3.fromRGB(180, 235, 170)
 	subtitle.Font = Enum.Font.GothamBold
 	subtitle.TextScaled = true
 	subtitle.Parent = header
@@ -645,7 +658,7 @@ function createHeader(parent, titleText, subtitleText)
 	local line = Instance.new("Frame")
 	line.Size = UDim2.new(1, -8, 0, 2)
 	line.Position = UDim2.new(0, 4, 1, -2)
-	line.BackgroundColor3 = Color3.fromRGB(240, 247, 255)
+	line.BackgroundColor3 = Color3.fromRGB(120, 255, 110)
 	line.BackgroundTransparency = 0.18
 	line.BorderSizePixel = 0
 	line.Parent = header
@@ -661,6 +674,23 @@ screenGui.Name = "IncrementalMainGui"
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 20
 screenGui.Parent = playerGui
+
+local function applyResponsiveScale(targetGui)
+	local scale = Instance.new("UIScale")
+	scale.Scale = 1
+	scale.Parent = targetGui
+	local function refresh()
+		local view = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920,1080)
+		local minAxis = math.max(640, math.min(view.X, view.Y))
+		scale.Scale = math.clamp(minAxis / 1080, 0.72, 1.05)
+	end
+	refresh()
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(refresh)
+	end
+end
+
+applyResponsiveScale(screenGui)
 staleDebug = screenGui:FindFirstChild("UnlockDebugLabel")
 if staleDebug then
 	staleDebug:Destroy()
@@ -1058,7 +1088,7 @@ function createStatRow(parent, titleText)
 	title.Size = UDim2.new(0.58, 0, 1, 0)
 	title.Position = UDim2.new(0, 10, 0, 0)
 	title.Text = titleText
-	title.TextColor3 = Color3.fromRGB(246, 250, 255)
+	title.TextColor3 = Color3.fromRGB(220, 255, 200)
 	title.Font = Enum.Font.GothamBlack
 	title.TextScaled = true
 	title.TextXAlignment = Enum.TextXAlignment.Left
@@ -1660,6 +1690,7 @@ productionBarBg.Position = UDim2.new(0, 0, 0, 206)
 productionBarBg.BackgroundColor3 = Color3.fromRGB(53, 66, 98)
 productionBarBg.BorderSizePixel = 0
 productionBarBg.Parent = factoryBoard
+productionBarBg.Visible = false
 createCorner(productionBarBg, 999)
 
 productionBarFill = Instance.new("Frame")
@@ -2219,25 +2250,27 @@ function createPassiveUi()
 	ui.indexPanel.AnchorPoint = Vector2.new(0.5, 0.5)
 	ui.indexPanel.Position = UDim2.new(0.5, 0, 0.55, 0)
 	ui.indexPanel.Visible = false
-	ui.indexPanel.BackgroundColor3 = Color3.fromRGB(45, 66, 112)
+	ui.indexPanel.BackgroundColor3 = Color3.fromRGB(12, 22, 14)
 	ui.indexPanel.BorderSizePixel = 0
 	ui.indexPanel.Parent = screenGui
 	createCorner(ui.indexPanel, 20)
-	createGradient(ui.indexPanel, Color3.fromRGB(99, 141, 232), Color3.fromRGB(49, 72, 126), 90)
-	createStroke(ui.indexPanel, Color3.fromRGB(203, 224, 255), 2, 0.1)
+	createGradient(ui.indexPanel, Color3.fromRGB(40, 66, 44), Color3.fromRGB(14, 24, 16), 90)
+	createStroke(ui.indexPanel, Color3.fromRGB(152, 255, 102), 2, 0.08)
 
 	createHeader(ui.indexPanel, "PASSIVE INDEX", "Нажми на пассив и смотри статы")
 	local closeIndexBtn = Instance.new("TextButton")
 	closeIndexBtn.Size = UDim2.new(0, 34, 0, 34)
 	closeIndexBtn.Position = UDim2.new(1, -42, 0, 8)
 	closeIndexBtn.Text = "✕"
-	closeIndexBtn.BackgroundColor3 = Color3.fromRGB(255, 108, 108)
-	closeIndexBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeIndexBtn.BackgroundColor3 = Color3.fromRGB(36, 50, 38)
+	closeIndexBtn.TextColor3 = Color3.fromRGB(210, 255, 190)
 	closeIndexBtn.Font = Enum.Font.GothamBlack
 	closeIndexBtn.TextScaled = true
 	closeIndexBtn.Parent = ui.indexPanel
 	closeIndexBtn.BorderSizePixel = 0
 	createCorner(closeIndexBtn, 999)
+	createStroke(closeIndexBtn, Color3.fromRGB(155,255,120), 1.6, 0.1)
+	addScaleHover(closeIndexBtn)
 	ui.rollButton = Instance.new("TextButton")
 	ui.rollButton.Size = UDim2.new(0.5, -12, 0, 40)
 	ui.rollButton.Position = UDim2.new(0, 8, 0, 70)
@@ -2387,24 +2420,26 @@ function createPassiveUi()
 	ui.inventoryPanel.AnchorPoint = Vector2.new(0.5, 0.5)
 	ui.inventoryPanel.Position = UDim2.new(0.5, 0, 0.55, 0)
 	ui.inventoryPanel.Visible = false
-	ui.inventoryPanel.BackgroundColor3 = Color3.fromRGB(45, 66, 112)
+	ui.inventoryPanel.BackgroundColor3 = Color3.fromRGB(12, 22, 14)
 	ui.inventoryPanel.BorderSizePixel = 0
 	ui.inventoryPanel.Parent = screenGui
 	createCorner(ui.inventoryPanel, 20)
-	createGradient(ui.inventoryPanel, Color3.fromRGB(99, 141, 232), Color3.fromRGB(49, 72, 126), 90)
-	createStroke(ui.inventoryPanel, Color3.fromRGB(203, 224, 255), 2, 0.1)
+	createGradient(ui.inventoryPanel, Color3.fromRGB(40, 66, 44), Color3.fromRGB(14, 24, 16), 90)
+	createStroke(ui.inventoryPanel, Color3.fromRGB(152, 255, 102), 2, 0.08)
 	createHeader(ui.inventoryPanel, "PASSIVE INVENTORY", "ЛКМ экипировка, ПКМ удаление")
 	local closeInvBtn = Instance.new("TextButton")
 	closeInvBtn.Size = UDim2.new(0, 34, 0, 34)
 	closeInvBtn.Position = UDim2.new(1, -42, 0, 8)
 	closeInvBtn.Text = "✕"
-	closeInvBtn.BackgroundColor3 = Color3.fromRGB(255, 108, 108)
-	closeInvBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeInvBtn.BackgroundColor3 = Color3.fromRGB(36, 50, 38)
+	closeInvBtn.TextColor3 = Color3.fromRGB(210, 255, 190)
 	closeInvBtn.Font = Enum.Font.GothamBlack
 	closeInvBtn.TextScaled = true
 	closeInvBtn.Parent = ui.inventoryPanel
 	closeInvBtn.BorderSizePixel = 0
 	createCorner(closeInvBtn, 999)
+	createStroke(closeInvBtn, Color3.fromRGB(155,255,120), 1.6, 0.1)
+	addScaleHover(closeInvBtn)
 
 	ui.rollButtonInventory = Instance.new("TextButton")
 	ui.rollButtonInventory.Size = UDim2.new(0.5, -12, 0, 40)
@@ -2587,8 +2622,8 @@ function createPassiveUi()
 	createCorner(backToIndex, 10)
 
 	openInvButton.MouseButton1Click:Connect(function()
-		ui.indexPanel.Visible = false
-		ui.inventoryPanel.Visible = true
+		animatePanelVisibility(ui.indexPanel, false)
+		animatePanelVisibility(ui.inventoryPanel, true)
 	end)
 	closeIndexBtn.MouseButton1Click:Connect(function()
 		ui.indexPanel.Visible = false
@@ -2597,8 +2632,8 @@ function createPassiveUi()
 		ui.inventoryPanel.Visible = false
 	end)
 	backToIndex.MouseButton1Click:Connect(function()
-		ui.inventoryPanel.Visible = false
-		ui.indexPanel.Visible = true
+		animatePanelVisibility(ui.inventoryPanel, false)
+		animatePanelVisibility(ui.indexPanel, true)
 	end)
 	closeDetail.MouseButton1Click:Connect(function()
 		ui.indexDetail.Visible = false
@@ -4084,7 +4119,7 @@ updateBoards = function()
 	if factoryRunning.Value and cycleTime > 0 then
 		progress = math.clamp(1 - (factoryCountdown.Value / cycleTime), 0, 1)
 	end
-	TweenService:Create(productionBarFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
+	-- production progress bar removed for cleaner paper factory layout
 
 	if paperUpgradeCards then
 		updateCard(paperUpgradeCards.gain, paperValueLevel.Value, paperValueCost.Value, paperValueActive.Value, math.huge, paperValue.Value)
