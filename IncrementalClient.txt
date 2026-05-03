@@ -572,19 +572,6 @@ function animatePanelVisibility(panel, visible)
 	end
 end
 
-function animatePanelVisibility(panel, visible)
-	if not panel then return end
-	if visible then
-		panel.Visible = true
-		panel.BackgroundTransparency = 1
-		TweenService:Create(panel, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-	else
-		local tw = TweenService:Create(panel, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
-		tw:Play()
-		tw.Completed:Connect(function() panel.Visible = false panel.BackgroundTransparency = 0 end)
-	end
-end
-
 function createDecorDots(parent, count)
 	for _ = 1, count do
 		local dot = Instance.new("Frame")
@@ -710,8 +697,12 @@ applyResponsiveScale(screenGui)
 local function applyResponsivePanel(panel, ratioX, ratioY, maxWidth, maxHeight, position)
 	local function refresh()
 		local view = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
-		local w = math.floor(math.clamp(view.X * (ratioX or 0.7), 460, maxWidth or 900))
-		local h = math.floor(math.clamp(view.Y * (ratioY or 0.7), 320, maxHeight or 620))
+		local widthMax = maxWidth or 900
+		local heightMax = maxHeight or 620
+		local widthMin = math.min(460, widthMax)
+		local heightMin = math.min(320, heightMax)
+		local w = math.floor(math.clamp(view.X * (ratioX or 0.7), widthMin, widthMax))
+		local h = math.floor(math.clamp(view.Y * (ratioY or 0.7), heightMin, heightMax))
 		panel.Size = UDim2.new(0, w, 0, h)
 		if position then
 			panel.Position = position
