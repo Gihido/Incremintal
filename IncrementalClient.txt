@@ -508,6 +508,19 @@ function getAssetOrEmpty(assetId)
 	return ""
 end
 
+
+function safeClamp(value, minValue, maxValue)
+	value = tonumber(value) or tonumber(minValue) or 0
+	minValue = tonumber(minValue) or 0
+	maxValue = tonumber(maxValue) or minValue
+
+	if maxValue < minValue then
+		maxValue = minValue
+	end
+
+	return math.clamp(value, minValue, maxValue)
+end
+
 function createCorner(parent, radius)
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, radius or 12)
@@ -684,7 +697,7 @@ local function applyResponsiveScale(targetGui)
 	local function refresh()
 		local view = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920,1080)
 		local minAxis = math.max(640, math.min(view.X, view.Y))
-		scale.Scale = math.clamp(minAxis / 1080, 0.72, 1.05)
+		scale.Scale = safeClamp(minAxis / 1080, 0.72, 1.05)
 	end
 	refresh()
 	if workspace.CurrentCamera then
@@ -701,8 +714,8 @@ local function applyResponsivePanel(panel, ratioX, ratioY, maxWidth, maxHeight, 
 		local heightMax = maxHeight or 620
 		local widthMin = math.min(460, widthMax)
 		local heightMin = math.min(320, heightMax)
-		local w = math.floor(math.clamp(view.X * (ratioX or 0.7), widthMin, widthMax))
-		local h = math.floor(math.clamp(view.Y * (ratioY or 0.7), heightMin, heightMax))
+		local w = math.floor(safeClamp(view.X * (ratioX or 0.7), widthMin, widthMax))
+		local h = math.floor(safeClamp(view.Y * (ratioY or 0.7), heightMin, heightMax))
 		panel.Size = UDim2.new(0, w, 0, h)
 		if position then
 			panel.Position = position
@@ -3556,7 +3569,7 @@ function renderAdminEvents(events)
 		timer.TextSize = 14
 		timer.Parent = row
 		local bar = Instance.new("Frame")
-		bar.Size = UDim2.new(math.clamp((tonumber(ev.timeLeft) or 0) / 3600, 0.05, 1), 0, 0, 3)
+		bar.Size = UDim2.new(safeClamp((tonumber(ev.timeLeft) or 0) / 3600, 0.05, 1), 0, 0, 3)
 		bar.Position = UDim2.new(0, 8, 1, -5)
 		bar.BackgroundColor3 = Color3.fromRGB(162, 236, 255)
 		bar.BorderSizePixel = 0
@@ -3702,8 +3715,8 @@ function spawnCoin(layer, progress)
 	coin.ZIndex = 95 + math.random(0, 8)
 	coin.Parent = layer
 
-	local targetY = math.clamp(0.35 + progress * 0.72 + math.random() * 0.18, 0.35, 1.12)
-	local targetX = math.clamp(coin.Position.X.Scale + ((math.random() - 0.5) * 0.08), 0.02, 0.98)
+	local targetY = safeClamp(0.35 + progress * 0.72 + math.random() * 0.18, 0.35, 1.12)
+	local targetX = safeClamp(coin.Position.X.Scale + ((math.random() - 0.5) * 0.08), 0.02, 0.98)
 	local tween = TweenService:Create(coin, TweenInfo.new(1.7 + math.random() * 1.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Position = UDim2.new(targetX, 0, targetY, 0),
 		Rotation = coin.Rotation + math.random(-160, 160),
@@ -3832,7 +3845,7 @@ function startRollAnimation(passiveName, passiveIcon, rarityColor)
 		local rewardFrame = nil
 		local closeRequested = false
 		while elapsed < ROLL_ANIMATION_CONFIG.duration do
-			local progress = math.clamp(elapsed / ROLL_ANIMATION_CONFIG.duration, 0, 1)
+			local progress = safeClamp(elapsed / ROLL_ANIMATION_CONFIG.duration, 0, 1)
 			table.insert(coins, spawnCoin(coinLayer, progress))
 			if elapsed >= ROLL_ANIMATION_CONFIG.rewardRevealTime and not rewardFrame then
 				rewardFrame = showReward(passiveUi.rollFxLayer, passiveName, passiveIcon, rarityColor, function()
@@ -4175,7 +4188,7 @@ updateBoards = function()
 	local cycleTime = getPaperCycleTime()
 	local progress = 0
 	if factoryRunning.Value and cycleTime > 0 then
-		progress = math.clamp(1 - (factoryCountdown.Value / cycleTime), 0, 1)
+		progress = safeClamp(1 - (factoryCountdown.Value / cycleTime), 0, 1)
 	end
 	-- production progress bar removed for cleaner paper factory layout
 
@@ -4489,7 +4502,7 @@ updateBoards = function()
 		if xpProgressUi.collectText then
 			xpProgressUi.collectText.Text = "+" .. formatNumber(getClientXpPerCollectEstimate()) .. " XP"
 		end
-		local progress = xpBoostNextCost.Value > 0 and math.clamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
+		local progress = xpBoostNextCost.Value > 0 and safeClamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
 		TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.15), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
 		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
 		if xpProgressLockedOverlay then
