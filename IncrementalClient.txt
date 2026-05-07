@@ -697,6 +697,16 @@ function animatePanelVisibility(panel, visible)
 		tw:Play()
 		tw.Completed:Connect(function() panel.Visible = false panel.BackgroundTransparency = 0 scale.Scale = 1 end)
 	end
+	merged.system = systemName
+	return merged
+end
+
+function pulseStroke(stroke, lowTransparency, highTransparency, seconds)
+	if not stroke then return end
+	TweenService:Create(stroke, TweenInfo.new(seconds or 1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+		Transparency = highTransparency or 0.35,
+	}):Play()
+	stroke.Transparency = lowTransparency or stroke.Transparency
 end
 
 
@@ -3496,6 +3506,14 @@ function createRuneOverlays()
 			infoPanel.BorderSizePixel = 0
 			infoPanel.Parent = row
 			createCorner(infoPanel, 10)
+			local infoBg = Instance.new("ImageLabel")
+			infoBg.Name = "RuneInfoBackground"
+			infoBg.Size = UDim2.new(1, 0, 1, 0)
+			infoBg.BackgroundTransparency = 1
+			infoBg.Image = getRuneBackgroundAsset(runeId)
+			infoBg.ImageTransparency = infoBg.Image == "" and 1 or 0.7
+			infoBg.ScaleType = Enum.ScaleType.Crop
+			infoBg.Parent = infoPanel
 			createStroke(infoPanel, visual.accent, 1, 0.4)
 
 			-- КОЛИЧЕСТВО label
@@ -4121,6 +4139,9 @@ function renderAdminEvents(events)
 		row.BorderSizePixel = 0
 		row.Parent = adminEventGui
 		createCorner(row, 12)
+		createGradient(row, runeSystemConfig.id == "Forest" and Color3.fromRGB(61, 89, 43) or Color3.fromRGB(42, 122, 54), runeSystemConfig.id == "Forest" and Color3.fromRGB(66, 42, 22) or Color3.fromRGB(14, 52, 22), 0)
+		local rowStroke = createStroke(row, runeSystemConfig.id == "Forest" and Color3.fromRGB(142, 226, 103) or Color3.fromRGB(125, 255, 132), 1.6, 0.18)
+		pulseStroke(rowStroke, 0.18, 0.38, 1.8)
 		createGradient(row, Color3.fromRGB(88, 128, 194), Color3.fromRGB(36, 52, 90), 0)
 		createStroke(row, Color3.fromRGB(255, 255, 255), 1.1, 0.25)
 		local icon = Instance.new("ImageLabel")
