@@ -5636,48 +5636,7 @@ if xpProgressUi then
 		xpProgressLockedOverlay.Visible = false
 	end
 end
-end
 
-if xpProgressUi then
-	local boostValue = 1 + xpBoostLevel.Value
-	xpProgressUi.valueText.Text = "x" .. formatNumber(boostValue)
-	xpProgressUi.costText.Text = xpBoostNextCost.Value <= 0 and "MAX" or (formatNumber(math.floor(xpBoostNextCost.Value + 0.5)) .. " XP")
-	if xpProgressUi.currentText then
-		xpProgressUi.currentText.Text = formatNumber(xpValue.Value)
-	end
-	if xpProgressUi.collectText then
-		xpProgressUi.collectText.Text = formatNumber(getClientXpPerCollectEstimate()) .. " XP/sec"
-	end
-	if xpProgressUi.needText then
-		xpProgressUi.needText.Text = xpBoostNextCost.Value <= 0 and "0" or formatNumber(math.max(0, xpBoostNextCost.Value - xpValue.Value))
-	end
-	if xpProgressUi.multText then
-		xpProgressUi.multText.Text = "x" .. formatNumber(1 + xpMultiplierLevel.Value)
-	end
-	if xpProgressUi.levelText then
-		xpProgressUi.levelText.Text = tostring(xpBoostLevel.Value)
-	end
-	if xpProgressUi.nextUnlockText then
-		local nxt = xpBoostLevel.Value < 5 and "Rune XP Tier" or (xpBoostLevel.Value < 10 and "Advanced Rune Tier" or "MAX TIER")
-		xpProgressUi.nextUnlockText.Text = nxt
-	end
-	local progress = xpBoostNextCost.Value > 0 and safeClamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
-	TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
-	if xpProgressUi.barGlow then
-		local boost = (xpProgressLastValue and xpValue.Value > xpProgressLastValue) and 0.58 or 0.75
-		xpProgressUi.barGlow.BackgroundTransparency = boost
-		TweenService:Create(xpProgressUi.barGlow, TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {BackgroundTransparency = 0.8}):Play()
-	end
-	if xpProgressLastValue and xpValue.Value > xpProgressLastValue and xpProgressUi.valueText then
-		xpProgressUi.valueText.TextColor3 = Color3.fromRGB(170, 255, 230)
-		TweenService:Create(xpProgressUi.valueText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(236, 255, 228)}):Play()
-	end
-	xpProgressLastValue = xpValue.Value
-	setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
-	if xpProgressLockedOverlay then
-		xpProgressLockedOverlay.Visible = false
-	end
-end
 
 -- Safety pass against stale visual lock states.
 if thirdUnlockedVisual then
@@ -5702,7 +5661,6 @@ end
 updateWallVisual()
 refreshAdminCurrencyButtons()
 updateUnlockDebug()
-end
 
 passiveEffectParts = {}
 if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
