@@ -10,6 +10,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local MessagingService = game:GetService("MessagingService")
 
 local RuneService = require(script:WaitForChild("RuneService"))
+local CoinVisualService = require(script:WaitForChild("CoinVisualService"))
 
 local zonePart = Workspace:WaitForChild("ZonePart")
 local coinTemplate = ServerStorage:WaitForChild("CoinPart")
@@ -2646,29 +2647,6 @@ local function getRandomCoinCFrame()
 	return CFrame.new(worldPosition)
 end
 
-local function applyCoinVisuals(coin)
-	if not coin:FindFirstChild("CoinLight") then
-		local light = Instance.new("PointLight")
-		light.Name = "CoinLight"
-		light.Color = Color3.fromRGB(255, 222, 88)
-		light.Brightness = 1.8
-		light.Range = 8
-		light.Parent = coin
-	end
-
-	if not coin:FindFirstChild("CoinHighlight") then
-		local highlight = Instance.new("Highlight")
-		highlight.Name = "CoinHighlight"
-		highlight.Adornee = coin
-		highlight.FillColor = Color3.fromRGB(255, 217, 82)
-		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-		highlight.FillTransparency = 0.35
-		highlight.OutlineTransparency = 0.05
-		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		highlight.Parent = coin
-	end
-end
-
 local function spawnCoin()
 	if activeCoinCount >= MAX_COINS then
 		return
@@ -2682,7 +2660,7 @@ local function spawnCoin()
 	coin.CanTouch = true
 	coin.Parent = spawnedCoinsFolder
 
-	applyCoinVisuals(coin)
+	CoinVisualService.applyCoinVisuals(coin)
 
 	activeCoinCount += 1
 	animatedCoins[coin] = {
