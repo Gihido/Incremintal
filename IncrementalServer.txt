@@ -7,7 +7,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local PhysicsService = game:GetService("PhysicsService")
 local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
-MessagingService = game:GetService("MessagingService")
+local MessagingService = game:GetService("MessagingService")
 
 if not RunService:IsServer() then
 	warn("IncrementalServer must run as a Script on the server")
@@ -19,11 +19,11 @@ local coinTemplate = ServerStorage:WaitForChild("CoinPart")
 local rebirthWall = Workspace:WaitForChild("RebirthWall")
 local treeBlock = Workspace:WaitForChild("TreeBlock")
 local runeRollBlock = Workspace:FindFirstChild("RuneRollBlock")
-forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
-natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
+local forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
+local natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
 local hayBlock = Workspace:FindFirstChild("HayBlock")
 
-function stripPromptsFromPart(part)
+local function stripPromptsFromPart(part)
 	if not part then return end
 	for _, child in ipairs(part:GetDescendants()) do
 		if child:IsA("ProximityPrompt") then
@@ -37,7 +37,7 @@ stripPromptsFromPart(natureRuneBlock)
 stripPromptsFromPart(hayBlock)
 
 local SAVE_STORE_NAME = "IncrementalSave_v10"
-GLOBAL_EVENT_STORE_NAME = "IncrementalGlobalEvents_v1"
+local GLOBAL_EVENT_STORE_NAME = "IncrementalGlobalEvents_v1"
 
 local MAX_COINS = 10
 local BASE_COIN_RESPAWN = 3

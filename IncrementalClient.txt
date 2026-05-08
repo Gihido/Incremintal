@@ -1,40 +1,40 @@
-Players = game:GetService("Players")
-ReplicatedStorage = game:GetService("ReplicatedStorage")
-TweenService = game:GetService("TweenService")
-UserInputService = game:GetService("UserInputService")
-HttpService = game:GetService("HttpService")
-RunService = game:GetService("RunService")
-GuiService = game:GetService("GuiService")
-MarketplaceService = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
+local MarketplaceService = game:GetService("MarketplaceService")
 
-player = Players.LocalPlayer
+local player = Players.LocalPlayer
 if not player then
 	warn("IncrementalClient must run as a LocalScript under PlayerScripts")
 	return
 end
 
-mouse = player:GetMouse()
-playerGui = player:WaitForChild("PlayerGui")
-GamepassIds = {
+local mouse = player:GetMouse()
+local playerGui = player:WaitForChild("PlayerGui")
+local GamepassIds = {
 	DoubleCoins = 0,
 	DoublePaper = 0,
 	DoubleWood = 0,
 	TripleRuneLuck = 0,
 }
 
-data = player:WaitForChild("PlayerData", 30)
+local data = player:WaitForChild("PlayerData", 30)
 if not data then
 	warn("PlayerData was not created within 30 seconds for " .. player.Name)
 	return
 end
-coins = data:WaitForChild("Coins")
-gamepassFolder = data:WaitForChild("Gamepasses")
-doubleCoinsGamepass = gamepassFolder:WaitForChild("DoubleCoins")
-doublePaperGamepass = gamepassFolder:WaitForChild("DoublePaper")
-doubleWoodGamepass = gamepassFolder:WaitForChild("DoubleWood")
-tripleRuneLuckGamepass = gamepassFolder:WaitForChild("TripleRuneLuck")
+local coins = data:WaitForChild("Coins")
+local gamepassFolder = data:WaitForChild("Gamepasses")
+local doubleCoinsGamepass = gamepassFolder:WaitForChild("DoubleCoins")
+local doublePaperGamepass = gamepassFolder:WaitForChild("DoublePaper")
+local doubleWoodGamepass = gamepassFolder:WaitForChild("DoubleWood")
+local tripleRuneLuckGamepass = gamepassFolder:WaitForChild("TripleRuneLuck")
 
-coinUpgrades = data:WaitForChild("CoinUpgrades")
+local coinUpgrades = data:WaitForChild("CoinUpgrades")
 coinValueLevel = coinUpgrades:WaitForChild("CoinValueLevel")
 coinMultiplierLevel = coinUpgrades:WaitForChild("MultiplierLevel")
 coinSpawnLevel = coinUpgrades:WaitForChild("SpawnSpeedLevel")
@@ -189,7 +189,7 @@ MAX_COIN_SPAWN_SPEED_LEVEL = 3
 MAX_REBIRTH_COUNT = 7
 PASSIVE_ROLL_COST = 50
 PASSIVE_INVENTORY_CAPACITY = 10
-isRovRolling = false
+local isRollRolling = false
 
 ICON_ASSET_IDS = {
 	CurrencyCoin = "rbxassetid://6031094678",
@@ -4826,12 +4826,12 @@ function cleanupAnimation(layer, dimmer, coins, rewardFrame)
 	for _, c in ipairs(layer:GetChildren()) do
 		c:Destroy()
 	end
-	isRovRolling = false
+	isRollRolling = false
 end
 
 function startRollAnimation(passiveName, passiveIcon, rarityColor)
 	if not passiveUi.rollFxLayer then return end
-	isRovRolling = true
+	isRollRolling = true
 	for _, c in ipairs(passiveUi.rollFxLayer:GetChildren()) do
 		c:Destroy()
 	end
@@ -5394,7 +5394,7 @@ end
 		addFuelMaxButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelMax") end)
 
 		function firePassiveRoll()
-			if isRovRolling then
+			if isRollRolling then
 				showToast("Подожди, ролл уже идет")
 				return
 			end
