@@ -4966,6 +4966,8 @@ function setCardVisible(cardObj, visible)
 	end
 end
 
+local updateUnlockDebug = function() end
+
 function updateWallVisual()
 	for _, part in ipairs(wallParts) do
 		part.LocalTransparencyModifier = secondAreaUnlocked.Value and 0.78 or 0
@@ -5083,7 +5085,7 @@ updateBoards = function()
 	setWorldBoardGuiVisible("HayIndexBoardSurfaceGui", seventhUnlockedVisual)
 	setWorldBoardGuiVisible("HayUpgradeBoardSurfaceGui", seventhUnlockedVisual)
 
-	function updateUnlockDebug()
+	updateUnlockDebug = function()
 		-- debug panel removed in production build
 
 
