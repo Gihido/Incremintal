@@ -7,18 +7,18 @@ local DataStoreService = game:GetService("DataStoreService")
 local PhysicsService = game:GetService("PhysicsService")
 local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
-MessagingService = game:GetService("MessagingService")
+local MessagingService = game:GetService("MessagingService")
 
 local zonePart = Workspace:WaitForChild("ZonePart")
 local coinTemplate = ServerStorage:WaitForChild("CoinPart")
 local rebirthWall = Workspace:WaitForChild("RebirthWall")
 local treeBlock = Workspace:WaitForChild("TreeBlock")
 local runeRollBlock = Workspace:FindFirstChild("RuneRollBlock")
-forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
-natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
+local forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
+local natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
 local hayBlock = Workspace:FindFirstChild("HayBlock")
 
-function stripPromptsFromPart(part)
+local function stripPromptsFromPart(part)
 	if not part then return end
 	for _, child in ipairs(part:GetDescendants()) do
 		if child:IsA("ProximityPrompt") then
@@ -33,7 +33,7 @@ stripPromptsFromPart(hayBlock)
 
 local SAVE_STORE_NAME = "IncrementalSave_v10"
 local LEADERBOARD_STORE_NAME = "GlobalCoinLeaderboard"
-GLOBAL_EVENT_STORE_NAME = "IncrementalGlobalEvents_v1"
+local GLOBAL_EVENT_STORE_NAME = "IncrementalGlobalEvents_v1"
 
 local MAX_COINS = 10
 local BASE_COIN_RESPAWN = 3
@@ -515,8 +515,8 @@ local WALL_GROUP = "RebirthWallGroup"
 
 local playerDataStore = DataStoreService:GetDataStore(SAVE_STORE_NAME)
 local coinLeaderboardStore = DataStoreService:GetOrderedDataStore(LEADERBOARD_STORE_NAME)
-globalEventStore = DataStoreService:GetDataStore(GLOBAL_EVENT_STORE_NAME)
-ADMIN_EVENT_CHANNEL = "IncrementalAdminEventsV1"
+local globalEventStore = DataStoreService:GetDataStore(GLOBAL_EVENT_STORE_NAME)
+local ADMIN_EVENT_CHANNEL = "IncrementalAdminEventsV1"
 
 local spawnedCoinsFolder = Workspace:FindFirstChild("SpawnedCoins")
 if not spawnedCoinsFolder then
@@ -568,9 +568,9 @@ local passiveRollCooldowns = {}
 local runeStates = {}
 local runeOpenCooldowns = {}
 local runeRollingSessions = {}
-activeForestRuneRolls = {}
-activeNatureRuneRolls = {}
-activeHayCollection = {}
+local activeForestRuneRolls = {}
+local activeNatureRuneRolls = {}
+local activeHayCollection = {}
 local activeAdminEvents = {}
 local ADMIN_EVENT_DURATION = 300
 local ACTIVE_SERVER_EVENTS = {
@@ -2506,9 +2506,9 @@ local function getRuneOpenDuration(player)
 	return math.max(5, t)
 end
 
-FOREST_RUNE_ORDER = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}
-NATURE_RUNE_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
-RUNE_SET_DEFS = {
+local FOREST_RUNE_ORDER = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}
+local NATURE_RUNE_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
+local RUNE_SET_DEFS = {
 	Forest = {
 		order = FOREST_RUNE_ORDER,
 		unlockRebirth = 6,
