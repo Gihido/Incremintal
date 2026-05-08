@@ -1210,55 +1210,17 @@ local function getXPBoostMultiplier(player)
 	return 1 + math.max(0, safeNumber(lvl and lvl.Value, 0))
 end
 
-local function getRuneSpeedOverflowBulk(speedStat)
-	local interval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
-	if interval >= 0.01 then
-		return 0
-	end
-	local overflowFactor = math.min(250, 0.01 / math.max(0.000001, interval))
-	return math.max(0, math.floor((overflowFactor - 1) * 2 + 0.5))
-end
-
 local function getEffectiveRuneStats(player)
-	local runeUpgrades = getRuneUpgradeFolder(player)
-	local xpUpgrades = getXPUpgradesFolder(player)
-	local runeState = getRuneState(player)
-	if not runeUpgrades then
-		return 1, 1, 1
-	end
-	local luck = 1 + runeUpgrades.RuneLuckLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneLuckXPLevel") and xpUpgrades.RuneLuckXPLevel.Value or 0))
-	local speed = 1 + runeUpgrades.RuneSpeedLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneSpeedXPLevel") and xpUpgrades.RuneSpeedXPLevel.Value or 0))
-	local bulk = 1 + runeUpgrades.RuneBulkLevel.Value + math.max(0, tonumber(xpUpgrades and xpUpgrades:FindFirstChild("RuneBulkXPLevel") and xpUpgrades.RuneBulkXPLevel.Value or 0))
-	local _, _, _, _, runeLuckMul, runeSpeedMul, runeBulkAdd = getRuneBonusMultipliers(player)
-	runeLuckMul = safeNumber(runeLuckMul, 1)
-	runeSpeedMul = safeNumber(runeSpeedMul, 1)
-	runeBulkAdd = safeNumber(runeBulkAdd, 0)
-	luck = luck * runeLuckMul
-	speed = speed * runeSpeedMul
-	bulk = bulk + runeBulkAdd
-	local passiveLuckMul, passiveSpeedMul, passiveBulkMul = getPassiveSpecialBoosts(player)
-	passiveLuckMul = safeNumber(passiveLuckMul, 1)
-	passiveSpeedMul = safeNumber(passiveSpeedMul, 1)
-	passiveBulkMul = safeNumber(passiveBulkMul, 1)
-	luck = math.floor(luck * passiveLuckMul + 0.5)
-	speed = math.floor(speed * passiveSpeedMul + 0.5)
-	bulk = math.floor(bulk * passiveBulkMul + 0.5)
-	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = getServerRuneEventBoosts()
-	eventLuckMul = safeNumber(eventLuckMul, 1)
-	eventSpeedMul = safeNumber(eventSpeedMul, 1)
-	eventBulkMul = safeNumber(eventBulkMul, 1)
-	eventBulkAdd = safeNumber(eventBulkAdd, 0)
-	luck = math.floor(luck * eventLuckMul + 0.5)
-	speed = math.floor(speed * eventSpeedMul + 0.5)
-	bulk = math.floor(bulk * eventBulkMul + 0.5)
-	bulk += eventBulkAdd
-	local rebirth = getRebirthFolder(player)
-	if rebirth and rebirth.Count.Value >= 7 then
-		luck = math.floor(luck * 1.5 + 0.5)
-	end
-	luck = math.floor(luck * getGamepassMultiplier(player, "TripleRuneLuck", 3) + 0.5)
-	bulk += getRuneSpeedOverflowBulk(speed)
-	return luck, speed, bulk
+	return RuneService.getEffectiveRuneStats(player, {
+		getRuneUpgradeFolder = getRuneUpgradeFolder,
+		getXPUpgradesFolder = getXPUpgradesFolder,
+		getRuneBonusMultipliers = getRuneBonusMultipliers,
+		getPassiveSpecialBoosts = getPassiveSpecialBoosts,
+		getServerRuneEventBoosts = getServerRuneEventBoosts,
+		getRebirthFolder = getRebirthFolder,
+		getGamepassMultiplier = getGamepassMultiplier,
+		safeNumber = safeNumber,
+	})
 end
 
 function emptyRuneState()
@@ -2533,10 +2495,16 @@ local function rollFromSet(player, setName)
 end
 
 local function getRuneRollInterval(player)
-	local _, speed = getEffectiveRuneStats(player)
-	local baseInterval = 1.2
-	local interval = baseInterval / math.max(1, speed)
-	return math.max(0.2, interval)
+	return RuneService.getRuneRollInterval(player, {
+		getRuneUpgradeFolder = getRuneUpgradeFolder,
+		getXPUpgradesFolder = getXPUpgradesFolder,
+		getRuneBonusMultipliers = getRuneBonusMultipliers,
+		getPassiveSpecialBoosts = getPassiveSpecialBoosts,
+		getServerRuneEventBoosts = getServerRuneEventBoosts,
+		getRebirthFolder = getRebirthFolder,
+		getGamepassMultiplier = getGamepassMultiplier,
+		safeNumber = safeNumber,
+	})
 end
 
 local function startRuneRolling(player, setName)
