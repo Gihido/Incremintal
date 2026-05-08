@@ -514,6 +514,125 @@ local WALL_GROUP = "RebirthWallGroup"
 
 local playerDataStore = DataStoreService:GetDataStore(SAVE_STORE_NAME)
 globalEventStore = DataStoreService:GetDataStore(GLOBAL_EVENT_STORE_NAME)
+
+local coinsLeaderboardStore = DataStoreService:GetOrderedDataStore("CoinsLeaderboard")
+local leaderboardPart = Workspace:FindFirstChild("LeaderstatsCoin")
+local leaderboardGui = nil
+local leaderboardRowsContainer = nil
+local LEADERBOARD_UPDATE_INTERVAL = 60
+local LEADERBOARD_MAX_ROWS = 100
+
+local function safeFormatCompact(value)
+	local n = tonumber(value) or 0
+	local abs = math.abs(n)
+	local suffixes = {{1e30, "No"}, {1e27, "Oc"}, {1e24, "Sp"}, {1e21, "Sx"}, {1e18, "Qi"}, {1e15, "Qa"}, {1e12, "T"}, {1e9, "B"}, {1e6, "M"}, {1e3, "K"}}
+	for _, pair in ipairs(suffixes) do
+		if abs >= pair[1] then
+			return string.format("%.2f%s", n / pair[1], pair[2])
+		end
+	end
+	return string.format("%.0f", n)
+end
+
+local function updateCoinsLeaderboardValue(userId, totalCoins)
+	local coinsValue = tonumber(totalCoins) or 0
+	pcall(function()
+		coinsLeaderboardStore:UpdateAsync(tostring(userId), function()
+			return coinsValue
+		end)
+	end)
+end
+
+local function ensureLeaderboardGui()
+	if leaderboardGui and leaderboardGui.Parent then
+		return true
+	end
+	if not leaderboardPart or not leaderboardPart:IsA("BasePart") then
+		return false
+	end
+	local gui = leaderboardPart:FindFirstChild("CoinsLeaderboardGui")
+	if not gui then
+		gui = Instance.new("SurfaceGui")
+		gui.Name = "CoinsLeaderboardGui"
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 40
+		gui.AlwaysOnTop = true
+		gui.Parent = leaderboardPart
+	end
+	local frame = gui:FindFirstChild("Frame") or Instance.new("Frame")
+	frame.Name = "Frame"
+	frame.BackgroundColor3 = Color3.fromRGB(46, 24, 6)
+	frame.BackgroundTransparency = 0.15
+	frame.Size = UDim2.fromScale(1, 1)
+	frame.Parent = gui
+	local title = frame:FindFirstChild("Title") or Instance.new("TextLabel")
+	title.Name = "Title"
+	title.Size = UDim2.new(1, -12, 0, 36)
+	title.Position = UDim2.new(0, 6, 0, 4)
+	title.BackgroundTransparency = 1
+	title.Font = Enum.Font.GothamBlack
+	title.TextScaled = true
+	title.TextColor3 = Color3.fromRGB(255, 216, 100)
+	title.Text = "TOP 100 COINS"
+	title.Parent = frame
+	local scrolling = frame:FindFirstChild("Rows") or Instance.new("ScrollingFrame")
+	scrolling.Name = "Rows"
+	scrolling.Position = UDim2.new(0, 6, 0, 44)
+	scrolling.Size = UDim2.new(1, -12, 1, -50)
+	scrolling.BackgroundColor3 = Color3.fromRGB(67, 33, 8)
+	scrolling.BackgroundTransparency = 0.2
+	scrolling.BorderSizePixel = 0
+	scrolling.ScrollBarThickness = 8
+	scrolling.CanvasSize = UDim2.new(0,0,0,0)
+	scrolling.Parent = frame
+	local list = scrolling:FindFirstChildOfClass("UIListLayout") or Instance.new("UIListLayout")
+	list.Padding = UDim.new(0, 2)
+	list.Parent = scrolling
+	leaderboardGui = gui
+	leaderboardRowsContainer = scrolling
+	return true
+end
+
+local function renderLeaderboardRows(rows)
+	if not ensureLeaderboardGui() then return end
+	for _, child in ipairs(leaderboardRowsContainer:GetChildren()) do
+		if child:IsA("TextLabel") then child:Destroy() end
+	end
+	for i, row in ipairs(rows or {}) do
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -6, 0, 20)
+		label.BackgroundTransparency = 1
+		label.Font = Enum.Font.GothamBold
+		label.TextScaled = true
+		if i == 1 then label.TextColor3 = Color3.fromRGB(255, 215, 0)
+		elseif i == 2 then label.TextColor3 = Color3.fromRGB(210, 210, 220)
+		elseif i == 3 then label.TextColor3 = Color3.fromRGB(205, 127, 50)
+		else label.TextColor3 = Color3.fromRGB(255, 236, 190) end
+		label.Text = string.format("#%d %s - %s", i, tostring(row.name or "Unknown"), safeFormatCompact(row.coins))
+		label.Parent = leaderboardRowsContainer
+	end
+	leaderboardRowsContainer.CanvasSize = UDim2.new(0, 0, 0, (#rows * 22) + 4)
+end
+
+local function refreshGlobalCoinsLeaderboard()
+	local ok, pages = pcall(function()
+		return coinsLeaderboardStore:GetSortedAsync(false, LEADERBOARD_MAX_ROWS)
+	end)
+	if not ok or not pages then return end
+	local topRows = {}
+	local entries = pages:GetCurrentPage()
+	for _, entry in ipairs(entries or {}) do
+		local userId = tonumber(entry.key)
+		local name = "User_" .. tostring(entry.key)
+		if userId then
+			local ns, resolvedName = pcall(function() return Players:GetNameFromUserIdAsync(userId) end)
+			if ns and resolvedName then name = resolvedName end
+		end
+		table.insert(topRows, {name = name, coins = tonumber(entry.value) or 0})
+	end
+	renderLeaderboardRows(topRows)
+end
 ADMIN_EVENT_CHANNEL = "IncrementalAdminEventsV1"
 
 local spawnedCoinsFolder = Workspace:FindFirstChild("SpawnedCoins")
@@ -2987,6 +3106,7 @@ local function savePlayerData(player, force)
 	if success then
 		lastSaveTimes[player] = now
 		dirtyPlayers[player] = nil
+		updateCoinsLeaderboardValue(player.UserId, payload.Coins)
 		return true
 	else
 		warn("Не удалось сохранить " .. player.Name .. ": " .. tostring(result))
@@ -3061,6 +3181,7 @@ local function loadPlayerData(player)
 	refreshPlayerGamepasses(player, data.Gamepasses)
 
 	coins.Value = roundToTenth(data.Coins or 0)
+	updateCoinsLeaderboardValue(player.UserId, coins.Value)
 
 	local savedCoin = data.CoinUpgrades or {}
 	coinUpgrades.CoinValueLevel.Value = math.max(0, tonumber(savedCoin.CoinValueLevel) or 0)
@@ -3361,6 +3482,11 @@ end)
 Players.PlayerAdded:Connect(function(player)
 	setupPlayer(player)
 	broadcastAdminEventState()
+	local coinsObj = getCoinsObject(player)
+	if coinsObj then
+		updateCoinsLeaderboardValue(player.UserId, coinsObj.Value)
+	end
+	refreshGlobalCoinsLeaderboard()
 end)
 
 for _, player in ipairs(Players:GetPlayers()) do
@@ -3550,6 +3676,21 @@ task.spawn(function()
 		end
 	end
 end)
+
+task.spawn(function()
+	while true do
+		task.wait(LEADERBOARD_UPDATE_INTERVAL)
+		for _, player in ipairs(Players:GetPlayers()) do
+			local coinsObj = getCoinsObject(player)
+			if coinsObj then
+				updateCoinsLeaderboardValue(player.UserId, coinsObj.Value)
+			end
+		end
+		refreshGlobalCoinsLeaderboard()
+	end
+end)
+
+refreshGlobalCoinsLeaderboard()
 
 game:BindToClose(function()
 	isClosing = true
