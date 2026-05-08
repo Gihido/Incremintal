@@ -5148,6 +5148,9 @@ updateBoards = function()
         warn("updateUnlockDebug error:", err)
     end
 end
+
+end -- закрытие updateBoards()
+
 passiveEffectParts = {}
 if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
 	table.insert(passiveEffectParts, passiveRollBlock)
@@ -5183,29 +5186,6 @@ for i = 1, #(passiveEffectParts or {}) do
 			l.Color = Color3.fromRGB(181, 219, 255)
 			l.Parent = p
 		end
-		if not target or not target:IsA("BasePart") then
-			return
-		end
-		local burst = Instance.new("ParticleEmitter")
-		burst.Texture = getAssetOrEmpty(AssetSlots.RuneIcons.Grass)
-		if systemName == "Forest" then
-			burst.Color = ColorSequence.new(Color3.fromRGB(176, 121, 76), Color3.fromRGB(97, 73, 45))
-		else
-			burst.Color = ColorSequence.new(Color3.fromRGB(122, 255, 116), Color3.fromRGB(66, 184, 82))
-		end
-		burst.Speed = NumberRange.new(4, 7)
-		burst.Lifetime = NumberRange.new(0.2, 0.35)
-		burst.Rate = 0
-		burst.SpreadAngle = Vector2.new(360, 360)
-		burst.Size = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.35),
-			NumberSequenceKeypoint.new(1, 0),
-		})
-		burst.Parent = target
-		burst:Emit(14)
-		task.delay(0.4, function()
-			burst:Destroy()
-		end)
 	end)(passiveEffectParts[i])
 end
 
@@ -5696,8 +5676,6 @@ end
 			end)
 		end
 	end
-end
-
 
 updateBoards()
 
