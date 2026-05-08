@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local DataStoreService = game:GetService("DataStoreService")
 local PhysicsService = game:GetService("PhysicsService")
 local HttpService = game:GetService("HttpService")
+local MarketplaceService = game:GetService("MarketplaceService")
 MessagingService = game:GetService("MessagingService")
 
 local zonePart = Workspace:WaitForChild("ZonePart")
@@ -72,6 +73,14 @@ local BASE_HAY_COOLDOWN = 5
 local MIN_HAY_COOLDOWN = 0.8
 
 local ADMIN_NAME = "Doter24_7"
+
+local GamepassIds = {
+	DoubleCoins = 0,
+	DoublePaper = 0,
+	DoubleWood = 0,
+	TripleRuneLuck = 0,
+}
+
 
 local SAVE_INTERVAL = 45
 local SAVE_COOLDOWN = 20
@@ -775,6 +784,22 @@ local function getCoinsObject(player)
 	return data and data:FindFirstChild("Coins") or nil
 end
 
+local function getGamepassFolder(player)
+	local data = getPlayerData(player)
+	return data and data:FindFirstChild("Gamepasses") or nil
+end
+
+local function playerHasGamepass(player, gamepassName)
+	local folder = getGamepassFolder(player)
+	local flag = folder and folder:FindFirstChild(gamepassName)
+	return flag and flag.Value == true
+end
+
+local function getGamepassMultiplier(player, gamepassName, ownedMultiplier)
+	return playerHasGamepass(player, gamepassName) and ownedMultiplier or 1
+end
+
+
 local function getCoinUpgradesFolder(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("CoinUpgrades") or nil
@@ -967,7 +992,7 @@ local function getEquippedPassiveEntry(player)
 	end
 
 	for _, entry in ipairs(state.inventory) do
-		if entry.uid == state.equippedUid then
+		if type(entry) == "table" and entry.uid and entry.uid == state.equippedUid then
 			return entry
 		end
 	end
@@ -981,7 +1006,7 @@ local function getEquippedPassiveDef(player)
 		return nil
 	end
 
-	return PASSIVE_DEFS[entry.passiveId]
+	return entry.passiveId and PASSIVE_DEFS[entry.passiveId] or nil
 end
 
 local function getPassiveMultipliers(player)
@@ -1139,6 +1164,7 @@ local function getEffectiveRuneStats(player)
 	if rebirth and rebirth.Count.Value >= 7 then
 		luck = math.floor(luck * 1.5 + 0.5)
 	end
+	luck = math.floor(luck * getGamepassMultiplier(player, "TripleRuneLuck", 3) + 0.5)
 	bulk += getRuneSpeedOverflowBulk(speed)
 	return luck, speed, bulk
 end
@@ -1454,6 +1480,10 @@ local function setupPlayerDataObjects(player)
 	local playerData = ensureFolder(player, "PlayerData")
 
 	createValue(playerData, "NumberValue", "Coins", 0)
+	local gamepassFolder = ensureFolder(playerData, "Gamepasses")
+	for gamepassName, _ in pairs(GamepassIds) do
+		createValue(gamepassFolder, "BoolValue", gamepassName, false)
+	end
 
 	local coinUpgrades = ensureFolder(playerData, "CoinUpgrades")
 	for _, config in pairs(COIN_UPGRADES) do
@@ -1877,6 +1907,7 @@ local function calculateFinalCoinGain(player, baseAmount)
 	local coinUpgrades = getCoinUpgradesFolder(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
+	local coinsObject = getCoinsObject(player)
 	local passiveCoin, _, passiveGlobalMultiplier = getPassiveMultipliers(player)
 	local runeCoinMultiplier = select(1, getRuneBonusMultipliers(player))
 
@@ -1886,12 +1917,14 @@ local function calculateFinalCoinGain(player, baseAmount)
 	local upgradedCoinGain = (baseCoinGain + coinValueLevel) * (1 + (multiplierLevel * 0.1))
 	local rebirthCoinMul = rebirth and syncRebirthCoinMultiplierBonus(player) or 1
 	local afterRebirthGain = upgradedCoinGain * rebirthCoinMul
+	local coinGoalBoostMultiplier = (rebirth and rebirth.FourthSystemsUnlocked.Value) and computeGoalWoodFactorFromCoins(coinsObject and coinsObject.Value or 0) or 1
 	local woodCoinBoostLevel = woodUpgrades and woodUpgrades:FindFirstChild("CoinBoostLevel") and woodUpgrades.CoinBoostLevel.Value or 0
 	local woodCoinBoostMultiplier = 1.1 ^ woodCoinBoostLevel
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
-	local finalCoinGain = afterRebirthGain * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul
+	local gamepassCoinMul = getGamepassMultiplier(player, "DoubleCoins", 2)
+	local finalCoinGain = afterRebirthGain * coinGoalBoostMultiplier * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul * gamepassCoinMul
 	local floorGain = baseCoinGain * rebirthCoinMul
 	return roundToTenth(math.max(finalCoinGain, floorGain))
 end
@@ -1941,7 +1974,8 @@ local function getWoodReward(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("WoodXPLevel") and xpUpgrades.WoodXPLevel.Value or 0) * 0.2)
 	local _, eventWoodMul = getServerEventMultipliers()
-	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier * passiveGlobalMultiplier * runeWoodMultiplier * xpMul * eventWoodMul)
+	local gamepassWoodMul = getGamepassMultiplier(player, "DoubleWood", 2)
+	return roundToTenth(baseValue * woodMultiplier * goalFactor * rebirth.WoodMultiplierBonus.Value * passiveWoodMultiplier * passiveGlobalMultiplier * runeWoodMultiplier * xpMul * eventWoodMul * gamepassWoodMul)
 end
 
 local function getWoodCooldown(player)
@@ -1997,7 +2031,8 @@ local function getPaperProductionAmount(player)
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("PaperXPLevel") and xpUpgrades.PaperXPLevel.Value or 0) * 0.2)
 	local _, _, eventPaperMul = getServerEventMultipliers()
-	return roundToTenth(baseValue * multiplier * runePaperMultiplier * xpMul * eventPaperMul)
+	local gamepassPaperMul = getGamepassMultiplier(player, "DoublePaper", 2)
+	return roundToTenth(baseValue * multiplier * runePaperMultiplier * xpMul * eventPaperMul * gamepassPaperMul)
 end
 
 local function getPaperCycleTime(player)
@@ -2334,7 +2369,7 @@ local function handlePassiveAction(player, actionName, argument)
 		local found = false
 
 		for _, entry in ipairs(state.inventory) do
-			if entry.uid == targetUid then
+			if type(entry) == "table" and entry.uid == targetUid then
 				found = true
 				break
 			end
@@ -2832,6 +2867,12 @@ local function buildSaveData(player)
 
 	return {
 			Version = 10,
+		Gamepasses = {
+			DoubleCoins = playerHasGamepass(player, "DoubleCoins"),
+			DoublePaper = playerHasGamepass(player, "DoublePaper"),
+			DoubleWood = playerHasGamepass(player, "DoubleWood"),
+			TripleRuneLuck = playerHasGamepass(player, "TripleRuneLuck"),
+		},
 		Coins = coins.Value,
 		CoinUpgrades = {
 			CoinValueLevel = coinUpgrades.CoinValueLevel.Value,
@@ -2953,6 +2994,31 @@ local function savePlayerData(player, force)
 	end
 end
 
+local function refreshPlayerGamepasses(player, savedGamepasses)
+	local folder = getGamepassFolder(player)
+	if not folder then
+		return
+	end
+	savedGamepasses = type(savedGamepasses) == "table" and savedGamepasses or {}
+	for gamepassName, gamepassId in pairs(GamepassIds) do
+		local flag = folder:FindFirstChild(gamepassName)
+		if flag then
+			local owns = savedGamepasses[gamepassName] == true
+			if tonumber(gamepassId) and tonumber(gamepassId) > 0 then
+				local ok, result = pcall(function()
+					return MarketplaceService:UserOwnsGamePassAsync(player.UserId, gamepassId)
+				end)
+				if ok then
+					owns = result == true
+				else
+					warn(string.format("[GamepassCheckFailed] %s %s: %s", player.Name, gamepassName, tostring(result)))
+				end
+			end
+			flag.Value = owns
+		end
+	end
+end
+
 local function loadPlayerData(player)
 	setupPlayerDataObjects(player)
 	passiveStates[player] = emptyPassiveState()
@@ -2970,6 +3036,7 @@ local function loadPlayerData(player)
 	end
 
 	if type(data) ~= "table" then
+		refreshPlayerGamepasses(player, {})
 		return
 	end
 
@@ -2990,6 +3057,8 @@ local function loadPlayerData(player)
 	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not hayCurrency or not hayUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
 		return
 	end
+
+	refreshPlayerGamepasses(player, data.Gamepasses)
 
 	coins.Value = roundToTenth(data.Coins or 0)
 
