@@ -3051,7 +3051,6 @@ local function buildSaveData(player)
 	if not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
 		return nil
 	end
-
 	return {
 		Version = 10,
 		Gamepasses = {
