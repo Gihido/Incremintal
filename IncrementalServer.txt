@@ -9,6 +9,10 @@ local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
 MessagingService = game:GetService("MessagingService")
 
+local ModulesFolder = script:FindFirstChild("Modules")
+local RuneSystemService = ModulesFolder and require(ModulesFolder:WaitForChild("RuneSystemService")) or nil
+local LeaderboardService = ModulesFolder and require(ModulesFolder:WaitForChild("LeaderboardService")) or nil
+
 local zonePart = Workspace:WaitForChild("ZonePart")
 local coinTemplate = ServerStorage:WaitForChild("CoinPart")
 local rebirthWall = Workspace:WaitForChild("RebirthWall")
@@ -2493,6 +2497,9 @@ local function rollFromSet(player, setName)
 			end
 		end
 		targetCounts[chosen] = (targetCounts[chosen] or 0) + 1
+		if RuneSystemService then
+			RuneSystemService:RecordRuneRoll(player, chosen, 1)
+		end
 		table.insert(rolled, chosen)
 	end
 	state.counts = state.natureCounts
@@ -2519,6 +2526,9 @@ local function startRuneRolling(player, setName)
 		lastRollAt = 0,
 		sessionCounts = {},
 	}
+	if RuneSystemService then
+		RuneSystemService:BeginSession(player)
+	end
 	notifyEvent:FireClient(player, {kind = "rune_roll_state", active = true, system = setName})
 end
 
@@ -3207,6 +3217,27 @@ local function applyPendingTeleport(player, character)
 		hrp.CFrame = CFrame.lookAt(position, position + look)
 		pendingTeleportTransforms[player] = nil
 	end)
+end
+
+local function formatLeaderboardValue(value)
+	local n = tonumber(value) or 0
+	if n >= 1000000 then
+		return string.format("%.2fM", n / 1000000)
+	elseif n >= 1000 then
+		return string.format("%.1fK", n / 1000)
+	end
+	return tostring(math.floor(n + 0.5))
+end
+
+local function buildCoinLeaderboardTop(topCount)
+	if not LeaderboardService then
+		return {}
+	end
+	local entries = LeaderboardService:BuildEntries(Players:GetPlayers(), function(plr)
+		local coinsObj = getCoinsObject(plr)
+		return coinsObj and coinsObj.Value or 0
+	end, formatLeaderboardValue)
+	return LeaderboardService:GetTopPlayers(entries, topCount or 10)
 end
 
 local function setupPlayer(player)
