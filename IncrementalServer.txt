@@ -9,6 +9,11 @@ local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
 MessagingService = game:GetService("MessagingService")
 
+if not RunService:IsServer() then
+	warn("IncrementalServer must run as a Script on the server")
+	return
+end
+
 local zonePart = Workspace:WaitForChild("ZonePart")
 local coinTemplate = ServerStorage:WaitForChild("CoinPart")
 local rebirthWall = Workspace:WaitForChild("RebirthWall")
