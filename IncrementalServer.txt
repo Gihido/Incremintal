@@ -32,6 +32,7 @@ stripPromptsFromPart(natureRuneBlock)
 stripPromptsFromPart(hayBlock)
 
 local SAVE_STORE_NAME = "IncrementalSave_v10"
+local LEADERBOARD_STORE_NAME = "GlobalCoinLeaderboard"
 GLOBAL_EVENT_STORE_NAME = "IncrementalGlobalEvents_v1"
 
 local MAX_COINS = 10
@@ -513,6 +514,7 @@ local UNLOCKED_PLAYER_GROUP = "UnlockedAreaPlayers"
 local WALL_GROUP = "RebirthWallGroup"
 
 local playerDataStore = DataStoreService:GetDataStore(SAVE_STORE_NAME)
+local coinLeaderboardStore = DataStoreService:GetOrderedDataStore(LEADERBOARD_STORE_NAME)
 globalEventStore = DataStoreService:GetDataStore(GLOBAL_EVENT_STORE_NAME)
 ADMIN_EVENT_CHANNEL = "IncrementalAdminEventsV1"
 
@@ -684,6 +686,21 @@ local function roundToTenth(value)
 	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
 end
 
+local NUMBER_SUFFIXES = {"", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No"}
+local function formatCompact(value)
+	local n = tonumber(value) or 0
+	local absValue = math.abs(n)
+	local idx = 1
+	while absValue >= 1000 and idx < #NUMBER_SUFFIXES do
+		absValue /= 1000
+		idx += 1
+	end
+	local shown = math.floor(absValue * 10 + 0.5) / 10
+	local text = (shown % 1 == 0) and tostring(math.floor(shown)) or string.format("%.1f", shown)
+	if n < 0 then text = "-" .. text end
+	return text .. NUMBER_SUFFIXES[idx]
+end
+
 local function ensureFolder(parent, name)
 	local folder = parent:FindFirstChild(name)
 	if folder and folder:IsA("Folder") then
@@ -782,6 +799,79 @@ end
 local function getCoinsObject(player)
 	local data = getPlayerData(player)
 	return data and data:FindFirstChild("Coins") or nil
+end
+
+local leaderboardNameCache = {}
+local function resolvePlayerName(userId)
+	if leaderboardNameCache[userId] then return leaderboardNameCache[userId] end
+	local ok, name = pcall(function() return Players:GetNameFromUserIdAsync(userId) end)
+	local final = ok and name or ("User_" .. tostring(userId))
+	leaderboardNameCache[userId] = final
+	return final
+end
+
+local function getLeaderboardGui()
+	local part = Workspace:FindFirstChild("LeaderstatsCoin")
+	if not part or not part:IsA("BasePart") then return nil end
+	local gui = part:FindFirstChild("Top100CoinGui")
+	if not gui then
+		gui = Instance.new("SurfaceGui")
+		gui.Name = "Top100CoinGui"
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 60
+		gui.AlwaysOnTop = true
+		gui.Parent = part
+		local root = Instance.new("Frame")
+		root.Name = "Root"
+		root.Size = UDim2.new(1,0,1,0)
+		root.BackgroundColor3 = Color3.fromRGB(18,24,40)
+		root.BackgroundTransparency = 0.08
+		root.BorderSizePixel = 0
+		root.Parent = gui
+		local header = Instance.new("TextLabel")
+		header.Size = UDim2.new(1,0,0,52)
+		header.BackgroundTransparency = 1
+		header.Text = "TOP 100 COINS\nUpdates every 60s"
+		header.TextColor3 = Color3.fromRGB(180,230,255)
+		header.Font = Enum.Font.GothamBlack
+		header.TextScaled = true
+		header.Parent = root
+		local list = Instance.new("TextLabel")
+		list.Name = "List"
+		list.Position = UDim2.new(0,8,0,56)
+		list.Size = UDim2.new(1,-16,1,-64)
+		list.BackgroundTransparency = 1
+		list.TextXAlignment = Enum.TextXAlignment.Left
+		list.TextYAlignment = Enum.TextYAlignment.Top
+		list.Font = Enum.Font.Code
+		list.TextColor3 = Color3.fromRGB(235,245,255)
+		list.TextScaled = false
+		list.TextSize = 16
+		list.TextWrapped = false
+		list.Parent = root
+	end
+	return gui
+end
+
+local function refreshGlobalCoinLeaderboardBoard()
+	local gui = getLeaderboardGui()
+	if not gui then return end
+	local root = gui:FindFirstChild("Root")
+	local list = root and root:FindFirstChild("List")
+	if not list or not list:IsA("TextLabel") then return end
+	local ok, pages = pcall(function()
+		return coinLeaderboardStore:GetSortedAsync(false, 100)
+	end)
+	if not ok then return end
+	local rows = pages:GetCurrentPage()
+	local lines = {}
+	for rank, row in ipairs(rows) do
+		local userId = tonumber(row.key) or 0
+		local name = resolvePlayerName(userId)
+		lines[#lines+1] = string.format("#%d  %s  %s", rank, name, formatCompact(row.value))
+	end
+	list.Text = table.concat(lines, "\n")
 end
 
 local function getGamepassFolder(player)
@@ -2985,6 +3075,10 @@ local function savePlayerData(player, force)
 	end)
 
 	if success then
+		local coinsValue = tonumber(payload.Coins) or 0
+		pcall(function()
+			coinLeaderboardStore:SetAsync(tostring(player.UserId), coinsValue)
+		end)
 		lastSaveTimes[player] = now
 		dirtyPlayers[player] = nil
 		return true
@@ -3556,6 +3650,16 @@ game:BindToClose(function()
 	for _, player in ipairs(Players:GetPlayers()) do
 		savePlayerData(player, true)
 	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(60)
+		pcall(refreshGlobalCoinLeaderboardBoard)
+	end
+end)
+task.defer(function()
+	pcall(refreshGlobalCoinLeaderboardBoard)
 end)
 
 if not treeBlock:FindFirstChild("TreeLight") then
