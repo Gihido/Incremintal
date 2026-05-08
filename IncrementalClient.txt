@@ -5206,7 +5206,8 @@ for i = 1, #(passiveEffectParts or {}) do
 		task.delay(0.4, function()
 			burst:Destroy()
 		end)
-	end
+	end)(passiveEffectParts[i])
+end
 
 	function triggerHayBurst()
 		if not hayBlock or not hayBlock:IsA("BasePart") then return end
@@ -5697,7 +5698,6 @@ for i = 1, #(passiveEffectParts or {}) do
 	end
 end
 
-end
 
 function initializeClientBindingsAndRuntime()
 	bindAdminCurrencySelectors()
