@@ -1,40 +1,35 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-local GuiService = game:GetService("GuiService")
-local MarketplaceService = game:GetService("MarketplaceService")
+Players = game:GetService("Players")
+ReplicatedStorage = game:GetService("ReplicatedStorage")
+TweenService = game:GetService("TweenService")
+UserInputService = game:GetService("UserInputService")
+HttpService = game:GetService("HttpService")
+RunService = game:GetService("RunService")
+GuiService = game:GetService("GuiService")
+MarketplaceService = game:GetService("MarketplaceService")
 
-local player = Players.LocalPlayer
-if not player then
-	warn("IncrementalClient must run as a LocalScript under PlayerScripts")
-	return
-end
-
-local mouse = player:GetMouse()
-local playerGui = player:WaitForChild("PlayerGui")
-local GamepassIds = {
+player = Players.LocalPlayer
+mouse = player:GetMouse()
+playerGui = player:WaitForChild("PlayerGui")
+GamepassIds = {
 	DoubleCoins = 0,
 	DoublePaper = 0,
 	DoubleWood = 0,
 	TripleRuneLuck = 0,
 }
 
-local data = player:WaitForChild("PlayerData", 30)
+data = player:WaitForChild("PlayerData", 30)
 if not data then
 	warn("PlayerData was not created within 30 seconds for " .. player.Name)
 	return
 end
-local coins = data:WaitForChild("Coins")
-local gamepassFolder = data:WaitForChild("Gamepasses")
-local doubleCoinsGamepass = gamepassFolder:WaitForChild("DoubleCoins")
-local doublePaperGamepass = gamepassFolder:WaitForChild("DoublePaper")
-local doubleWoodGamepass = gamepassFolder:WaitForChild("DoubleWood")
-local tripleRuneLuckGamepass = gamepassFolder:WaitForChild("TripleRuneLuck")
+coins = data:WaitForChild("Coins")
+gamepassFolder = data:WaitForChild("Gamepasses")
+doubleCoinsGamepass = gamepassFolder:WaitForChild("DoubleCoins")
+doublePaperGamepass = gamepassFolder:WaitForChild("DoublePaper")
+doubleWoodGamepass = gamepassFolder:WaitForChild("DoubleWood")
+tripleRuneLuckGamepass = gamepassFolder:WaitForChild("TripleRuneLuck")
 
-local coinUpgrades = data:WaitForChild("CoinUpgrades")
+coinUpgrades = data:WaitForChild("CoinUpgrades")
 coinValueLevel = coinUpgrades:WaitForChild("CoinValueLevel")
 coinMultiplierLevel = coinUpgrades:WaitForChild("MultiplierLevel")
 coinSpawnLevel = coinUpgrades:WaitForChild("SpawnSpeedLevel")
@@ -153,12 +148,12 @@ hayBlock = workspace:FindFirstChild("HayBlock")
 hayUpgradeBoardPart = workspace:FindFirstChild("HayUpgradeBoard")
 hayIndexBoardPart = workspace:FindFirstChild("HayIndexBoard")
 hayAreaGate = workspace:FindFirstChild("HayAreaGate") or workspace:FindFirstChild("Rebirth7Gate")
-forestRuneBlock = workspace:FindFirstChild("ForestRuneBlock")
-forestRuneIndexBoard = workspace:FindFirstChild("ForestRuneIndexBoard")
-forestRuneStatsBoard = workspace:FindFirstChild("ForestRuneStatsBoard")
-natureRuneBlock = workspace:FindFirstChild("NatureRuneBlock")
-natureRuneIndexBoard = workspace:FindFirstChild("NatureRuneIndexBoard")
-natureRuneStatsBoard = workspace:FindFirstChild("NatureRuneStatsBoard")
+	forestRuneBlock = workspace:FindFirstChild("ForestRuneBlock")
+	forestRuneIndexBoard = workspace:FindFirstChild("ForestRuneIndexBoard")
+	forestRuneStatsBoard = workspace:FindFirstChild("ForestRuneStatsBoard")
+	natureRuneBlock = workspace:FindFirstChild("NatureRuneBlock")
+	natureRuneIndexBoard = workspace:FindFirstChild("NatureRuneIndexBoard")
+	natureRuneStatsBoard = workspace:FindFirstChild("NatureRuneStatsBoard")
 
 xpFolder = data:WaitForChild("XP")
 xpValue = xpFolder:WaitForChild("XPValue")
@@ -189,7 +184,7 @@ MAX_COIN_SPAWN_SPEED_LEVEL = 3
 MAX_REBIRTH_COUNT = 7
 PASSIVE_ROLL_COST = 50
 PASSIVE_INVENTORY_CAPACITY = 10
-local isRollRolling = false
+isRovRolling = false
 
 ICON_ASSET_IDS = {
 	CurrencyCoin = "rbxassetid://6031094678",
@@ -267,31 +262,31 @@ ICON_ASSET_IDS = {
 	HayAmountUpgradeIcon = "rbxassetid://6031260785",
 	HayMultiplierUpgradeIcon = "rbxassetid://6031260785",
 	HayCooldownUpgradeIcon = "rbxassetid://6031260785",
-	ForestRuneBlock = "rbxassetid://6031079152",
-	ForestRuneIndexBoard = "rbxassetid://6031079152",
-	ForestRuneStatsBoard = "rbxassetid://6031079152",
-	ForestRune_Palka = "rbxassetid://6031079152",
-	ForestRune_ObrublennyKonec = "rbxassetid://6031079152",
-	ForestRune_VetvDereva = "rbxassetid://6031079152",
-	ForestRune_Brevno = "rbxassetid://6031079152",
-	ForestRune_Poleno = "rbxassetid://6031079152",
-	ForestRune_ObgorevshiyPen = "rbxassetid://6031079152",
-	ForestRuneIndexBackground = "rbxassetid://6031079152",
-	ForestRuneSessionBackground = "rbxassetid://6031079152",
-	NatureRuneBlock = "rbxassetid://6031079152",
-	NatureRuneIndexBoard = "rbxassetid://6031079152",
-	NatureRuneStatsBoard = "rbxassetid://6031079152",
-	NatureRune_Grass = "rbxassetid://6031079152",
-	NatureRune_DarkGrass = "rbxassetid://6031079152",
-	NatureRune_Dandelion = "rbxassetid://6031079152",
-	NatureRune_Flower = "rbxassetid://6031079152",
-	NatureRune_Violet = "rbxassetid://6031079152",
-	NatureRune_Rose = "rbxassetid://6031079152",
-	NatureRuneIndexBackground = "rbxassetid://6031079152",
-	NatureRuneSessionBackground = "rbxassetid://6031079152",
-	ForestRuneGrass = "rbxassetid://6031079152",
-	ForestRuneDarkGrass = "rbxassetid://6031079152",
-	ForestRuneDandelion = "rbxassetid://6031079152",
+		ForestRuneBlock = "rbxassetid://6031079152",
+		ForestRuneIndexBoard = "rbxassetid://6031079152",
+		ForestRuneStatsBoard = "rbxassetid://6031079152",
+		ForestRune_Palka = "rbxassetid://6031079152",
+		ForestRune_ObrublennyKonec = "rbxassetid://6031079152",
+		ForestRune_VetvDereva = "rbxassetid://6031079152",
+		ForestRune_Brevno = "rbxassetid://6031079152",
+		ForestRune_Poleno = "rbxassetid://6031079152",
+		ForestRune_ObgorevshiyPen = "rbxassetid://6031079152",
+		ForestRuneIndexBackground = "rbxassetid://6031079152",
+		ForestRuneSessionBackground = "rbxassetid://6031079152",
+		NatureRuneBlock = "rbxassetid://6031079152",
+		NatureRuneIndexBoard = "rbxassetid://6031079152",
+		NatureRuneStatsBoard = "rbxassetid://6031079152",
+		NatureRune_Grass = "rbxassetid://6031079152",
+		NatureRune_DarkGrass = "rbxassetid://6031079152",
+		NatureRune_Dandelion = "rbxassetid://6031079152",
+		NatureRune_Flower = "rbxassetid://6031079152",
+		NatureRune_Violet = "rbxassetid://6031079152",
+		NatureRune_Rose = "rbxassetid://6031079152",
+		NatureRuneIndexBackground = "rbxassetid://6031079152",
+		NatureRuneSessionBackground = "rbxassetid://6031079152",
+		ForestRuneGrass = "rbxassetid://6031079152",
+		ForestRuneDarkGrass = "rbxassetid://6031079152",
+		ForestRuneDandelion = "rbxassetid://6031079152",
 	ForestRuneFlower = "rbxassetid://6031079152",
 	ForestRuneViolet = "rbxassetid://6031079152",
 	ForestRuneRose = "rbxassetid://6031079152",
@@ -454,18 +449,18 @@ ROLL_ANIMATION_CONFIG = {
 }
 RUNE_DISPLAY_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
 RUNE_VISUALS = {
-	Grass = {name = "ТРАВА", chance = "1 / 3", baseDenominator = 3, rowColor = Color3.fromRGB(61, 74, 79), accent = Color3.fromRGB(210, 210, 210), icon = "◈", backgroundAsset = ""},
-	DarkGrass = {name = "ТЁМНАЯ ТРАВА", chance = "1 / 8", baseDenominator = 8, rowColor = Color3.fromRGB(34, 86, 44), accent = Color3.fromRGB(154, 255, 84), icon = "ᛒ", backgroundAsset = ""},
-	Dandelion = {name = "ОДУВАНЧИК", chance = "1 / 20", baseDenominator = 20, rowColor = Color3.fromRGB(10, 73, 118), accent = Color3.fromRGB(78, 201, 255), icon = "ᛟ", backgroundAsset = ""},
-	Flower = {name = "ЦВЕТОК", chance = "1 / 60", baseDenominator = 60, rowColor = Color3.fromRGB(72, 16, 110), accent = Color3.fromRGB(196, 86, 255), icon = "ᚲ", backgroundAsset = ""},
-	Violet = {name = "ФИАЛКА", chance = "1 / 180", baseDenominator = 180, rowColor = Color3.fromRGB(96, 72, 22), accent = Color3.fromRGB(255, 205, 64), icon = "ᛋ", backgroundAsset = ""},
-	Rose = {name = "РОЗА", chance = "1 / 700", baseDenominator = 700, rowColor = Color3.fromRGB(90, 18, 66), accent = Color3.fromRGB(255, 118, 220), icon = "✦", backgroundAsset = ""},
-	Palka = {name = "ПАЛКА", chance = "1 / 2", baseDenominator = 2, rowColor = Color3.fromRGB(83, 56, 31), accent = Color3.fromRGB(225, 166, 92), icon = "╱", backgroundAsset = ""},
-	ObrublennyKonec = {name = "ОБРУБЛЕННЫЙ КОНЕЦ", chance = "1 / 5", baseDenominator = 5, rowColor = Color3.fromRGB(92, 68, 38), accent = Color3.fromRGB(240, 185, 105), icon = "◇", backgroundAsset = ""},
-	VetvDereva = {name = "ВЕТВЬ ДЕРЕВА", chance = "1 / 15", baseDenominator = 15, rowColor = Color3.fromRGB(52, 91, 45), accent = Color3.fromRGB(154, 226, 110), icon = "ᚠ", backgroundAsset = ""},
-	Brevno = {name = "БРЕВНО", chance = "1 / 40", baseDenominator = 40, rowColor = Color3.fromRGB(109, 70, 34), accent = Color3.fromRGB(255, 174, 83), icon = "▰", backgroundAsset = ""},
-	Poleno = {name = "ПОЛЕНО", chance = "1 / 120", baseDenominator = 120, rowColor = Color3.fromRGB(128, 82, 43), accent = Color3.fromRGB(255, 204, 116), icon = "▱", backgroundAsset = ""},
-	ObgorevshiyPen = {name = "ОБГОРЕВШИЙ ПЕНЬ", chance = "1 / 500", baseDenominator = 500, rowColor = Color3.fromRGB(49, 35, 26), accent = Color3.fromRGB(255, 124, 76), icon = "✦", backgroundAsset = ""},
+	Grass = {name = "ТРАВА", chance = "1 к 1", baseDenominator = 1, rowColor = Color3.fromRGB(61, 74, 79), accent = Color3.fromRGB(210, 210, 210), icon = "◈", backgroundAsset = ""},
+	DarkGrass = {name = "ТЁМНАЯ ТРАВА", chance = "1 к 5", baseDenominator = 5, rowColor = Color3.fromRGB(34, 86, 44), accent = Color3.fromRGB(154, 255, 84), icon = "ᛒ", backgroundAsset = ""},
+	Dandelion = {name = "ОДУВАНЧИК", chance = "1 к 25", baseDenominator = 25, rowColor = Color3.fromRGB(10, 73, 118), accent = Color3.fromRGB(78, 201, 255), icon = "ᛟ", backgroundAsset = ""},
+	Flower = {name = "ЦВЕТОК", chance = "1 к 100", baseDenominator = 100, rowColor = Color3.fromRGB(72, 16, 110), accent = Color3.fromRGB(196, 86, 255), icon = "ᚲ", backgroundAsset = ""},
+	Violet = {name = "ФИАЛКА", chance = "1 к 250", baseDenominator = 250, rowColor = Color3.fromRGB(96, 72, 22), accent = Color3.fromRGB(255, 205, 64), icon = "ᛋ", backgroundAsset = ""},
+	Rose = {name = "РОЗА", chance = "1 к 1000", baseDenominator = 1000, rowColor = Color3.fromRGB(90, 18, 66), accent = Color3.fromRGB(255, 118, 220), icon = "✦", backgroundAsset = ""},
+	Palka = {name = "ПАЛКА", chance = "1 к 1", baseDenominator = 1, rowColor = Color3.fromRGB(83, 56, 31), accent = Color3.fromRGB(225, 166, 92), icon = "╱", backgroundAsset = ""},
+	ObrublennyKonec = {name = "ОБРУБЛЕННЫЙ КОНЕЦ", chance = "1 к 5", baseDenominator = 5, rowColor = Color3.fromRGB(92, 68, 38), accent = Color3.fromRGB(240, 185, 105), icon = "◇", backgroundAsset = ""},
+	VetvDereva = {name = "ВЕТВЬ ДЕРЕВА", chance = "1 к 25", baseDenominator = 25, rowColor = Color3.fromRGB(52, 91, 45), accent = Color3.fromRGB(154, 226, 110), icon = "ᚠ", backgroundAsset = ""},
+	Brevno = {name = "БРЕВНО", chance = "1 к 100", baseDenominator = 100, rowColor = Color3.fromRGB(109, 70, 34), accent = Color3.fromRGB(255, 174, 83), icon = "▰", backgroundAsset = ""},
+	Poleno = {name = "ПОЛЕНО", chance = "1 к 250", baseDenominator = 250, rowColor = Color3.fromRGB(128, 82, 43), accent = Color3.fromRGB(255, 204, 116), icon = "▱", backgroundAsset = ""},
+	ObgorevshiyPen = {name = "ОБГОРЕВШИЙ ПЕНЬ", chance = "1 к 1000", baseDenominator = 1000, rowColor = Color3.fromRGB(49, 35, 26), accent = Color3.fromRGB(255, 124, 76), icon = "✦", backgroundAsset = ""},
 }
 
 RUNE_ASSET_CONFIG = {
@@ -1978,7 +1973,7 @@ function createHorizontalScroller(parent, positionY, height)
 	local function refreshScrollerForDevice()
 		local profile = getDeviceProfile()
 		if profile == "mobile" then
-			scrolling.ScrollBarThickness = 20
+		scrolling.ScrollBarThickness = 20
 			layout.Padding = UDim.new(0, 16)
 			padding.PaddingLeft = UDim.new(0, 12)
 			padding.PaddingRight = UDim.new(0, 12)
@@ -2530,21 +2525,21 @@ if xpProgressDoska then
 	buyBtn.Parent = xpProgressBoard
 	createCorner(buyBtn, 12)
 	addScaleHover(buyBtn)
-	local currentXpRow = createStatRow(xpProgressBoard, "XP сейчас")
-	local collectXpRow = createStatRow(xpProgressBoard, "XP за сбор")
-	local needXpRow = createStatRow(xpProgressBoard, "Нужно XP")
-	local xpMultRow = createStatRow(xpProgressBoard, "XP Multiplier")
-	local levelRow = createStatRow(xpProgressBoard, "Текущий уровень")
-	local nextUnlockRow = createStatRow(xpProgressBoard, "Следующий unlock")
-	xpProgressUi = {
+		local currentXpRow = createStatRow(xpProgressBoard, "XP сейчас")
+		local collectXpRow = createStatRow(xpProgressBoard, "XP за сбор")
+		local needXpRow = createStatRow(xpProgressBoard, "Нужно XP")
+		local xpMultRow = createStatRow(xpProgressBoard, "XP Multiplier")
+		local levelRow = createStatRow(xpProgressBoard, "Текущий уровень")
+		local nextUnlockRow = createStatRow(xpProgressBoard, "Следующий unlock")
+		xpProgressUi = {
 		valueText = valueRow,
 		costText = costRow,
-		currentText = currentXpRow,
-		collectText = collectXpRow,
-		needText = needXpRow,
-		multText = xpMultRow,
-		levelText = levelRow,
-		nextUnlockText = nextUnlockRow,
+			currentText = currentXpRow,
+			collectText = collectXpRow,
+			needText = needXpRow,
+			multText = xpMultRow,
+			levelText = levelRow,
+			nextUnlockText = nextUnlockRow,
 		barFill = barFill,
 		barGlow = barGlow,
 		buyButton = buyBtn
@@ -3129,30 +3124,30 @@ function createPassiveUi()
 	refreshIndexGrid()
 
 	for passiveId, passiveDef in pairs(PASSIVE_DEFS) do
-		local b = Instance.new("TextButton")
-		b.Text = ""
-		b.Size = UDim2.new(0, 122, 0, 116)
-		b.BackgroundColor3 = Color3.fromRGB(16, 18, 24)
-		b.BackgroundTransparency = 0.12
-		b.BorderSizePixel = 0
-		b.Parent = indexList
-		createCorner(b, 12)
-		local g1, g2, g3 = getPassiveStyle(passiveId, passiveDef.rarity)
-		b.BackgroundColor3 = g1
-		-- no default tint fill; card uses explicit image background when provided
-		local outline = createStroke(b, Color3.fromRGB(255, 255, 255), 2.2, 0.02)
+			local b = Instance.new("TextButton")
+			b.Text = ""
+				b.Size = UDim2.new(0, 122, 0, 116)
+					b.BackgroundColor3 = Color3.fromRGB(16, 18, 24)
+					b.BackgroundTransparency = 0.12
+			b.BorderSizePixel = 0
+			b.Parent = indexList
+			createCorner(b, 12)
+				local g1, g2, g3 = getPassiveStyle(passiveId, passiveDef.rarity)
+				b.BackgroundColor3 = g1
+				-- no default tint fill; card uses explicit image background when provided
+			local outline = createStroke(b, Color3.fromRGB(255, 255, 255), 2.2, 0.02)
 		pulseStroke(outline, 0.02, passiveDef.rarity == "Common" and 0.18 or 0.32, passiveDef.rarity == "Mythic" and 0.9 or 1.7)
-		decorateCardCorners(b)
-		createStroke(b, g2, 1.2, 0.2)
-		createGradient(b, g1, g3, 35)
-		local customBg = Instance.new("ImageLabel")
-		customBg.Size = UDim2.new(1, 0, 1, 0)
-		customBg.BackgroundTransparency = 1
-		customBg.Image = getAssetOrEmpty(AssetSlots.PassiveIndexBackgrounds[passiveId])
-		customBg.ImageTransparency = customBg.Image == "" and 1 or 0
-		customBg.ScaleType = Enum.ScaleType.Crop
-		customBg.Parent = b
-		if passiveDef.rarity == "Mythic" or passiveDef.rarity == "Secret" then
+				decorateCardCorners(b)
+				createStroke(b, g2, 1.2, 0.2)
+				createGradient(b, g1, g3, 35)
+			local customBg = Instance.new("ImageLabel")
+			customBg.Size = UDim2.new(1, 0, 1, 0)
+			customBg.BackgroundTransparency = 1
+			customBg.Image = getAssetOrEmpty(AssetSlots.PassiveIndexBackgrounds[passiveId])
+				customBg.ImageTransparency = customBg.Image == "" and 1 or 0
+			customBg.ScaleType = Enum.ScaleType.Crop
+			customBg.Parent = b
+				if passiveDef.rarity == "Mythic" or passiveDef.rarity == "Secret" then
 			local rainbow = Instance.new("UIGradient")
 			rainbow.Color = ColorSequence.new({
 				ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 95, 172)),
@@ -3745,8 +3740,8 @@ function createRuneOverlays()
 		rowHolder.ScrollBarThickness = getGuiPreset().scrollBar
 		rowHolder.ScrollBarImageColor3 = Color3.fromRGB(196, 255, 124)
 		rowHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
-		rowHolder.Parent = root
-		applyFreeScroll(rowHolder, {minCanvasY = 360})
+			rowHolder.Parent = root
+			applyFreeScroll(rowHolder, {minCanvasY = 360})
 
 		local rowList = Instance.new("UIListLayout")
 		rowList.Padding = UDim.new(0, 5)
@@ -3946,11 +3941,11 @@ function createRuneOverlays()
 		else
 			listHolder.ScrollingDirection = Enum.ScrollingDirection.Y
 		end
-		listHolder.ScrollBarImageColor3 = Color3.fromRGB(196, 255, 124)
-		listHolder.ScrollBarImageTransparency = 1
-		listHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
-		listHolder.Parent = panel
-		applyFreeScroll(listHolder, {minCanvasX = 260, minCanvasY = 420})
+			listHolder.ScrollBarImageColor3 = Color3.fromRGB(196, 255, 124)
+			listHolder.ScrollBarImageTransparency = 1
+			listHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
+			listHolder.Parent = panel
+			applyFreeScroll(listHolder, {minCanvasX = 260, minCanvasY = 420})
 
 		local list = Instance.new("UIListLayout")
 		list.Padding = UDim.new(0, 5)
@@ -3962,7 +3957,7 @@ function createRuneOverlays()
 			listHolder.CanvasSize = UDim2.new(0, xPad, 0, list.AbsoluteContentSize.Y + (desktopRuneUi and 90 or 4))
 		end)
 
-		for _, runeId in ipairs({"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose", "Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}) do
+			for _, runeId in ipairs({"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose", "Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}) do
 			local visual = getRuneVisual(runeId)
 			local row = Instance.new("Frame")
 			row.Name = runeId .. "SessionRow"
@@ -4019,7 +4014,7 @@ function createRuneOverlays()
 			gain.TextScaled = true
 			gain.Parent = row
 			runeUi.sessionRows[runeId] = gain
-			row.Visible = false
+				row.Visible = false
 		end
 
 		runeUi.sessionPanel = panel
@@ -4060,14 +4055,14 @@ do
 	createStroke(panel, Color3.fromRGB(205, 174, 118), 3, 0)
 	local listHolder = Instance.new("ScrollingFrame")
 	listHolder.Size = UDim2.new(1, -12, 1, -46)
-	listHolder.Position = UDim2.new(0, 5, 0, 36)
+		listHolder.Position = UDim2.new(0, 5, 0, 36)
 	listHolder.BackgroundTransparency = 1
 	listHolder.BorderSizePixel = 0
 	listHolder.ScrollBarThickness = getGuiPreset().scrollBar
 	listHolder.ScrollBarImageColor3 = Color3.fromRGB(214, 186, 136)
-	listHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
-	listHolder.Parent = panel
-	applyFreeScroll(listHolder, {minCanvasY = 320})
+		listHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
+		listHolder.Parent = panel
+		applyFreeScroll(listHolder, {minCanvasY = 320})
 	local list = Instance.new("UIListLayout")
 	list.Padding = UDim.new(0, 4)
 	list.Parent = listHolder
@@ -4178,10 +4173,8 @@ function updateRuneSummaryGui()
 			label.Text = formatNumber(count)
 		end
 		if chanceLabel then
-			local baseDenom = tonumber(effectiveRuneDenominators[runeId]) or tonumber(RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].baseDenominator) or 1
-			local finalLuck = select(1, getFinalRuneStats())
-			local denom = math.max(1, math.floor((baseDenom / math.max(1, finalLuck)) + 0.5))
-			chanceLabel.Text = "1 / " .. tostring(denom)
+			local denom = tonumber(effectiveRuneDenominators[runeId]) or tonumber(RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].baseDenominator) or 1
+			chanceLabel.Text = "1 к " .. tostring(math.max(1, math.floor(denom + 0.5)))
 		end
 	end
 end
@@ -4376,7 +4369,7 @@ function formatRuneStatValue(value)
 	return string.format("%.1f", rounded)
 end
 
-function getFinalRuneStats()
+function getClientEffectiveRuneStats()
 	local baseLuck = 1 + runeLuckLevel.Value + runeLuckXpLevel.Value
 	local baseSpeed = 1 + runeSpeedLevel.Value + runeSpeedXpLevel.Value
 	local baseBulkBonus = runeBulkLevel.Value + runeBulkXpLevel.Value
@@ -4393,22 +4386,16 @@ function getFinalRuneStats()
 	local passiveCommonSpeedMul = passive and (passive.speedMultiplier or 1) or 1
 	local eventLuckMul, eventSpeedMul, eventBulkMul, eventBulkAdd = getActiveAdminEventUpgrades()
 	local gamepassLuckMul = tripleRuneLuckGamepass and tripleRuneLuckGamepass.Value and 3 or 1
-	local rawLuck = baseLuck * passiveLuckMul * passiveGlobalMul * mythicLuckSpeedMul * eventLuckMul * gamepassLuckMul
-	local luckSoftCapKnee = 25
-	local luck = rawLuck <= luckSoftCapKnee and rawLuck or (luckSoftCapKnee + math.sqrt(math.max(0, rawLuck - luckSoftCapKnee)) * 3.5)
-	local speed = baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul * mythicLuckSpeedMul * eventSpeedMul
-	local bulkBonus = (baseBulkBonus + mythicBulkAdd) * passiveBulkMul * passiveGlobalMul
-	bulkBonus = bulkBonus * eventBulkMul + eventBulkAdd
+	local luck = math.floor(baseLuck * passiveLuckMul * passiveGlobalMul * mythicLuckSpeedMul * eventLuckMul * gamepassLuckMul + 0.5)
+	local speed = math.floor(baseSpeed * passiveSpeedMul * passiveGlobalMul * passiveCommonSpeedMul * mythicLuckSpeedMul * eventSpeedMul + 0.5)
+	local bulkBonus = math.floor((baseBulkBonus + mythicBulkAdd) * passiveBulkMul * passiveGlobalMul + 0.5)
+	bulkBonus = math.floor(bulkBonus * eventBulkMul + 0.5) + eventBulkAdd
 	if rebirthCount.Value >= 7 then
-		luck = luck * 1.5
+		luck = math.floor(luck * 1.5 + 0.5)
 	end
 	bulkBonus += getRuneSpeedOverflowBulk(speed)
-	local bulk = math.max(1, 1 + math.floor(bulkBonus + 0.5))
+	local bulk = math.max(1, 1 + bulkBonus)
 	return luck, speed, bulk
-end
-
-function getClientEffectiveRuneStats()
-	return getFinalRuneStats()
 end
 
 function showToast(text)
@@ -4826,12 +4813,12 @@ function cleanupAnimation(layer, dimmer, coins, rewardFrame)
 	for _, c in ipairs(layer:GetChildren()) do
 		c:Destroy()
 	end
-	isRollRolling = false
+	isRovRolling = false
 end
 
 function startRollAnimation(passiveName, passiveIcon, rarityColor)
 	if not passiveUi.rollFxLayer then return end
-	isRollRolling = true
+	isRovRolling = true
 	for _, c in ipairs(passiveUi.rollFxLayer:GetChildren()) do
 		c:Destroy()
 	end
@@ -5089,67 +5076,525 @@ updateBoards = function()
 	setWorldBoardGuiVisible("HayUpgradeBoardSurfaceGui", seventhUnlockedVisual)
 
 	function updateUnlockDebug()
+		-- debug panel removed in production build
+	end
 
-    local success, err = pcall(function()
+	local coinGoalBoostMultiplier = fourthUnlockedVisual and select(1, computeGoalWoodFactor(coins.Value)) or 1
+	coinValueLabel.Text = formatNumber(coins.Value)
+	coinRewardLabel.Text = formatNumber(getCoinReward())
+	xpValueLabel.Text = formatNumber(xpValue.Value)
+	coinUpgradeMultiplierLabel.Text = "x" .. formatNumber(getCoinUpgradeMultiplier())
+	coinRebirthMultiplierLabel.Text = "x" .. formatNumber(rebirthCoinMultiplierBonus.Value)
+	coinGoalBoostLabel.Text = "x" .. formatNumber(coinGoalBoostMultiplier)
+	coinRespawnLabel.Text = formatNumber(getCoinRespawn()) .. "s"
+	if adminCoinChainLabel then
+		adminCoinChainLabel.Text = "Coin chain: base x" .. formatNumber(1 + coinValueLevel.Value)
+			.. " * upgrade x" .. formatNumber(getCoinUpgradeMultiplier())
+			.. " * rebirth x" .. formatNumber(rebirthCoinMultiplierBonus.Value)
+			.. " * CoinGoal x" .. formatNumber(coinGoalBoostMultiplier)
+			.. " => " .. formatNumber(getCoinReward())
+	end
+	rebirthCountLabel.Text = tostring(rebirthCount.Value)
 
-        local coinGoalBoostMultiplier = 1
+	setCardVisible(coinWoodBoostCard, thirdUnlockedVisual)
+	setCardVisible(treeCoinBoostCard, thirdUnlockedVisual)
+	if paperUpgradeCards then
+		setCardVisible(paperUpgradeCards.gain, fourthUnlockedVisual)
+		setCardVisible(paperUpgradeCards.multi, fourthUnlockedVisual)
+		setCardVisible(paperUpgradeCards.speed, fourthUnlockedVisual)
+	end
+	if xpUpgradeCards then
+		setCardVisible(xpUpgradeCards.coin, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.wood, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.paper, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.xpMul, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.runeLuck, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.runeBulk, secondUnlockedVisual)
+		setCardVisible(xpUpgradeCards.runeSpeed, secondUnlockedVisual)
+	end
+	if runeUpgradeCards then
+		setCardVisible(runeUpgradeCards.luck, secondUnlockedVisual)
+		setCardVisible(runeUpgradeCards.speed, secondUnlockedVisual)
+		setCardVisible(runeUpgradeCards.bulk, secondUnlockedVisual)
+	end
 
-        if fourthUnlockedVisual then
-            local ok, result = pcall(function()
-                return select(1, computeGoalWoodFactor(coins.Value))
-            end)
+	updateCard(coinGainCard, coinValueLevel.Value, coinValueCost.Value, coinValueActive.Value, math.huge, coins.Value, nil, "Coins")
+	updateCard(coinMultiCard, coinMultiplierLevel.Value, coinMultiplierCost.Value, coinMultiplierActive.Value, math.huge, coins.Value, nil, "Coins")
+	updateCard(coinSpawnCard, coinSpawnLevel.Value, coinSpawnCost.Value, coinSpawnActive.Value, MAX_COIN_SPAWN_SPEED_LEVEL, coins.Value, nil, "Coins")
+	updateCard(
+		coinWoodBoostCard,
+		coinWoodBoostLevel.Value,
+		coinWoodBoostCost.Value,
+		coinWoodBoostActive.Value,
+		10,
+		coins.Value,
+		nil,
+		"Coins"
+	)
 
-            if ok and result then
-                coinGoalBoostMultiplier = result
-            end
-        end
+	rebirthLevelText.Text = "Rebirth " .. tostring(rebirthCount.Value) .. "/" .. tostring(MAX_REBIRTH_COUNT)
+	rebirthCurrentText.Text = "Сейчас: x" .. formatNumber(rebirthCoinMultiplierBonus.Value) .. " | Goal x" .. formatNumber(coinGoalBoostMultiplier) .. " | -" .. formatNumber(rebirthSpawnSpeedBonus.Value) .. "с"
 
-        if coinValueLabel and coins then
-            coinValueLabel.Text = formatNumber(coins.Value)
-        end
+	if rebirthCount.Value == 0 then
+		rebirthNextText.Text = "1-е: x2 монеты и -0.1с к спавну"
+	elseif rebirthCount.Value == 1 then
+		rebirthNextText.Text = "2-е: x5 поверх и открытие дерева"
+	elseif rebirthCount.Value == 2 then
+		rebirthNextText.Text = "3-е: x10 монет и новые апгрейды"
+	elseif rebirthCount.Value == 3 then
+		rebirthNextText.Text = "4-е: x2 дерево, буст-доска, бумага"
+	elseif rebirthCount.Value == 4 then
+		rebirthNextText.Text = "5-е: пассивы и инвентарь (50 бумаги)"
+	elseif rebirthCount.Value == 5 then
+		rebirthNextText.Text = "6-е: руны, индекс, ускорение рунной прогрессии"
+	elseif rebirthCount.Value == 6 then
+		rebirthNextText.Text = "7-е: Hay, HayBlock, HayBoard, HayAreaGate, +50% Rune Luck"
+	else
+		rebirthNextText.Text = "Все перерождения куплены"
+	end
 
-        if coinRewardLabel then
-            coinRewardLabel.Text = formatNumber(getCoinReward())
-        end
+	rebirthUnlockText.Text = secondUnlockedVisual and "Новая зона: открыта" or "Новая зона: закрыта"
 
-        if xpValueLabel and xpValue then
-            xpValueLabel.Text = formatNumber(xpValue.Value)
-        end
+	local rebirthAtMax = rebirthNextCost.Value <= 0
+	local currencyLabel = rebirthNextCurrency.Value ~= "None" and rebirthNextCurrency.Value or ""
+	local rebirthCanBuy = false
+	if not rebirthAtMax then
+		if currencyLabel == "Coins" then
+			rebirthCanBuy = coins.Value >= rebirthNextCost.Value
+		elseif currencyLabel == "Wood" then
+			rebirthCanBuy = woodCurrency.Value >= rebirthNextCost.Value
+		elseif currencyLabel == "Paper" then
+			rebirthCanBuy = paperValue.Value >= rebirthNextCost.Value
+		end
+	end
 
-        if coinUpgradeMultiplierLabel then
-            coinUpgradeMultiplierLabel.Text =
-                "x" .. formatNumber(getCoinUpgradeMultiplier())
-        end
+	if rebirthAtMax then
+		rebirthCostText.Text = "Cost: MAX"
+	else
+		rebirthCostText.Text = "Cost: " .. formatNumber(rebirthNextCost.Value) .. " " .. currencyLabel
+	end
 
-        if coinRebirthMultiplierLabel and rebirthCoinMultiplierBonus then
-            coinRebirthMultiplierLabel.Text =
-                "x" .. formatNumber(rebirthCoinMultiplierBonus.Value)
-        end
+	setButtonVisual(rebirthButton, "REBIRTH!", rebirthCanBuy, rebirthAtMax, Color3.fromRGB(255, 218, 96), Color3.fromRGB(136, 148, 175), Color3.fromRGB(65, 46, 93))
 
-        if coinGoalBoostLabel then
-            coinGoalBoostLabel.Text =
-                "x" .. formatNumber(coinGoalBoostMultiplier)
-        end
+	treeCurrencyText.Text = formatNumber(woodCurrency.Value)
+	treeRewardText.Text = formatNumber(getWoodReward())
+	treeMultiplierText.Text = "x" .. formatNumber(1 + woodMultiplierLevel.Value + (coinWoodBoostLevel.Value * 0.25))
+	treeCooldownText.Text = formatNumber(getWoodCooldown()) .. "s"
+	treeUnlockStatusText.Text = secondUnlockedVisual and "Открыто" or "Закрыто"
 
-        if coinRespawnLabel then
-            coinRespawnLabel.Text =
-                formatNumber(getCoinRespawn()) .. "s"
-        end
+	updateCard(treeGainCard, woodValueLevel.Value, woodValueCost.Value, woodValueActive.Value, math.huge, woodCurrency.Value, nil, "Wood")
+	updateCard(treeMultiCard, woodMultiplierLevel.Value, woodMultiplierCost.Value, woodMultiplierActive.Value, math.huge, woodCurrency.Value, nil, "Wood")
+	updateCard(treeSpeedCard, woodSpeedLevel.Value, woodSpeedCost.Value, woodSpeedActive.Value, math.huge, woodCurrency.Value, nil, "Wood")
+	updateCard(
+		treeCoinBoostCard,
+		woodCoinBoostLevel.Value,
+		woodCoinBoostCost.Value,
+		woodCoinBoostActive.Value,
+		20,
+		woodCurrency.Value,
+		nil,
+		"Wood"
+	)
 
-        if rebirthCountLabel and rebirthCount then
-            rebirthCountLabel.Text = tostring(rebirthCount.Value)
-        end
+	local goalFactor, goalsReached, nextTarget = computeGoalWoodFactor(coins.Value)
+	boostFactorText.Text = "x" .. formatNumber(goalFactor)
+	boostGoalsText.Text = formatNumber(goalsReached)
+	boostNextTargetText.Text = goalFactor >= 10 and "MAX" or formatNumber(nextTarget)
+	boostCoinText.Text = formatNumber(coins.Value)
 
-        refreshAdminCurrencyButtons()
+	paperText.Text = formatNumber(paperValue.Value)
+	fuelText.Text = formatNumber(fuelValue.Value)
+	countdownText.Text = formatNumber(factoryCountdown.Value) .. "s"
+	factoryStatusText.Text = factoryRunning.Value and "Работает" or "Нет топлива"
+	paperProductionText.Text = "x" .. formatNumber(getPaperProductionAmount())
+	local cycleTime = getPaperCycleTime()
+	local progress = 0
+	if factoryRunning.Value and cycleTime > 0 then
+		progress = safeClamp(1 - (factoryCountdown.Value / cycleTime), 0, 1)
+	end
+	-- production progress bar removed for cleaner paper factory layout
 
-    end)
+	if paperUpgradeCards then
+		updateCard(paperUpgradeCards.gain, paperValueLevel.Value, paperValueCost.Value, paperValueActive.Value, math.huge, paperValue.Value, nil, "Paper")
+		updateCard(paperUpgradeCards.multi, paperMultiplierLevel.Value, paperMultiplierCost.Value, paperMultiplierActive.Value, math.huge, paperValue.Value, nil, "Paper")
+		updateCard(paperUpgradeCards.speed, paperSpeedLevel.Value, paperSpeedCost.Value, paperSpeedActive.Value, 10, paperValue.Value, nil, "Paper")
+		if paperUpgradeLockedOverlay then
+			paperUpgradeLockedOverlay.Visible = false
+		end
+	end
 
-    if not success then
-        warn("updateUnlockDebug error:", err)
-    end
+	treeInfoLockedOverlay.Visible = false
+	treeUpgradeLockedOverlay.Visible = false
+	boostLockedOverlay.Visible = false
+	factoryLockedOverlay.Visible = false
+
+	if passiveUi.indexPanel then passiveUi.indexPanel.Visible = fifthUnlockedVisual and passiveUi.indexPanel.Visible or false end
+	if passiveUi.inventoryPanel then passiveUi.inventoryPanel.Visible = fifthUnlockedVisual and passiveUi.inventoryPanel.Visible or false end
+	if runeUi.panel and not secondUnlockedVisual then runeUi.panel.Visible = false end
+	if runeUi.sessionPanel and not secondUnlockedVisual then runeUi.sessionPanel.Visible = false end
+	if xpProgressUi and xpProgressUi.panel then xpProgressUi.panel.Visible = secondUnlockedVisual end
+
+		if passiveUi.hintGui then
+			passiveUi.hintGui.Enabled = fifthUnlockedVisual
+		end
+		local passiveInventory = {}
+			if passiveUi.inventoryPanel then
+				local state = parsePassiveState()
+				passiveInventory = (state and state.inventory) or {}
+			passiveUi.lastState = state
+			local renderSignature = passiveStateJson.Value .. "|" .. tostring(passiveUi.selectedUid or "") .. "|" .. tostring(fifthUnlockedVisual) .. "|" .. tostring(math.floor(paperValue.Value + 0.5))
+			if passiveUi.lastRenderSignature ~= renderSignature then
+				passiveUi.lastRenderSignature = renderSignature
+				local equippedName = "none"
+				local inventoryProfile = getDeviceProfile()
+				local mobileInventory = inventoryProfile == "mobile"
+				local compactInventory = inventoryProfile == "mobile" or inventoryProfile == "tablet"
+				for _, child in ipairs(passiveUi.slotsList:GetChildren()) do
+					if child:IsA("TextButton") then
+						child:Destroy()
+					end
+				end
+				for _, entry in ipairs(passiveInventory) do
+				if type(entry) == "table" and entry.passiveId and entry.uid then
+				local def = PASSIVE_DEFS[entry.passiveId]
+				if def then
+					local b = Instance.new("TextButton")
+					local isEquipped = entry.uid == state.equippedUid
+					local isSelected = entry.uid == passiveUi.selectedUid
+				b.Size = UDim2.new(0, mobileInventory and 95 or (compactInventory and 110 or 132), 0, mobileInventory and 95 or (compactInventory and 110 or 112))
+				b.Text = ""
+					b.BackgroundColor3 = Color3.fromRGB(14, 16, 22)
+					b.BackgroundTransparency = 0.1
+					b.BorderSizePixel = 0
+					b.Parent = passiveUi.slotsList
+					createCorner(b, 10)
+					local customBg = Instance.new("ImageLabel")
+					customBg.Size = UDim2.new(1, 0, 1, 0)
+					customBg.BackgroundTransparency = 1
+					customBg.Image = getAssetOrEmpty(AssetSlots.PassiveInventoryBackgrounds[entry.passiveId])
+						customBg.ImageTransparency = customBg.Image == "" and 1 or 0
+					customBg.ScaleType = Enum.ScaleType.Crop
+					customBg.Parent = b
+						local c1, c2, c3 = getPassiveStyle(entry.passiveId, def.rarity)
+						b.BackgroundColor3 = c1
+						-- no forced default tint; visuals come from direct image background + border style
+					local edgeColor = isEquipped and Color3.fromRGB(206, 255, 192) or getRarityColor(def.rarity)
+					local edge = createStroke(b, Color3.fromRGB(255, 255, 255), isEquipped and 3 or 2.4, isSelected and 0.01 or 0.07)
+					pulseStroke(edge, isSelected and 0.01 or 0.07, def.rarity == "Common" and 0.2 or 0.34, def.rarity == "Mythic" and 0.85 or 1.6)
+						createStroke(b, edgeColor, 1.2, 0.2)
+						createGradient(b, c1, c3, 40)
+					decorateCardCorners(b)
+				if def.rarity == "Mythic" or def.rarity == "Secret" then
+					local mythicGradient = Instance.new("UIGradient")
+					mythicGradient.Color = ColorSequence.new({
+						ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 95, 172)),
+						ColorSequenceKeypoint.new(0.33, Color3.fromRGB(101, 196, 255)),
+						ColorSequenceKeypoint.new(0.66, Color3.fromRGB(158, 255, 126)),
+						ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 212, 108)),
+					})
+					mythicGradient.Parent = edge
+				end
+					-- Stable hover/click: no scale teleporting.
+				local spark = Instance.new("TextLabel")
+				spark.BackgroundTransparency = 1
+				spark.Size = UDim2.new(0, 28, 0, 18)
+				spark.Position = UDim2.new(1, -30, 0, 4)
+				spark.Text = def.rarity == "Mythic" and "✦✦" or (def.rarity == "Legendary" and "✦" or "")
+				spark.TextColor3 = getRarityColor(def.rarity)
+				spark.TextScaled = true
+				spark.Font = Enum.Font.GothamBlack
+				spark.Parent = b
+				local icon = Instance.new("ImageLabel")
+				icon.Size = UDim2.new(0, mobileInventory and 54 or (compactInventory and 64 or 72), 0, mobileInventory and 54 or (compactInventory and 64 or 72))
+				icon.AnchorPoint = Vector2.new(0.5, 0)
+				icon.Position = compactInventory and UDim2.new(0.5, 0, 0, mobileInventory and 10 or 12) or UDim2.new(0, 8, 0, 8)
+				icon.BackgroundTransparency = 1
+				icon.Image = getAssetOrEmpty(AssetSlots.PassiveCardImages[entry.passiveId] or ICON_ASSET_IDS.PassiveCardDefault)
+				icon.Parent = b
+				local title = Instance.new("TextLabel")
+				title.Size = UDim2.new(1, compactInventory and -8 or -90, 0, compactInventory and 22 or 28)
+				title.Position = compactInventory and UDim2.new(0, 4, 1, mobileInventory and -26 or -28) or UDim2.new(0, 84, 0, 8)
+				title.BackgroundTransparency = 1
+				title.TextXAlignment = compactInventory and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+				title.TextScaled = false
+				title.Font = Enum.Font.GothamBlack
+				title.TextSize = mobileInventory and 12 or (compactInventory and 14 or 18)
+				title.TextColor3 = Color3.fromRGB(245, 250, 255)
+				title.Text = ""
+				title.Visible = false
+				title.Parent = b
+				local info = Instance.new("TextLabel")
+					info.Size = UDim2.new(1, mobileInventory and -90 or -90, 0, mobileInventory and 48 or 40)
+				info.Position = UDim2.new(0, mobileInventory and 84 or 84, 0, mobileInventory and 44 or 34)
+				info.BackgroundTransparency = 1
+				info.TextXAlignment = Enum.TextXAlignment.Left
+				info.TextYAlignment = Enum.TextYAlignment.Top
+				info.TextWrapped = true
+				info.TextScaled = true
+				info.Font = Enum.Font.GothamSemibold
+				info.TextColor3 = Color3.fromRGB(228, 236, 255)
+				info.Text = ""
+				info.Visible = false
+					info.Parent = b
+				local status = Instance.new("TextLabel")
+					status.Size = UDim2.new(1, mobileInventory and -90 or -90, 0, mobileInventory and 24 or 20)
+					status.Position = UDim2.new(0, mobileInventory and 84 or 84, 1, mobileInventory and -52 or -46)
+				status.BackgroundTransparency = 1
+				status.TextXAlignment = Enum.TextXAlignment.Left
+				status.TextScaled = true
+				status.Font = Enum.Font.GothamBold
+					status.TextColor3 = isEquipped and Color3.fromRGB(198, 255, 190) or Color3.fromRGB(225, 235, 255)
+					status.Text = isEquipped and "Экипировано" or "Не экипировано"
+					status.Visible = not compactInventory
+						status.Parent = b
+					local effectBadge = Instance.new("TextLabel")
+					effectBadge.Size = UDim2.new(0, mobileInventory and 210 or 180, 0, mobileInventory and 26 or 20)
+					effectBadge.Position = UDim2.new(1, mobileInventory and -218 or -186, 1, mobileInventory and -30 or -24)
+					effectBadge.BackgroundColor3 = Color3.fromRGB(23, 28, 40)
+					effectBadge.TextColor3 = edgeColor
+					effectBadge.BorderSizePixel = 0
+					effectBadge.Font = Enum.Font.GothamBold
+					effectBadge.TextScaled = true
+					effectBadge.Text = ""
+					effectBadge.Visible = false
+						effectBadge.Parent = b
+					createCorner(effectBadge, 8)
+					b.MouseButton1Click:Connect(function()
+					passiveUi.selectedUid = entry.uid
+					passiveUi.manageTitle.Text = def.name
+					if compactInventory then
+						passiveUi.manageInfo.Text = "Редкость: " .. tostring(def.rarity or "Common")
+							.. "\nШанс: " .. tostring(def.chance or "?")
+							.. "\nЭффект: " .. tostring(def.effect or "—")
+					else
+						passiveUi.manageInfo.Text = "Тип: " .. tostring(def.currencyType or "Coins")
+							.. "\nРедкость: " .. tostring(def.rarity or "Common")
+							.. "\nШанс: " .. tostring(def.chance or "?")
+							.. "\nЭффект: " .. tostring(def.effect or "—")
+							.. "\n\n" .. tostring(def.desc or "")
+					end
+				end)
+				if isEquipped then
+					equippedName = def.name
+				end
+			end
+				end
+				end
+				end
+				local selectedStillExists = false
+				for _, entry in ipairs(passiveInventory) do
+					if type(entry) == "table" and entry.uid == passiveUi.selectedUid then
+						selectedStillExists = true
+						break
+					end
+				end
+				if not selectedStillExists then
+					passiveUi.selectedUid = ""
+					passiveUi.manageTitle.Text = "Выбери пассив"
+					passiveUi.manageInfo.Text = "Нажми слева на пассив"
+				end
+				passiveUi.emptyState.Visible = #passiveInventory == 0
+				passiveUi.equippedText.Text = "EQUIPPED: " .. string.upper(tostring(equippedName))
+			end
+			if passiveUi.rollButton then
+				setButtonVisual(passiveUi.rollButton, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #passiveInventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
+			end
+			if passiveUi.rollButtonInventory then
+				setButtonVisual(passiveUi.rollButtonInventory, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #passiveInventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
+			end
+		end
+
+	do
+		local rs = parseRuneState()
+		local natureCounts = rs.natureCounts or rs.counts or {}
+		local forestCounts = rs.forestCounts or {}
+		for systemId, bundle in pairs(runeSystemBoards or {}) do
+			local counts = systemId == "Forest" and forestCounts or natureCounts
+			local cfg = RUNE_SYSTEM_UI_CONFIG[systemId]
+			if bundle.index and bundle.index.rows and cfg then
+				for _, runeId in ipairs(cfg.displayOrder) do
+					local label = bundle.index.rows[runeId]
+					if label then
+						local count = tonumber(counts[runeId]) or 0
+						local info = RUNE_EFFECT_INFO[runeId] or RUNE_EFFECT_INFO.Grass
+						local capMul = (info.cap or 10)
+						local eff = math.min(math.floor((capMul / math.max(info.base, 0.0001)) + 0.5), count)
+						local total = eff * info.base
+						local denom = tonumber((effectiveRuneDenominators or {})[runeId]) or tonumber(RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].baseDenominator) or (runeId == "Palka" and 1 or runeId == "ObrublennyKonec" and 5 or runeId == "VetvDereva" and 25 or runeId == "Brevno" and 100 or runeId == "Poleno" and 250 or runeId == "ObgorevshiyPen" and 1000 or 1)
+						local chance = "1 к " .. tostring(math.max(1, math.floor(denom + 0.5)))
+							local runtime = string.format("Количество: %s\nШанс: %s\nСуммарно: +%.2fx %s", formatNumber(count), chance, total, info.target)
+						label:SetAttribute("RuntimeText", runtime)
+						label.Text = string.format("%s\n%s\nЗа 1: %s | cap x%.1f", tostring(cfg.names[runeId] or runeId), runtime, info.per, capMul)
+					end
+				end
+			end
+				if bundle.stats and bundle.stats.luck then
+				local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+				local speedOverflowBulk = getRuneSpeedOverflowBulk(effSpeed)
+				local effBulkBonus = math.max(0, effBulk - 1)
+				local speedSeconds = getRuneRollIntervalFromSpeed(effSpeed)
+				bundle.stats.luck.Text = formatRuneStatValue(effLuck) .. "x"
+				bundle.stats.bulk.Text = "+" .. formatRuneStatValue(effBulkBonus)
+				bundle.stats.speed.Text = string.format("%ss/roll | Overflow Bulk +%s", formatRuneStatValue(speedSeconds), formatRuneStatValue(speedOverflowBulk))
+				bundle.stats.total.Text = "Luck " .. formatRuneStatValue(effLuck) .. "x | Speed " .. formatRuneStatValue(effSpeed) .. "x | Bulk +" .. formatRuneStatValue(effBulkBonus)
+				end
+		end
+	end
+
+	do
+			local runeUnlocked = secondUnlockedVisual
+		if runeUi.panel and runeUi.panel.Visible and not runeUnlocked then
+			runeUi.panel.Visible = false
+		end
+		if runeUi.sessionPanel then
+			runeUi.sessionPanel.Visible = runeUnlocked and runeRollingActive
+		end
+		local rs = parseRuneState()
+		local c = rs.counts or {}
+		function stacks(v)
+			return math.min(10, tonumber(v) or 0)
+		end
+		local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+		if runeUi.indexText then
+				runeUi.indexText.Text = "Трава: " .. formatNumber(c.Grass or 0) .. " (эф. " .. formatNumber(stacks(c.Grass)) .. ")\n"
+					.. "Тёмная трава: " .. formatNumber(c.DarkGrass or 0) .. " (эф. " .. formatNumber(stacks(c.DarkGrass)) .. ")\n"
+					.. "Одуванчик: " .. formatNumber(c.Dandelion or 0) .. " (эф. " .. formatNumber(stacks(c.Dandelion)) .. ")\n"
+					.. "Цветок: " .. formatNumber(c.Flower or 0) .. " (эф. " .. formatNumber(stacks(c.Flower)) .. ")\n"
+					.. "Фиалка: " .. formatNumber(c.Violet or 0) .. " (эф. " .. formatNumber(stacks(c.Violet)) .. ")\n"
+					.. "Роза: " .. formatNumber(c.Rose or 0) .. " (эф. " .. formatNumber(stacks(c.Rose)) .. ")\n\n"
+				.. "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(math.max(0, effBulk - 1))
+		end
+		if runeUi.openBtn then
+				setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ FOREST RUNE (50 Coins)", coins.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
+		end
+		if runeUi.luckBtn then runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)" end
+		if runeUi.speedBtn then runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)" end
+		if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
+		refreshRuneStats()
+		local safeHayState = buildStableHaySnapshot()
+		local hayAmountLevelValue = readHayUpgradeLevel(safeHayState, "HayAmount")
+		local hayMultiplierLevelValue = readHayUpgradeLevel(safeHayState, "HayMultiplier")
+		local hayCooldownLevelValue = readHayUpgradeLevel(safeHayState, "HayCooldown")
+		local hayCurrencyValue = tonumber(type(safeHayState) == "table" and safeHayState.HayCurrency or 0) or 0
+		if hayUiRows.gain then
+			local gain = (1 + hayAmountLevelValue) * (1 + hayMultiplierLevelValue * 0.5)
+			local cooldown = math.max(0.8, 5 - hayCooldownLevelValue * 0.1)
+			hayUiRows.currency.Text = formatNumber(hayCurrencyValue)
+			hayUiRows.gain.Text = "+" .. formatNumber(gain)
+			hayUiRows.multiplier.Text = "x" .. formatNumber(1 + hayMultiplierLevelValue * 0.5)
+			hayUiRows.cooldown.Text = formatNumber(cooldown) .. "s"
+			hayUiRows.amountLvl.Text = tostring(hayAmountLevelValue) .. "/250"
+			hayUiRows.multLvl.Text = tostring(hayMultiplierLevelValue) .. "/50"
+			hayUiRows.cdLvl.Text = tostring(hayCooldownLevelValue) .. "/25"
+			hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevelValue, hayMultiplierLevelValue)
+		end
+		for idx = 1, #HAY_UPGRADE_ORDER do
+			local key = HAY_UPGRADE_ORDER[idx]
+			local def = getHayUpgradeDefSafe(key)
+			local card = getHayUpgradeCard(key)
+			if card then
+					updateCard(
+						card,
+						readHayUpgradeLevel(safeHayState, key),
+						readHayUpgradeCost(safeHayState, key),
+						true,
+						def.maxLevel,
+						hayCurrencyValue,
+						not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil,
+						"Hay"
+					)
+			end
+		end
+	end
+
+	if runeUpgradeCards then
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil, "Coins")
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, nil, "Wood")
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil, "Paper")
+		if runeUpgradeLockedOverlay then
+			runeUpgradeLockedOverlay.Visible = false
+		end
+	end
+
+	if xpUpgradeCards then
+		local xpUnlocked = secondUnlockedVisual
+		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.xpMul, xpMultiplierLevel.Value, math.floor(xpMultiplierCost.Value + 0.5), true, 5, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.runeLuck, runeLuckXpLevel.Value, math.floor(runeLuckXpCost.Value + 0.5), true, 3, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, nil, "XP")
+		if xpUpgradeLockedOverlay then
+			xpUpgradeLockedOverlay.Visible = false
+		end
+	end
+
+		if xpProgressUi then
+			local boostValue = 1 + xpBoostLevel.Value
+			xpProgressUi.valueText.Text = "x" .. formatNumber(boostValue)
+			xpProgressUi.costText.Text = xpBoostNextCost.Value <= 0 and "MAX" or (formatNumber(math.floor(xpBoostNextCost.Value + 0.5)) .. " XP")
+		if xpProgressUi.currentText then
+			xpProgressUi.currentText.Text = formatNumber(xpValue.Value)
+		end
+			if xpProgressUi.collectText then
+				xpProgressUi.collectText.Text = formatNumber(getClientXpPerCollectEstimate()) .. " XP/sec"
+			end
+			if xpProgressUi.needText then
+				xpProgressUi.needText.Text = xpBoostNextCost.Value <= 0 and "0" or formatNumber(math.max(0, xpBoostNextCost.Value - xpValue.Value))
+			end
+			if xpProgressUi.multText then
+				xpProgressUi.multText.Text = "x" .. formatNumber(1 + xpMultiplierLevel.Value)
+			end
+			if xpProgressUi.levelText then
+				xpProgressUi.levelText.Text = tostring(xpBoostLevel.Value)
+			end
+			if xpProgressUi.nextUnlockText then
+				local nxt = xpBoostLevel.Value < 5 and "Rune XP Tier" or (xpBoostLevel.Value < 10 and "Advanced Rune Tier" or "MAX TIER")
+				xpProgressUi.nextUnlockText.Text = nxt
+			end
+			local progress = xpBoostNextCost.Value > 0 and safeClamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
+			TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
+			if xpProgressUi.barGlow then
+				local boost = (xpProgressLastValue and xpValue.Value > xpProgressLastValue) and 0.58 or 0.75
+				xpProgressUi.barGlow.BackgroundTransparency = boost
+				TweenService:Create(xpProgressUi.barGlow, TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {BackgroundTransparency = 0.8}):Play()
+			end
+			if xpProgressLastValue and xpValue.Value > xpProgressLastValue and xpProgressUi.valueText then
+				xpProgressUi.valueText.TextColor3 = Color3.fromRGB(170, 255, 230)
+				TweenService:Create(xpProgressUi.valueText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(236, 255, 228)}):Play()
+			end
+			xpProgressLastValue = xpValue.Value
+		setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
+		if xpProgressLockedOverlay then
+			xpProgressLockedOverlay.Visible = false
+		end
+	end
+
+	-- Safety pass against stale visual lock states.
+	if thirdUnlockedVisual then
+		updateCard(coinWoodBoostCard, coinWoodBoostLevel.Value, coinWoodBoostCost.Value, coinWoodBoostActive.Value, 10, coins.Value, nil, "Coins")
+		updateCard(treeCoinBoostCard, woodCoinBoostLevel.Value, woodCoinBoostCost.Value, woodCoinBoostActive.Value, 20, woodCurrency.Value, nil, "Wood")
+	end
+	if secondUnlockedVisual and xpUpgradeCards then
+		updateCard(xpUpgradeCards.coin, coinXpLevel.Value, math.floor(coinXpCost.Value + 0.5), true, 10, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.wood, woodXpLevel.Value, math.floor(woodXpCost.Value + 0.5), true, 10, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.paper, paperXpLevel.Value, math.floor(paperXpCost.Value + 0.5), true, 10, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.xpMul, xpMultiplierLevel.Value, math.floor(xpMultiplierCost.Value + 0.5), true, 5, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.runeLuck, runeLuckXpLevel.Value, math.floor(runeLuckXpCost.Value + 0.5), true, 3, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.runeBulk, runeBulkXpLevel.Value, math.floor(runeBulkXpCost.Value + 0.5), true, 5, xpValue.Value, nil, "XP")
+		updateCard(xpUpgradeCards.runeSpeed, runeSpeedXpLevel.Value, math.floor(runeSpeedXpCost.Value + 0.5), true, 2, xpValue.Value, nil, "XP")
+	end
+	if secondUnlockedVisual and runeUpgradeCards then
+		updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil, "Coins")
+		updateCard(runeUpgradeCards.speed, runeSpeedLevel.Value, math.floor(runeSpeedCost.Value + 0.5), true, 5, woodCurrency.Value, nil, "Wood")
+		updateCard(runeUpgradeCards.bulk, runeBulkLevel.Value, math.floor(runeBulkCost.Value + 0.5), true, 5, paperValue.Value, nil, "Paper")
+	end
+
+	updateWallVisual()
+	refreshAdminCurrencyButtons()
+	updateUnlockDebug()
 end
-
-end -- закрытие updateBoards()
 
 passiveEffectParts = {}
 if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
@@ -5186,498 +5631,553 @@ for i = 1, #(passiveEffectParts or {}) do
 			l.Color = Color3.fromRGB(181, 219, 255)
 			l.Parent = p
 		end
+		if not p:FindFirstChild("PassiveFxHighlight") then
+			local h = Instance.new("Highlight")
+			h.Name = "PassiveFxHighlight"
+			h.Adornee = p
+			h.FillColor = (p == hayBlock and Color3.fromRGB(255, 229, 128)) or ((p == runeRollBlock or p == natureRuneBlock) and Color3.fromRGB(122, 255, 220)) or (p == forestRuneBlock and Color3.fromRGB(165, 255, 145)) or Color3.fromRGB(168, 199, 255)
+			h.OutlineColor = (p == hayBlock and Color3.fromRGB(255, 247, 196)) or ((p == runeRollBlock or p == natureRuneBlock) and Color3.fromRGB(224, 255, 244)) or (p == forestRuneBlock and Color3.fromRGB(218, 255, 203)) or Color3.fromRGB(245, 249, 255)
+			h.FillTransparency = 0.7
+			h.OutlineTransparency = 0.02
+			h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			h.Parent = p
+		end
+		if not p:FindFirstChild("PassiveFxParticles") then
+			local emitter = Instance.new("ParticleEmitter")
+			emitter.Name = "PassiveFxParticles"
+			emitter.Rate = 8
+			emitter.Lifetime = NumberRange.new(0.7, 1.2)
+			emitter.Speed = NumberRange.new(0.8, 1.8)
+			emitter.RotSpeed = NumberRange.new(-30, 30)
+			emitter.Size = NumberSequence.new(0.3, 0)
+			emitter.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.35),
+				NumberSequenceKeypoint.new(1, 1),
+			})
+			emitter.Parent = p
+		end
 	end)(passiveEffectParts[i])
 end
 
-	function triggerHayBurst()
-		if not hayBlock or not hayBlock:IsA("BasePart") then return end
-		local burst = Instance.new("ParticleEmitter")
-		burst.Color = ColorSequence.new(Color3.fromRGB(255, 231, 133), Color3.fromRGB(232, 186, 79))
-		burst.Speed = NumberRange.new(3, 6)
-		burst.Lifetime = NumberRange.new(0.2, 0.35)
-		burst.Rate = 0
-		burst.SpreadAngle = Vector2.new(360, 360)
-		burst.Size = NumberSequence.new(0.25, 0)
-		burst.Parent = hayBlock
-		burst:Emit(16)
-		task.delay(0.4, function() burst:Destroy() end)
+function triggerRuneBurst(systemName)
+	local target = runeRollBlock
+	if systemName == "Forest" and forestRuneBlock and forestRuneBlock:IsA("BasePart") then
+		target = forestRuneBlock
+	elseif systemName == "Nature" and natureRuneBlock and natureRuneBlock:IsA("BasePart") then
+		target = natureRuneBlock
 	end
-
-	function getButtonPurchaseContext(button)
-		return {
-			button = button,
-			text = button and button.Text or "",
-			active = button and button.Active or false,
-			selectable = button and button.Selectable or false,
-		}
+	if not target or not target:IsA("BasePart") then
+		return
 	end
-
-	function checkButtonExistsRequirement(context)
-		if context.button then
-			return true, "ok"
-		end
-		return false, "missing_button"
+	local burst = Instance.new("ParticleEmitter")
+	burst.Texture = getAssetOrEmpty(AssetSlots.RuneIcons.Grass)
+	if systemName == "Forest" then
+		burst.Color = ColorSequence.new(Color3.fromRGB(176, 121, 76), Color3.fromRGB(97, 73, 45))
+	else
+		burst.Color = ColorSequence.new(Color3.fromRGB(122, 255, 116), Color3.fromRGB(66, 184, 82))
 	end
+	burst.Speed = NumberRange.new(4, 7)
+	burst.Lifetime = NumberRange.new(0.2, 0.35)
+	burst.Rate = 0
+	burst.SpreadAngle = Vector2.new(360, 360)
+	burst.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.35),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	burst.Parent = target
+	burst:Emit(14)
+	task.delay(0.4, function()
+		burst:Destroy()
+	end)
+end
 
-	function checkButtonInteractableRequirement(context)
-		if context.active and context.selectable then
-			return true, "ok"
-		end
-		return false, "inactive"
-	end
+function triggerHayBurst()
+	if not hayBlock or not hayBlock:IsA("BasePart") then return end
+	local burst = Instance.new("ParticleEmitter")
+	burst.Color = ColorSequence.new(Color3.fromRGB(255, 231, 133), Color3.fromRGB(232, 186, 79))
+	burst.Speed = NumberRange.new(3, 6)
+	burst.Lifetime = NumberRange.new(0.2, 0.35)
+	burst.Rate = 0
+	burst.SpreadAngle = Vector2.new(360, 360)
+	burst.Size = NumberSequence.new(0.25, 0)
+	burst.Parent = hayBlock
+	burst:Emit(16)
+	task.delay(0.4, function() burst:Destroy() end)
+end
 
-	function checkButtonDisplayStateRequirement(context)
-		if context.text == "LOCKED" then
-			return false, "locked"
-		end
-		if context.text == "MAX" then
-			return false, "maxed"
-		end
+function getButtonPurchaseContext(button)
+	return {
+		button = button,
+		text = button and button.Text or "",
+		active = button and button.Active or false,
+		selectable = button and button.Selectable or false,
+	}
+end
+
+function checkButtonExistsRequirement(context)
+	if context.button then
 		return true, "ok"
 	end
+	return false, "missing_button"
+end
 
-	function buildButtonPurchaseState(context)
-		local existsOk, existsReason = checkButtonExistsRequirement(context)
-		if not existsOk then
-			return { purchasable = false, reason = existsReason, displayState = "hidden" }
-		end
+function checkButtonInteractableRequirement(context)
+	if context.active and context.selectable then
+		return true, "ok"
+	end
+	return false, "inactive"
+end
 
-		local interactableOk, interactableReason = checkButtonInteractableRequirement(context)
-		if not interactableOk then
-			return { purchasable = false, reason = interactableReason, displayState = "disabled" }
-		end
+function checkButtonDisplayStateRequirement(context)
+	if context.text == "LOCKED" then
+		return false, "locked"
+	end
+	if context.text == "MAX" then
+		return false, "maxed"
+	end
+	return true, "ok"
+end
 
-		local displayOk, displayReason = checkButtonDisplayStateRequirement(context)
-		if not displayOk then
-			return { purchasable = false, reason = displayReason, displayState = displayReason }
-		end
-
-		return { purchasable = true, reason = "ok", displayState = "active" }
+function buildButtonPurchaseState(context)
+	local existsOk, existsReason = checkButtonExistsRequirement(context)
+	if not existsOk then
+		return { purchasable = false, reason = existsReason, displayState = "hidden" }
 	end
 
-	function isButtonPurchasable(button)
-		local purchaseState = buildButtonPurchaseState(getButtonPurchaseContext(button))
-		return purchaseState.purchasable
+	local interactableOk, interactableReason = checkButtonInteractableRequirement(context)
+	if not interactableOk then
+		return { purchasable = false, reason = interactableReason, displayState = "disabled" }
 	end
 
-	function bindUpgradeCard(card, family, key)
-		if not card then return end
-		card.buyButton.MouseButton1Click:Connect(function()
-			if not isButtonPurchasable(card.buyButton) then return end
-			purchaseUpgradeEvent:FireServer(family, key, "Buy")
-		end)
-		card.maxButton.MouseButton1Click:Connect(function()
-			if not isButtonPurchasable(card.maxButton) then return end
-			purchaseUpgradeEvent:FireServer(family, key, "Max")
-		end)
+	local displayOk, displayReason = checkButtonDisplayStateRequirement(context)
+	if not displayOk then
+		return { purchasable = false, reason = displayReason, displayState = displayReason }
 	end
 
-	function bindRuneUpgradeCard(card, buyAction, maxAction)
-		if not card then return end
-		card.buyButton.MouseButton1Click:Connect(function()
-			if not isButtonPurchasable(card.buyButton) then return end
-			runeActionEvent:FireServer(buyAction)
-		end)
-		card.maxButton.MouseButton1Click:Connect(function()
-			if not isButtonPurchasable(card.maxButton) then return end
-			runeActionEvent:FireServer(maxAction)
-		end)
-	end
+	return { purchasable = true, reason = "ok", displayState = "active" }
+end
 
-	function bindAdminCurrencySelectors()
-		selectCoinsButton.MouseButton1Click:Connect(function()
-			selectedAdminCurrency = "Coins"
-			refreshAdminCurrencyButtons()
-		end)
-		selectWoodButton.MouseButton1Click:Connect(function()
-			selectedAdminCurrency = "Wood"
-			refreshAdminCurrencyButtons()
-		end)
-		selectPaperButton.MouseButton1Click:Connect(function()
-			selectedAdminCurrency = "Paper"
-			refreshAdminCurrencyButtons()
-		end)
-		selectXPButton.MouseButton1Click:Connect(function()
-			selectedAdminCurrency = "XP"
-			refreshAdminCurrencyButtons()
-		end)
-	end
+function isButtonPurchasable(button)
+	local purchaseState = buildButtonPurchaseState(getButtonPurchaseContext(button))
+	return purchaseState.purchasable
+end
 
-	function bindUpgradeBoards()
-		local upgrades = {
-			{coinGainCard, "Coin", "CoinValue"},
-			{coinMultiCard, "Coin", "Multiplier"},
-			{coinSpawnCard, "Coin", "SpawnSpeed"},
+function bindUpgradeCard(card, family, key)
+	if not card then return end
+	card.buyButton.MouseButton1Click:Connect(function()
+		if not isButtonPurchasable(card.buyButton) then return end
+		purchaseUpgradeEvent:FireServer(family, key, "Buy")
+	end)
+	card.maxButton.MouseButton1Click:Connect(function()
+		if not isButtonPurchasable(card.maxButton) then return end
+		purchaseUpgradeEvent:FireServer(family, key, "Max")
+	end)
+end
+
+function bindRuneUpgradeCard(card, buyAction, maxAction)
+	if not card then return end
+	card.buyButton.MouseButton1Click:Connect(function()
+		if not isButtonPurchasable(card.buyButton) then return end
+		runeActionEvent:FireServer(buyAction)
+	end)
+	card.maxButton.MouseButton1Click:Connect(function()
+		if not isButtonPurchasable(card.maxButton) then return end
+		runeActionEvent:FireServer(maxAction)
+	end)
+end
+
+function bindAdminCurrencySelectors()
+	selectCoinsButton.MouseButton1Click:Connect(function()
+		selectedAdminCurrency = "Coins"
+		refreshAdminCurrencyButtons()
+	end)
+	selectWoodButton.MouseButton1Click:Connect(function()
+		selectedAdminCurrency = "Wood"
+		refreshAdminCurrencyButtons()
+	end)
+	selectPaperButton.MouseButton1Click:Connect(function()
+		selectedAdminCurrency = "Paper"
+		refreshAdminCurrencyButtons()
+	end)
+	selectXPButton.MouseButton1Click:Connect(function()
+		selectedAdminCurrency = "XP"
+		refreshAdminCurrencyButtons()
+	end)
+end
+
+function bindUpgradeBoards()
+	local upgrades = {
+		{coinGainCard, "Coin", "CoinValue"},
+		{coinMultiCard, "Coin", "Multiplier"},
+		{coinSpawnCard, "Coin", "SpawnSpeed"},
 			{coinWoodBoostCard, "Coin", "WoodBoost"},
-			{treeGainCard, "Wood", "WoodValue"},
-			{treeMultiCard, "Wood", "WoodMultiplier"},
+		{treeGainCard, "Wood", "WoodValue"},
+		{treeMultiCard, "Wood", "WoodMultiplier"},
 			{treeSpeedCard, "Wood", "WoodSpeed"},
 			{treeCoinBoostCard, "Wood", "CoinBoost"},
+	}
+	for i = 1, #upgrades do
+		local cfg = upgrades[i]
+		bindUpgradeCard(cfg[1], cfg[2], cfg[3])
+	end
+
+	if paperUpgradeCards then
+		bindUpgradeCard(paperUpgradeCards.gain, "Paper", "PaperValue")
+		bindUpgradeCard(paperUpgradeCards.multi, "Paper", "PaperMultiplier")
+		bindUpgradeCard(paperUpgradeCards.speed, "Paper", "PaperSpeed")
+	end
+
+	if runeUpgradeCards then
+		bindRuneUpgradeCard(runeUpgradeCards.luck, "UpgradeLuck", "UpgradeLuckMax")
+		bindRuneUpgradeCard(runeUpgradeCards.speed, "UpgradeSpeed", "UpgradeSpeedMax")
+		bindRuneUpgradeCard(runeUpgradeCards.bulk, "UpgradeBulk", "UpgradeBulkMax")
+	end
+
+	if xpUpgradeCards then
+		local xpBindings = {
+			{xpUpgradeCards.coin, "CoinXP"},
+			{xpUpgradeCards.wood, "WoodXP"},
+			{xpUpgradeCards.paper, "PaperXP"},
+			{xpUpgradeCards.xpMul, "XPMultiplier"},
+			{xpUpgradeCards.runeLuck, "RuneLuckXP"},
+			{xpUpgradeCards.runeBulk, "RuneBulkXP"},
+			{xpUpgradeCards.runeSpeed, "RuneSpeedXP"},
 		}
-		for i = 1, #upgrades do
-			local cfg = upgrades[i]
-			bindUpgradeCard(cfg[1], cfg[2], cfg[3])
+		for idx = 1, #(xpBindings or {}) do
+			local binding = xpBindings[idx]
+			bindUpgradeCard(binding[1], "XP", binding[2])
 		end
-
-		if paperUpgradeCards then
-			bindUpgradeCard(paperUpgradeCards.gain, "Paper", "PaperValue")
-			bindUpgradeCard(paperUpgradeCards.multi, "Paper", "PaperMultiplier")
-			bindUpgradeCard(paperUpgradeCards.speed, "Paper", "PaperSpeed")
-		end
-
-		if runeUpgradeCards then
-			bindRuneUpgradeCard(runeUpgradeCards.luck, "UpgradeLuck", "UpgradeLuckMax")
-			bindRuneUpgradeCard(runeUpgradeCards.speed, "UpgradeSpeed", "UpgradeSpeedMax")
-			bindRuneUpgradeCard(runeUpgradeCards.bulk, "UpgradeBulk", "UpgradeBulkMax")
-		end
-
-		if xpUpgradeCards then
-			local xpBindings = {
-				{xpUpgradeCards.coin, "CoinXP"},
-				{xpUpgradeCards.wood, "WoodXP"},
-				{xpUpgradeCards.paper, "PaperXP"},
-				{xpUpgradeCards.xpMul, "XPMultiplier"},
-				{xpUpgradeCards.runeLuck, "RuneLuckXP"},
-				{xpUpgradeCards.runeBulk, "RuneBulkXP"},
-				{xpUpgradeCards.runeSpeed, "RuneSpeedXP"},
-			}
-			for idx = 1, #(xpBindings or {}) do
-				local binding = xpBindings[idx]
-				bindUpgradeCard(binding[1], "XP", binding[2])
-			end
-		end
-		for idx = 1, #HAY_UPGRADE_ORDER do
-			local key = HAY_UPGRADE_ORDER[idx]
-			local card = getHayUpgradeCard(key)
-			if card then
-				bindUpgradeCard(card, "Hay", key)
-			end
-		end
-
-		if xpProgressUi and xpProgressUi.buyButton then
-			xpProgressUi.buyButton.MouseButton1Click:Connect(function()
-				xpActionEvent:FireServer("BuyXPBoost")
-			end)
+	end
+	for idx = 1, #HAY_UPGRADE_ORDER do
+		local key = HAY_UPGRADE_ORDER[idx]
+		local card = getHayUpgradeCard(key)
+		if card then
+			bindUpgradeCard(card, "Hay", key)
 		end
 	end
 
-	function bindPassiveAndRuneButtons()
-		rebirthButton.MouseButton1Click:Connect(function()
-			purchaseRebirthEvent:FireServer()
-			task.delay(0.1, refreshClientUnlockVisibility)
-			task.delay(0.5, refreshClientUnlockVisibility)
+	if xpProgressUi and xpProgressUi.buyButton then
+		xpProgressUi.buyButton.MouseButton1Click:Connect(function()
+			xpActionEvent:FireServer("BuyXPBoost")
 		end)
-		addFuelButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelOnce") end)
-		addFuelMaxButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelMax") end)
+	end
+end
 
-		function firePassiveRoll()
-			if isRollRolling then
-				showToast("Подожди, ролл уже идет")
+function bindPassiveAndRuneButtons()
+	rebirthButton.MouseButton1Click:Connect(function()
+		purchaseRebirthEvent:FireServer()
+		task.delay(0.1, refreshClientUnlockVisibility)
+		task.delay(0.5, refreshClientUnlockVisibility)
+	end)
+	addFuelButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelOnce") end)
+	addFuelMaxButton.MouseButton1Click:Connect(function() factoryActionEvent:FireServer("AddFuelMax") end)
+
+	function firePassiveRoll()
+		if isRovRolling then
+			showToast("Подожди, ролл уже идет")
+			return
+		end
+		passiveActionEvent:FireServer("Roll")
+	end
+
+	if passiveUi.rollButton then passiveUi.rollButton.MouseButton1Click:Connect(firePassiveRoll) end
+	if passiveUi.rollButtonInventory then passiveUi.rollButtonInventory.MouseButton1Click:Connect(firePassiveRoll) end
+
+	if passiveUi.equipBtn then
+		passiveUi.equipBtn.MouseButton1Click:Connect(function()
+			if passiveUi.selectedUid == "" then
+				showToast("Выбери пассив")
 				return
 			end
-			passiveActionEvent:FireServer("Roll")
-		end
-
-		if passiveUi.rollButton then passiveUi.rollButton.MouseButton1Click:Connect(firePassiveRoll) end
-		if passiveUi.rollButtonInventory then passiveUi.rollButtonInventory.MouseButton1Click:Connect(firePassiveRoll) end
-
-		if passiveUi.equipBtn then
-			passiveUi.equipBtn.MouseButton1Click:Connect(function()
-				if passiveUi.selectedUid == "" then
-					showToast("Выбери пассив")
-					return
-				end
-				if passiveUi.lastState.equippedUid == passiveUi.selectedUid then
-					passiveActionEvent:FireServer("Unequip")
-				else
-					passiveActionEvent:FireServer("Equip", passiveUi.selectedUid)
-				end
-			end)
-		end
-
-		if passiveUi.deleteBtn then
-			passiveUi.deleteBtn.MouseButton1Click:Connect(function()
-				if passiveUi.selectedUid == "" then
-					showToast("Выбери пассив")
-					return
-				end
-				if passiveUi.deleteConfirm then
-					passiveUi.deleteConfirm.Visible = true
-				end
-			end)
-		end
-
-		if passiveUi.deleteConfirmYes then
-			passiveUi.deleteConfirmYes.MouseButton1Click:Connect(function()
-				if passiveUi.selectedUid ~= "" then
-					passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
-					passiveUi.selectedUid = ""
-				end
-				passiveUi.deleteConfirm.Visible = false
-			end)
-		end
-
-		if runeUi.luckBtn then runeUi.luckBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeLuck") end) end
-		if runeUi.speedBtn then runeUi.speedBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeSpeed") end) end
-		if runeUi.bulkBtn then runeUi.bulkBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeBulk") end) end
-	end
-
-	function bindAdminPanelActions()
-		giveCurrencyButton.MouseButton1Click:Connect(function()
-			local amount = tonumber(adminAmountBox.Text)
-			local targetName = tostring(adminTargetBox.Text or "me")
-			if amount then
-				adminActionEvent:FireServer("GiveCurrency", selectedAdminCurrency, {amount = amount, targetName = targetName})
+			if passiveUi.lastState.equippedUid == passiveUi.selectedUid then
+				passiveActionEvent:FireServer("Unequip")
 			else
-				showToast("Введи число")
+				passiveActionEvent:FireServer("Equip", passiveUi.selectedUid)
 			end
-		end)
-
-		resetButton.MouseButton1Click:Connect(function() adminActionEvent:FireServer("ResetSelf") end)
-		for _, quickButton in ipairs(adminQuickButtons or {}) do
-			quickButton.MouseButton1Click:Connect(function()
-				adminActionEvent:FireServer("GiveCurrency", selectedAdminCurrency, {amount = tonumber(quickButton:GetAttribute("Amount")) or 0, targetName = tostring(adminTargetBox.Text or "me")})
-			end)
-		end
-
-		givePassiveButton.MouseButton1Click:Connect(function()
-			local passiveId = tostring(adminPassiveBox.Text or "")
-			if passiveId == "" then
-				showToast("Укажи passive id")
-				return
-			end
-			adminActionEvent:FireServer("GivePassive", passiveId, {targetName = tostring(adminTargetBox.Text or "me")})
-		end)
-
-		adminRuneBoostButton.MouseButton1Click:Connect(function()
-			adminActionEvent:FireServer("AdminRuneBoost", "", {targetName = tostring(adminTargetBox.Text or "me")})
-		end)
-
-		startAllEventsButton.MouseButton1Click:Connect(function()
-			adminActionEvent:FireServer("StartServerEvent", "All", selectedAdminDuration)
-		end)
-
-		duration5Button.MouseButton1Click:Connect(function() selectedAdminDuration = 300 end)
-		duration15Button.MouseButton1Click:Connect(function() selectedAdminDuration = 900 end)
-		duration60Button.MouseButton1Click:Connect(function() selectedAdminDuration = 3600 end)
-
-		for eventId in pairs(eventButtons) do
-			eventButtons[eventId].MouseButton1Click:Connect(function()
-				selectedAdminEvent = eventId
-				adminActionEvent:FireServer("StartServerEvent", selectedAdminEvent, selectedAdminDuration)
-			end)
-		end
-
-		toggleAdminButton.MouseButton1Click:Connect(function()
-			adminFrame.Visible = not adminFrame.Visible
-			toggleAdminButton.Text = adminFrame.Visible and "Admin Hide" or "Admin Show"
 		end)
 	end
 
-	function registerNotifyEventListeners()
-		notifyEvent.OnClientEvent:Connect(function(payload)
-			if typeof(payload) ~= "table" then
-				showToast(tostring(payload))
+	if passiveUi.deleteBtn then
+		passiveUi.deleteBtn.MouseButton1Click:Connect(function()
+			if passiveUi.selectedUid == "" then
+				showToast("Выбери пассив")
 				return
 			end
+			if passiveUi.deleteConfirm then
+				passiveUi.deleteConfirm.Visible = true
+			end
+		end)
+	end
 
-			if payload.kind == "pickup" then
-				local ok = pcall(function()
-					showPickup(payload.icon or "Coin", payload.amount or 0)
-				end)
-				if tostring(payload.icon or "") == "Hay" then
-					triggerHayBurst()
-				end
-				if not ok then
-					showToast("+" .. tostring(payload.amount or 0))
-				end
-			elseif payload.kind == "passive_roll_result" then
-				local def = PASSIVE_DEFS[payload.passiveId or ""]
-				if def then
-					playRovAnimation(def)
-					showToast("Новый пассив: " .. def.name .. " [" .. def.rarity .. "]")
-				else
-					showToast("Пассив получен")
-				end
-			elseif payload.kind == "rune_roll_result" then
-				local rolled = payload.rolled or {}
-				showToast("Открыто рун: " .. tostring(#(rolled or {})))
-			elseif payload.kind == "rune_roll_state" then
-				local systemName = tostring(rawget(payload, "system") or "Nature")
-				if systemName ~= "Nature" and systemName ~= "Forest" then
-					return
-				end
-				if payload.active then startRuneRolling(systemName) else stopRuneRolling(systemName) end
-			elseif payload.kind == "rune_roll_tick" then
-				local systemName = tostring(rawget(payload, "system") or "Nature")
-				if systemName ~= "Nature" and systemName ~= "Forest" then
-					return
-				end
-				local session = payload.session or {}
-				effectiveRuneDenominators = payload.effectiveDenominators or effectiveRuneDenominators
-				if not runeRollingActive or activeRuneSystem ~= systemName then startRuneRolling(systemName) end
-				updateRuneSession(systemName, session)
-				refreshRuneStats()
-				triggerRuneBurst(systemName)
-			elseif payload.kind == "admin_event_state" then
-				activeAdminEvents = normalizeAdminEvents(payload.events)
-				renderAdminEvents(activeAdminEvents)
-				if updateBoards then updateBoards() end
+	if passiveUi.deleteConfirmYes then
+		passiveUi.deleteConfirmYes.MouseButton1Click:Connect(function()
+			if passiveUi.selectedUid ~= "" then
+				passiveActionEvent:FireServer("Delete", passiveUi.selectedUid)
+				passiveUi.selectedUid = ""
+			end
+			passiveUi.deleteConfirm.Visible = false
+		end)
+	end
+
+	if runeUi.luckBtn then runeUi.luckBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeLuck") end) end
+	if runeUi.speedBtn then runeUi.speedBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeSpeed") end) end
+	if runeUi.bulkBtn then runeUi.bulkBtn.MouseButton1Click:Connect(function() runeActionEvent:FireServer("UpgradeBulk") end) end
+end
+
+function bindAdminPanelActions()
+	giveCurrencyButton.MouseButton1Click:Connect(function()
+		local amount = tonumber(adminAmountBox.Text)
+		local targetName = tostring(adminTargetBox.Text or "me")
+		if amount then
+			adminActionEvent:FireServer("GiveCurrency", selectedAdminCurrency, {amount = amount, targetName = targetName})
+		else
+			showToast("Введи число")
+		end
+	end)
+
+	resetButton.MouseButton1Click:Connect(function() adminActionEvent:FireServer("ResetSelf") end)
+	for _, quickButton in ipairs(adminQuickButtons or {}) do
+		quickButton.MouseButton1Click:Connect(function()
+			adminActionEvent:FireServer("GiveCurrency", selectedAdminCurrency, {amount = tonumber(quickButton:GetAttribute("Amount")) or 0, targetName = tostring(adminTargetBox.Text or "me")})
+		end)
+	end
+
+	givePassiveButton.MouseButton1Click:Connect(function()
+		local passiveId = tostring(adminPassiveBox.Text or "")
+		if passiveId == "" then
+			showToast("Укажи passive id")
+			return
+		end
+		adminActionEvent:FireServer("GivePassive", passiveId, {targetName = tostring(adminTargetBox.Text or "me")})
+	end)
+
+	adminRuneBoostButton.MouseButton1Click:Connect(function()
+		adminActionEvent:FireServer("AdminRuneBoost", "", {targetName = tostring(adminTargetBox.Text or "me")})
+	end)
+
+	startAllEventsButton.MouseButton1Click:Connect(function()
+		adminActionEvent:FireServer("StartServerEvent", "All", selectedAdminDuration)
+	end)
+
+	duration5Button.MouseButton1Click:Connect(function() selectedAdminDuration = 300 end)
+	duration15Button.MouseButton1Click:Connect(function() selectedAdminDuration = 900 end)
+	duration60Button.MouseButton1Click:Connect(function() selectedAdminDuration = 3600 end)
+
+	for eventId in pairs(eventButtons) do
+		eventButtons[eventId].MouseButton1Click:Connect(function()
+			selectedAdminEvent = eventId
+			adminActionEvent:FireServer("StartServerEvent", selectedAdminEvent, selectedAdminDuration)
+		end)
+	end
+
+	toggleAdminButton.MouseButton1Click:Connect(function()
+		adminFrame.Visible = not adminFrame.Visible
+		toggleAdminButton.Text = adminFrame.Visible and "Admin Hide" or "Admin Show"
+	end)
+end
+
+function registerNotifyEventListeners()
+	notifyEvent.OnClientEvent:Connect(function(payload)
+		if typeof(payload) ~= "table" then
+			showToast(tostring(payload))
+			return
+		end
+
+		if payload.kind == "pickup" then
+			local ok = pcall(function()
+				showPickup(payload.icon or "Coin", payload.amount or 0)
+			end)
+			if tostring(payload.icon or "") == "Hay" then
+				triggerHayBurst()
+			end
+			if not ok then
+				showToast("+" .. tostring(payload.amount or 0))
+			end
+		elseif payload.kind == "passive_roll_result" then
+			local def = PASSIVE_DEFS[payload.passiveId or ""]
+			if def then
+				playRovAnimation(def)
+				showToast("Новый пассив: " .. def.name .. " [" .. def.rarity .. "]")
 			else
-				showToast(payload.text or "Готово")
+				showToast("Пассив получен")
 			end
-		end)
-	end
-
-	function registerWorldInputBindings()
-		mouse.Button1Down:Connect(function()
-			if UserInputService:GetFocusedTextBox() then return end
-
-			if not isSystemUnlocked(2) then
-				if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
-					passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
-				elseif passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
-					passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
-				end
+		elseif payload.kind == "rune_roll_result" then
+			local rolled = payload.rolled or {}
+			showToast("Открыто рун: " .. tostring(#(rolled or {})))
+		elseif payload.kind == "rune_roll_state" then
+			local systemName = tostring(rawget(payload, "system") or "Nature")
+			if systemName ~= "Nature" and systemName ~= "Forest" then
 				return
 			end
-
-			if mouse.Target == treeBlock then
-				woodClickEvent:FireServer()
+			if payload.active then startRuneRolling(systemName) else stopRuneRolling(systemName) end
+		elseif payload.kind == "rune_roll_tick" then
+			local systemName = tostring(rawget(payload, "system") or "Nature")
+			if systemName ~= "Nature" and systemName ~= "Forest" then
 				return
 			end
+			local session = payload.session or {}
+			effectiveRuneDenominators = payload.effectiveDenominators or effectiveRuneDenominators
+			if not runeRollingActive or activeRuneSystem ~= systemName then startRuneRolling(systemName) end
+			updateRuneSession(systemName, session)
+			refreshRuneStats()
+			triggerRuneBurst(systemName)
+		elseif payload.kind == "admin_event_state" then
+			activeAdminEvents = normalizeAdminEvents(payload.events)
+			renderAdminEvents(activeAdminEvents)
+			if updateBoards then updateBoards() end
+		else
+			showToast(payload.text or "Готово")
+		end
+	end)
+end
 
+function registerWorldInputBindings()
+	mouse.Button1Down:Connect(function()
+		if UserInputService:GetFocusedTextBox() then return end
+
+		if not isSystemUnlocked(2) then
 			if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
-				if isSystemUnlocked(5) then
-					passiveUi.inventoryPanel.Visible = false
-					passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
-				else
-					showToast("Пассивы откроются на 5-м перерождении")
-				end
-				return
+				passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
+			elseif passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
+				passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
 			end
+			return
+		end
 
-			if passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
-				if isSystemUnlocked(5) then
-					passiveUi.indexPanel.Visible = false
-					passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
-				else
-					showToast("Пассивы откроются на 5-м перерождении")
-				end
-				return
+		if mouse.Target == treeBlock then
+			woodClickEvent:FireServer()
+			return
+		end
+
+		if passiveUi.indexPanel and mouse.Target == passiveRollBlock then
+			if isSystemUnlocked(5) then
+				passiveUi.inventoryPanel.Visible = false
+				passiveUi.indexPanel.Visible = not passiveUi.indexPanel.Visible
+			else
+				showToast("Пассивы откроются на 5-м перерождении")
 			end
+			return
+		end
 
-			if mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock then
-				if not isSystemUnlocked(6) then
-					showToast("Руны откроются на 6-м перерождении")
+		if passiveUi.inventoryPanel and mouse.Target == passiveInventoryBlock then
+			if isSystemUnlocked(5) then
+				passiveUi.indexPanel.Visible = false
+				passiveUi.inventoryPanel.Visible = not passiveUi.inventoryPanel.Visible
+			else
+				showToast("Пассивы откроются на 5-м перерождении")
+			end
+			return
+		end
+
+		if mouse.Target == runeRollBlock or mouse.Target == runeIndexBlock then
+			if not isSystemUnlocked(6) then
+				showToast("Руны откроются на 6-м перерождении")
+			end
+			return
+		end
+	end)
+end
+
+function registerWatchedValueUpdates()
+	local watchedValues = {
+		coins,
+		coinValueLevel, coinMultiplierLevel, coinSpawnLevel, coinWoodBoostLevel,
+		coinValueCost, coinMultiplierCost, coinSpawnCost, coinWoodBoostCost,
+		coinValueActive, coinMultiplierActive, coinSpawnActive, coinWoodBoostActive,
+		woodCurrency,
+		woodValueLevel, woodMultiplierLevel, woodSpeedLevel, woodCoinBoostLevel,
+		woodValueCost, woodMultiplierCost, woodSpeedCost, woodCoinBoostCost,
+		woodValueActive, woodMultiplierActive, woodSpeedActive, woodCoinBoostActive,
+		paperValue, fuelValue, factoryCountdown, factoryRunning,
+		paperValueLevel, paperMultiplierLevel, paperSpeedLevel,
+		paperValueCost, paperMultiplierCost, paperSpeedCost,
+		paperValueActive, paperMultiplierActive, paperSpeedActive,
+		rebirthCount, rebirthNextCost, rebirthNextCurrency,
+		rebirthCoinMultiplierBonus, rebirthSpawnSpeedBonus, rebirthWoodMultiplierBonus,
+		secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked, fifthSystemsUnlocked, sixthSystemsUnlocked,
+		passiveStateJson, runeStateJson, runeLuckLevel, runeSpeedLevel, runeBulkLevel, runeLuckCost, runeSpeedCost, runeBulkCost,
+		doubleCoinsGamepass, doublePaperGamepass, doubleWoodGamepass, tripleRuneLuckGamepass,
+			xpValue, coinXpLevel, woodXpLevel, paperXpLevel, xpMultiplierLevel, runeLuckXpLevel, runeBulkXpLevel, runeSpeedXpLevel,
+		coinXpCost, woodXpCost, paperXpCost, xpMultiplierCost, runeLuckXpCost, runeBulkXpCost, runeSpeedXpCost, xpBoostLevel, xpBoostNextCost,
+	}
+	for i = 1, #(watchedValues or {}) do
+		local watched = watchedValues[i]
+		if watched then watched:GetPropertyChangedSignal("Value"):Connect(updateBoards) end
+	end
+end
+
+function refreshClientUnlockVisibility()
+	if updateBoards then
+		updateBoards()
+	end
+end
+
+function startRuntimeUiUpdates()
+	if passiveUi.hintEmoji then
+		RunService.RenderStepped:Connect(function()
+			local t = os.clock()
+			local blink = math.sin(t * 1.2)
+			if blink > 0.985 then
+				passiveUi.hintEmoji.Text = ";)"
+			elseif blink < -0.985 then
+				passiveUi.hintEmoji.Text = "-_-"
+			else
+				passiveUi.hintEmoji.Text = "😊"
+			end
+			passiveUi.hintEmoji.Rotation = math.sin(t * 0.8) * 6
+			if runeRollBlock and runeRollBlock:IsA("BasePart") then
+				local pulse = (math.sin(t * 1.6) + 1) * 0.5
+				local green = math.floor(120 + pulse * 90)
+				runeRollBlock.Color = Color3.fromRGB(40 + math.floor(pulse * 24), green, 52 + math.floor(pulse * 24))
+				local light = runeRollBlock:FindFirstChild("PassiveFxLight")
+				if light and light:IsA("PointLight") then
+					light.Brightness = 1.5 + pulse * 1.2
+					light.Color = Color3.fromRGB(122, 255, 138)
 				end
-				return
 			end
 		end)
 	end
 
-	function registerWatchedValueUpdates()
-		local watchedValues = {
-			coins,
-			coinValueLevel, coinMultiplierLevel, coinSpawnLevel, coinWoodBoostLevel,
-			coinValueCost, coinMultiplierCost, coinSpawnCost, coinWoodBoostCost,
-			coinValueActive, coinMultiplierActive, coinSpawnActive, coinWoodBoostActive,
-			woodCurrency,
-			woodValueLevel, woodMultiplierLevel, woodSpeedLevel, woodCoinBoostLevel,
-			woodValueCost, woodMultiplierCost, woodSpeedCost, woodCoinBoostCost,
-			woodValueActive, woodMultiplierActive, woodSpeedActive, woodCoinBoostActive,
-			paperValue, fuelValue, factoryCountdown, factoryRunning,
-			paperValueLevel, paperMultiplierLevel, paperSpeedLevel,
-			paperValueCost, paperMultiplierCost, paperSpeedCost,
-			paperValueActive, paperMultiplierActive, paperSpeedActive,
-			rebirthCount, rebirthNextCost, rebirthNextCurrency,
-			rebirthCoinMultiplierBonus, rebirthSpawnSpeedBonus, rebirthWoodMultiplierBonus,
-			secondAreaUnlocked, thirdUpgradeUnlocked, fourthSystemsUnlocked, fifthSystemsUnlocked, sixthSystemsUnlocked,
-			passiveStateJson, runeStateJson, runeLuckLevel, runeSpeedLevel, runeBulkLevel, runeLuckCost, runeSpeedCost, runeBulkCost,
-			doubleCoinsGamepass, doublePaperGamepass, doubleWoodGamepass, tripleRuneLuckGamepass,
-			xpValue, coinXpLevel, woodXpLevel, paperXpLevel, xpMultiplierLevel, runeLuckXpLevel, runeBulkXpLevel, runeSpeedXpLevel,
-			coinXpCost, woodXpCost, paperXpCost, xpMultiplierCost, runeLuckXpCost, runeBulkXpCost, runeSpeedXpCost, xpBoostLevel, xpBoostNextCost,
-		}
-		for i = 1, #(watchedValues or {}) do
-			local watched = watchedValues[i]
-			if watched then watched:GetPropertyChangedSignal("Value"):Connect(updateBoards) end
+	function tickAdminEventTimers()
+		if type(activeAdminEvents) ~= "table" or #activeAdminEvents == 0 then return end
+		local nextEvents = {}
+		for idx = 1, #activeAdminEvents do
+			local ev = activeAdminEvents[idx]
+			local eventData = type(ev) == "table" and ev or {}
+			local left = math.max(0, (tonumber(eventData.timeLeft) or 0) - 1)
+			eventData.timeLeft = left
+			if left > 0 then nextEvents[#nextEvents + 1] = ev end
 		end
+		activeAdminEvents = nextEvents
+		renderAdminEvents(activeAdminEvents)
 	end
 
-	function refreshClientUnlockVisibility()
-		if updateBoards then
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			tickAdminEventTimers()
+		end
+	end)
+
+	task.spawn(function()
+		while true do
+			task.wait(0.2)
 			updateBoards()
 		end
-	end
+	end)
 
-	function startRuntimeUiUpdates()
-		if passiveUi.hintEmoji then
-			RunService.RenderStepped:Connect(function()
-				local t = os.clock()
-				local blink = math.sin(t * 1.2)
-				if blink > 0.985 then
-					passiveUi.hintEmoji.Text = ";)"
-				elseif blink < -0.985 then
-					passiveUi.hintEmoji.Text = "-_-"
-				else
-					passiveUi.hintEmoji.Text = "😊"
-				end
-				passiveUi.hintEmoji.Rotation = math.sin(t * 0.8) * 6
-				if runeRollBlock and runeRollBlock:IsA("BasePart") then
-					local pulse = (math.sin(t * 1.6) + 1) * 0.5
-					local green = math.floor(120 + pulse * 90)
-					runeRollBlock.Color = Color3.fromRGB(40 + math.floor(pulse * 24), green, 52 + math.floor(pulse * 24))
-					local light = runeRollBlock:FindFirstChild("PassiveFxLight")
-					if light and light:IsA("PointLight") then
-						light.Brightness = 1.5 + pulse * 1.2
-						light.Color = Color3.fromRGB(122, 255, 138)
-					end
-				end
-			end)
-		end
-
-		function tickAdminEventTimers()
-			if type(activeAdminEvents) ~= "table" or #activeAdminEvents == 0 then return end
-			local nextEvents = {}
-			for idx = 1, #activeAdminEvents do
-				local ev = activeAdminEvents[idx]
-				local eventData = type(ev) == "table" and ev or {}
-				local left = math.max(0, (tonumber(eventData.timeLeft) or 0) - 1)
-				eventData.timeLeft = left
-				if left > 0 then nextEvents[#nextEvents + 1] = ev end
-			end
-			activeAdminEvents = nextEvents
-			renderAdminEvents(activeAdminEvents)
-		end
-
-		task.spawn(function()
-			while true do
-				task.wait(1)
-				tickAdminEventTimers()
+	if #(passiveEffectParts or {}) > 0 then
+		RunService.RenderStepped:Connect(function()
+			local t = os.clock()
+			for idx, part in ipairs(passiveEffectParts) do
+				local alpha = (math.sin(t * (1.3 + idx * 0.2)) + 1) / 2
+				part.Color = Color3.fromRGB(95 + math.floor(alpha * 90), 130 + math.floor(alpha * 70), 210 + math.floor(alpha * 45))
+				local light = part:FindFirstChild("PassiveFxLight")
+				if light then light.Brightness = 1.2 + alpha * 2.1 end
 			end
 		end)
-
-		task.spawn(function()
-			while true do
-				task.wait(0.2)
-				updateBoards()
-			end
-		end)
-
-		if #(passiveEffectParts or {}) > 0 then
-			RunService.RenderStepped:Connect(function()
-				local t = os.clock()
-				for idx, part in ipairs(passiveEffectParts) do
-					local alpha = (math.sin(t * (1.3 + idx * 0.2)) + 1) / 2
-					part.Color = Color3.fromRGB(95 + math.floor(alpha * 90), 130 + math.floor(alpha * 70), 210 + math.floor(alpha * 45))
-					local light = part:FindFirstChild("PassiveFxLight")
-					if light then light.Brightness = 1.2 + alpha * 2.1 end
-				end
-			end)
-		end
 	end
-
-updateBoards()
+end
 
 function initializeClientBindingsAndRuntime()
 	bindAdminCurrencySelectors()
