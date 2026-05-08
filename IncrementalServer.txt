@@ -2957,108 +2957,94 @@ local function buildSaveData(player)
 			return nil
 		end
 	end
-	local coins = refs.coins
-	local coinUpgrades = refs.coinUpgrades
-	local woodCurrency = refs.woodCurrency
-	local woodUpgrades = refs.woodUpgrades
-	local hayCurrency = refs.hayCurrency
-	local hayUpgrades = refs.hayUpgrades
-	local paperFactory = refs.paperFactory
-	local paperUpgrades = refs.paperUpgrades
-	local rebirth = refs.rebirth
-	local runeUpgrades = refs.runeUpgrades
-	local xp = refs.xp
-	local xpUpgrades = refs.xpUpgrades
-	local xpBoost = refs.xpBoost
-
 	return {
-			Version = 10,
+				Version = 10,
 		Gamepasses = {
 			DoubleCoins = playerHasGamepass(player, "DoubleCoins"),
 			DoublePaper = playerHasGamepass(player, "DoublePaper"),
 			DoubleWood = playerHasGamepass(player, "DoubleWood"),
 			TripleRuneLuck = playerHasGamepass(player, "TripleRuneLuck"),
 		},
-		Coins = coins.Value,
-		CoinUpgrades = {
-			CoinValueLevel = coinUpgrades.CoinValueLevel.Value,
-			MultiplierLevel = coinUpgrades.MultiplierLevel.Value,
-			SpawnSpeedLevel = coinUpgrades.SpawnSpeedLevel.Value,
-			WoodBoostLevel = coinUpgrades.WoodBoostLevel.Value,
-			CoinValueCost = coinUpgrades.CoinValueCost.Value,
-			MultiplierCost = coinUpgrades.MultiplierCost.Value,
-			SpawnSpeedCost = coinUpgrades.SpawnSpeedCost.Value,
-			WoodBoostCost = coinUpgrades.WoodBoostCost.Value,
-		},
-			Wood = {
-			WoodCurrency = woodCurrency.Value,
-			WoodValueLevel = woodUpgrades.WoodValueLevel.Value,
-			WoodMultiplierLevel = woodUpgrades.WoodMultiplierLevel.Value,
-			WoodSpeedLevel = woodUpgrades.WoodSpeedLevel.Value,
-			CoinBoostLevel = woodUpgrades.CoinBoostLevel.Value,
-			WoodValueCost = woodUpgrades.WoodValueCost.Value,
-			WoodMultiplierCost = woodUpgrades.WoodMultiplierCost.Value,
-			WoodSpeedCost = woodUpgrades.WoodSpeedCost.Value,
-			CoinBoostCost = woodUpgrades.CoinBoostCost.Value,
-			Paper = paperFactory.Paper.Value,
-				Fuel = paperFactory.Fuel.Value,
+			Coins = refs.coins.Value,
+			CoinUpgrades = {
+				CoinValueLevel = refs.coinUpgrades.CoinValueLevel.Value,
+				MultiplierLevel = refs.coinUpgrades.MultiplierLevel.Value,
+				SpawnSpeedLevel = refs.coinUpgrades.SpawnSpeedLevel.Value,
+				WoodBoostLevel = refs.coinUpgrades.WoodBoostLevel.Value,
+				CoinValueCost = refs.coinUpgrades.CoinValueCost.Value,
+				MultiplierCost = refs.coinUpgrades.MultiplierCost.Value,
+				SpawnSpeedCost = refs.coinUpgrades.SpawnSpeedCost.Value,
+				WoodBoostCost = refs.coinUpgrades.WoodBoostCost.Value,
 			},
-				Hay = {
-					HayCurrency = hayCurrency.Value,
-					HayAmountLevel = hayUpgrades.HayAmountLevel.Value,
-					HayMultiplierLevel = hayUpgrades.HayMultiplierLevel.Value,
-					HayCooldownLevel = hayUpgrades.HayCooldownLevel.Value,
-					HayAmountCost = hayUpgrades.HayAmountCost.Value,
-					HayMultiplierCost = hayUpgrades.HayMultiplierCost.Value,
-					HayCooldownCost = hayUpgrades.HayCooldownCost.Value,
-					HayUpgrades = {
-						HayAmount = hayUpgrades.HayAmountLevel.Value,
-						HayMultiplier = hayUpgrades.HayMultiplierLevel.Value,
-						HayCooldown = hayUpgrades.HayCooldownLevel.Value,
+				Wood = {
+				WoodCurrency = refs.woodCurrency.Value,
+				WoodValueLevel = refs.woodUpgrades.WoodValueLevel.Value,
+				WoodMultiplierLevel = refs.woodUpgrades.WoodMultiplierLevel.Value,
+				WoodSpeedLevel = refs.woodUpgrades.WoodSpeedLevel.Value,
+				CoinBoostLevel = refs.woodUpgrades.CoinBoostLevel.Value,
+				WoodValueCost = refs.woodUpgrades.WoodValueCost.Value,
+				WoodMultiplierCost = refs.woodUpgrades.WoodMultiplierCost.Value,
+				WoodSpeedCost = refs.woodUpgrades.WoodSpeedCost.Value,
+				CoinBoostCost = refs.woodUpgrades.CoinBoostCost.Value,
+				Paper = refs.paperFactory.Paper.Value,
+					Fuel = refs.paperFactory.Fuel.Value,
+				},
+					Hay = {
+						HayCurrency = refs.hayCurrency.Value,
+						HayAmountLevel = refs.hayUpgrades.HayAmountLevel.Value,
+						HayMultiplierLevel = refs.hayUpgrades.HayMultiplierLevel.Value,
+						HayCooldownLevel = refs.hayUpgrades.HayCooldownLevel.Value,
+						HayAmountCost = refs.hayUpgrades.HayAmountCost.Value,
+						HayMultiplierCost = refs.hayUpgrades.HayMultiplierCost.Value,
+						HayCooldownCost = refs.hayUpgrades.HayCooldownCost.Value,
+						HayUpgrades = {
+							HayAmount = refs.hayUpgrades.HayAmountLevel.Value,
+							HayMultiplier = refs.hayUpgrades.HayMultiplierLevel.Value,
+							HayCooldown = refs.hayUpgrades.HayCooldownLevel.Value,
+						},
+					},
+			PaperUpgrades = {
+				PaperValueLevel = refs.paperUpgrades.PaperValueLevel.Value,
+				PaperMultiplierLevel = refs.paperUpgrades.PaperMultiplierLevel.Value,
+				PaperSpeedLevel = refs.paperUpgrades.PaperSpeedLevel.Value,
+				PaperValueCost = refs.paperUpgrades.PaperValueCost.Value,
+				PaperMultiplierCost = refs.paperUpgrades.PaperMultiplierCost.Value,
+				PaperSpeedCost = refs.paperUpgrades.PaperSpeedCost.Value,
+			},
+				Rebirth = {
+					Count = refs.rebirth.Count.Value,
+				},
+				RuneUpgrades = {
+					RuneLuckLevel = refs.runeUpgrades.RuneLuckLevel.Value,
+					RuneSpeedLevel = refs.runeUpgrades.RuneSpeedLevel.Value,
+					RuneBulkLevel = refs.runeUpgrades.RuneBulkLevel.Value,
+					RuneLuckCost = refs.runeUpgrades.RuneLuckCost.Value,
+					RuneSpeedCost = refs.runeUpgrades.RuneSpeedCost.Value,
+					RuneBulkCost = refs.runeUpgrades.RuneBulkCost.Value,
+				},
+				XP = {
+					Value = refs.xp.Value,
+					Upgrades = {
+						CoinXPLevel = refs.xpUpgrades.CoinXPLevel.Value,
+						PaperXPLevel = refs.xpUpgrades.PaperXPLevel.Value,
+						WoodXPLevel = refs.xpUpgrades.WoodXPLevel.Value,
+						XPMultiplierLevel = refs.xpUpgrades.XPMultiplierLevel.Value,
+						RuneLuckXPLevel = refs.xpUpgrades.RuneLuckXPLevel.Value,
+						RuneBulkXPLevel = refs.xpUpgrades.RuneBulkXPLevel.Value,
+						RuneSpeedXPLevel = refs.xpUpgrades.RuneSpeedXPLevel.Value,
+						CoinXPCost = refs.xpUpgrades.CoinXPCost.Value,
+						PaperXPCost = refs.xpUpgrades.PaperXPCost.Value,
+						WoodXPCost = refs.xpUpgrades.WoodXPCost.Value,
+						XPMultiplierCost = refs.xpUpgrades.XPMultiplierCost.Value,
+						RuneLuckXPCost = refs.xpUpgrades.RuneLuckXPCost.Value,
+						RuneBulkXPCost = refs.xpUpgrades.RuneBulkXPCost.Value,
+						RuneSpeedXPCost = refs.xpUpgrades.RuneSpeedXPCost.Value,
+					},
+					Boost = {
+						Level = refs.xpBoost.Level.Value,
+						NextCost = refs.xpBoost.NextCost.Value,
 					},
 				},
-		PaperUpgrades = {
-			PaperValueLevel = paperUpgrades.PaperValueLevel.Value,
-			PaperMultiplierLevel = paperUpgrades.PaperMultiplierLevel.Value,
-			PaperSpeedLevel = paperUpgrades.PaperSpeedLevel.Value,
-			PaperValueCost = paperUpgrades.PaperValueCost.Value,
-			PaperMultiplierCost = paperUpgrades.PaperMultiplierCost.Value,
-			PaperSpeedCost = paperUpgrades.PaperSpeedCost.Value,
-		},
-			Rebirth = {
-				Count = rebirth.Count.Value,
-			},
-			RuneUpgrades = {
-				RuneLuckLevel = runeUpgrades.RuneLuckLevel.Value,
-				RuneSpeedLevel = runeUpgrades.RuneSpeedLevel.Value,
-				RuneBulkLevel = runeUpgrades.RuneBulkLevel.Value,
-				RuneLuckCost = runeUpgrades.RuneLuckCost.Value,
-				RuneSpeedCost = runeUpgrades.RuneSpeedCost.Value,
-				RuneBulkCost = runeUpgrades.RuneBulkCost.Value,
-			},
-			XP = {
-				Value = xp.Value,
-				Upgrades = {
-					CoinXPLevel = xpUpgrades.CoinXPLevel.Value,
-					PaperXPLevel = xpUpgrades.PaperXPLevel.Value,
-					WoodXPLevel = xpUpgrades.WoodXPLevel.Value,
-					XPMultiplierLevel = xpUpgrades.XPMultiplierLevel.Value,
-					RuneLuckXPLevel = xpUpgrades.RuneLuckXPLevel.Value,
-					RuneBulkXPLevel = xpUpgrades.RuneBulkXPLevel.Value,
-					RuneSpeedXPLevel = xpUpgrades.RuneSpeedXPLevel.Value,
-					CoinXPCost = xpUpgrades.CoinXPCost.Value,
-					PaperXPCost = xpUpgrades.PaperXPCost.Value,
-					WoodXPCost = xpUpgrades.WoodXPCost.Value,
-					XPMultiplierCost = xpUpgrades.XPMultiplierCost.Value,
-					RuneLuckXPCost = xpUpgrades.RuneLuckXPCost.Value,
-					RuneBulkXPCost = xpUpgrades.RuneBulkXPCost.Value,
-					RuneSpeedXPCost = xpUpgrades.RuneSpeedXPCost.Value,
-				},
-				Boost = {
-					Level = xpBoost.Level.Value,
-					NextCost = xpBoost.NextCost.Value,
-				},
-			},
 			Passives = getPassiveState(player),
 			Runes = getRuneState(player),
 			Position = captureTransform(player),

@@ -5445,7 +5445,7 @@ updateBoards = function()
 end
 
 
-do
+local function updateRuneAndHayUi()
 	local runeUnlocked = secondUnlockedVisual
 	if runeUi.panel and runeUi.panel.Visible and not runeUnlocked then
 		runeUi.panel.Visible = false
@@ -5455,7 +5455,7 @@ do
 	end
 	local rs = parseRuneState()
 	local c = rs.counts or {}
-	function stacks(v)
+	local function stacks(v)
 		return math.min(10, tonumber(v) or 0)
 	end
 	local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
@@ -5510,6 +5510,8 @@ do
 		end
 	end
 end
+
+updateRuneAndHayUi()
 
 if runeUpgradeCards then
 	updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil, "Coins")
