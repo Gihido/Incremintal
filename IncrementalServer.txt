@@ -190,43 +190,43 @@ local REBIRTH_STAGES = {
 		unlockFourthSystems = true,
 		unlockFifthSystems = false,
 	},
-		[5] = {
-			cost = 50,
-			currency = "Paper",
+	[5] = {
+		cost = 50,
+		currency = "Paper",
 		coinMultiplier = 1,
 		spawnBonus = 0,
 		woodMultiplier = 1,
-			unlockTree = true,
-			unlockThirdUpgrades = true,
-			unlockFourthSystems = true,
-			unlockFifthSystems = true,
-			unlockSixthSystems = false,
-		},
-		[6] = {
-			cost = 500,
-			currency = "Paper",
-			coinMultiplier = 1,
-			spawnBonus = 0,
-			woodMultiplier = 1,
-			unlockTree = true,
-			unlockThirdUpgrades = true,
-			unlockFourthSystems = true,
-			unlockFifthSystems = true,
-			unlockSixthSystems = true,
-		},
-		[7] = {
-			cost = 2500,
-			currency = "Paper",
-			coinMultiplier = 1,
-			spawnBonus = 0,
-			woodMultiplier = 1,
-			unlockTree = true,
-			unlockThirdUpgrades = true,
-			unlockFourthSystems = true,
-			unlockFifthSystems = true,
-			unlockSixthSystems = true,
-		},
-	}
+		unlockTree = true,
+		unlockThirdUpgrades = true,
+		unlockFourthSystems = true,
+		unlockFifthSystems = true,
+		unlockSixthSystems = false,
+	},
+	[6] = {
+		cost = 500,
+		currency = "Paper",
+		coinMultiplier = 1,
+		spawnBonus = 0,
+		woodMultiplier = 1,
+		unlockTree = true,
+		unlockThirdUpgrades = true,
+		unlockFourthSystems = true,
+		unlockFifthSystems = true,
+		unlockSixthSystems = true,
+	},
+	[7] = {
+		cost = 2500,
+		currency = "Paper",
+		coinMultiplier = 1,
+		spawnBonus = 0,
+		woodMultiplier = 1,
+		unlockTree = true,
+		unlockThirdUpgrades = true,
+		unlockFourthSystems = true,
+		unlockFifthSystems = true,
+		unlockSixthSystems = true,
+	},
+}
 
 local COIN_UPGRADES = {
 	CoinValue = {
@@ -1768,14 +1768,14 @@ local function recalculateRebirthStats(player)
 			if stage.unlockFourthSystems then
 				fourthUnlocked = true
 			end
-				if stage.unlockFifthSystems then
-					fifthUnlocked = true
-				end
-				if stage.unlockSixthSystems then
-					sixthUnlocked = true
-				end
+			if stage.unlockFifthSystems then
+				fifthUnlocked = true
+			end
+			if stage.unlockSixthSystems then
+				sixthUnlocked = true
 			end
 		end
+	end
 
 
 	rebirth.CoinMultiplierBonus.Value = syncRebirthCoinMultiplierBonus(player)
@@ -2848,33 +2848,33 @@ local function spawnCoin()
 		taken = true
 		coin.CanTouch = false
 
-			local coinsObject = getCoinsObject(player)
-			if not coinsObject then
-				return
-			end
-			local coinsBefore = coinsObject.Value
-			local reward = calculateFinalCoinGain(player, 1)
-			local rebirth = getRebirthFolder(player)
-			local floorReward = rebirth and syncRebirthCoinMultiplierBonus(player) or 1
-			if reward < floorReward then
-				reward = floorReward
-			end
-			addCurrency(coinsObject, reward)
-			local coinsAdded = roundToTenth(coinsObject.Value - coinsBefore)
-			if math.abs(coinsAdded - reward) > 0.001 then
-				warn(string.format("[CoinGainMismatch] %s reward=%s added=%s before=%s after=%s", player.Name, tostring(reward), tostring(coinsAdded), tostring(coinsBefore), tostring(coinsObject.Value)))
-			end
-			if rebirth and rebirth.SecondAreaUnlocked.Value then
-					local xpUpgrades = getXPUpgradesFolder(player)
-					local xpPerCoin = 1 + (xpUpgrades and xpUpgrades:FindFirstChild("XPMultiplierLevel") and xpUpgrades.XPMultiplierLevel.Value or 0)
-					local _, _, _, passiveXpMul = getPassiveSpecialBoosts(player)
-					local _, _, _, runeXpMul = getRuneBonusMultipliers(player)
-					local _, _, _, _, eventXPMul = getServerEventMultipliers()
-					local xpReward = roundToTenth(xpPerCoin * getXPBoostMultiplier(player) * passiveXpMul * runeXpMul * eventXPMul)
-				addCurrency(getXPCurrencyObject(player), xpReward)
-				firePickup(player, "XP", xpReward)
-			end
-			markDirty(player)
+		local coinsObject = getCoinsObject(player)
+		if not coinsObject then
+			return
+		end
+		local coinsBefore = coinsObject.Value
+		local reward = calculateFinalCoinGain(player, 1)
+		local rebirth = getRebirthFolder(player)
+		local floorReward = rebirth and syncRebirthCoinMultiplierBonus(player) or 1
+		if reward < floorReward then
+			reward = floorReward
+		end
+		addCurrency(coinsObject, reward)
+		local coinsAdded = roundToTenth(coinsObject.Value - coinsBefore)
+		if math.abs(coinsAdded - reward) > 0.001 then
+			warn(string.format("[CoinGainMismatch] %s reward=%s added=%s before=%s after=%s", player.Name, tostring(reward), tostring(coinsAdded), tostring(coinsBefore), tostring(coinsObject.Value)))
+		end
+		if rebirth and rebirth.SecondAreaUnlocked.Value then
+			local xpUpgrades = getXPUpgradesFolder(player)
+			local xpPerCoin = 1 + (xpUpgrades and xpUpgrades:FindFirstChild("XPMultiplierLevel") and xpUpgrades.XPMultiplierLevel.Value or 0)
+			local _, _, _, passiveXpMul = getPassiveSpecialBoosts(player)
+			local _, _, _, runeXpMul = getRuneBonusMultipliers(player)
+			local _, _, _, _, eventXPMul = getServerEventMultipliers()
+			local xpReward = roundToTenth(xpPerCoin * getXPBoostMultiplier(player) * passiveXpMul * runeXpMul * eventXPMul)
+			addCurrency(getXPCurrencyObject(player), xpReward)
+			firePickup(player, "XP", xpReward)
+		end
+		markDirty(player)
 
 		if touchConnection then
 			touchConnection:Disconnect()
@@ -2884,7 +2884,7 @@ local function spawnCoin()
 		activeCoinCount -= 1
 		coin:Destroy()
 
-			firePickup(player, "Coin", coinsAdded)
+		firePickup(player, "Coin", coinsAdded)
 
 		local respawnDelay = getCoinRespawnDelay(player)
 		task.delay(respawnDelay, function()
@@ -2918,7 +2918,9 @@ woodClickEvent.OnServerEvent:Connect(function(player)
 	firePickup(player, "Tree", reward)
 end)
 
-local function captureTransform(player)
+local snapshotBuilders = {}
+
+function snapshotBuilders.captureTransform(player)
 	local character = player.Character
 	local hrp = character and character:FindFirstChild("HumanoidRootPart")
 	if not hrp then
@@ -2936,7 +2938,7 @@ local function captureTransform(player)
 	}
 end
 
-local function buildCoinUpgradesSnapshot(coinUpgrades)
+function snapshotBuilders.buildCoinUpgrades(coinUpgrades)
 	return {
 		CoinValueLevel = coinUpgrades.CoinValueLevel.Value,
 		MultiplierLevel = coinUpgrades.MultiplierLevel.Value,
@@ -2949,7 +2951,7 @@ local function buildCoinUpgradesSnapshot(coinUpgrades)
 	}
 end
 
-local function buildWoodSnapshot(woodCurrency, woodUpgrades, paperFactory)
+function snapshotBuilders.buildWood(woodCurrency, woodUpgrades, paperFactory)
 	return {
 		WoodCurrency = woodCurrency.Value,
 		WoodValueLevel = woodUpgrades.WoodValueLevel.Value,
@@ -2965,7 +2967,7 @@ local function buildWoodSnapshot(woodCurrency, woodUpgrades, paperFactory)
 	}
 end
 
-local function buildHaySnapshot(hayCurrency, hayUpgrades)
+function snapshotBuilders.buildHay(hayCurrency, hayUpgrades)
 	return {
 		HayCurrency = hayCurrency.Value,
 		HayAmountLevel = hayUpgrades.HayAmountLevel.Value,
@@ -2982,7 +2984,7 @@ local function buildHaySnapshot(hayCurrency, hayUpgrades)
 	}
 end
 
-local function buildPaperUpgradesSnapshot(paperUpgrades)
+function snapshotBuilders.buildPaperUpgrades(paperUpgrades)
 	return {
 		PaperValueLevel = paperUpgrades.PaperValueLevel.Value,
 		PaperMultiplierLevel = paperUpgrades.PaperMultiplierLevel.Value,
@@ -2993,7 +2995,7 @@ local function buildPaperUpgradesSnapshot(paperUpgrades)
 	}
 end
 
-local function buildRuneUpgradesSnapshot(runeUpgrades)
+function snapshotBuilders.buildXP(xp, xpUpgrades, xpBoost)
 	return {
 		RuneLuckLevel = runeUpgrades.RuneLuckLevel.Value,
 		RuneSpeedLevel = runeUpgrades.RuneSpeedLevel.Value,
@@ -3004,7 +3006,7 @@ local function buildRuneUpgradesSnapshot(runeUpgrades)
 	}
 end
 
-local function buildXPSnapshot(xp, xpUpgrades, xpBoost)
+function snapshotBuilders.buildXP(xp, xpUpgrades, xpBoost)
 	return {
 		Value = xp.Value,
 		Upgrades = {
@@ -3060,18 +3062,18 @@ local function buildSaveData(player)
 			TripleRuneLuck = playerHasGamepass(player, "TripleRuneLuck"),
 		},
 		Coins = coins.Value,
-		CoinUpgrades = buildCoinUpgradesSnapshot(coinUpgrades),
-		Wood = buildWoodSnapshot(woodCurrency, woodUpgrades, paperFactory),
-		Hay = buildHaySnapshot(hayCurrency, hayUpgrades),
-		PaperUpgrades = buildPaperUpgradesSnapshot(paperUpgrades),
+		CoinUpgrades = snapshotBuilders.buildCoinUpgrades(coinUpgrades),
+		Wood = snapshotBuilders.buildWood(woodCurrency, woodUpgrades, paperFactory),
+		Hay = snapshotBuilders.buildHay(hayCurrency, hayUpgrades),
+		PaperUpgrades = snapshotBuilders.buildPaperUpgrades(paperUpgrades),
 		Rebirth = {
 			Count = rebirth.Count.Value,
 		},
-		RuneUpgrades = buildRuneUpgradesSnapshot(runeUpgrades),
-		XP = buildXPSnapshot(xp, xpUpgrades, xpBoost),
+		RuneUpgrades = snapshotBuilders.buildRuneUpgrades(runeUpgrades),
+		XP = snapshotBuilders.buildXP(xp, xpUpgrades, xpBoost),
 		Passives = getPassiveState(player),
 		Runes = getRuneState(player),
-		Position = captureTransform(player),
+		Position = snapshotBuilders.captureTransform(player),
 	}
 end
 
@@ -3542,21 +3544,21 @@ task.spawn(function()
 
 		local now = os.clock()
 		local eventsChanged = false
-			for eventId, eventState in pairs(activeAdminEvents) do
-				local endAt = type(eventState) == "table" and (eventState.endsAt or 0) or tonumber(eventState) or 0
-				if endAt > 0 and endAt <= now then
-					activeAdminEvents[eventId] = nil
-					eventsChanged = true
-				end
+		for eventId, eventState in pairs(activeAdminEvents) do
+			local endAt = type(eventState) == "table" and (eventState.endsAt or 0) or tonumber(eventState) or 0
+			if endAt > 0 and endAt <= now then
+				activeAdminEvents[eventId] = nil
+				eventsChanged = true
 			end
+		end
 		if eventsChanged then
 			broadcastAdminEventState()
 			publishGlobalAdminEvents()
 		end
 
-			for _, player in ipairs(Players:GetPlayers()) do
-				local rebirth = getRebirthFolder(player)
-				local paperFactory = getPaperFactoryFolder(player)
+		for _, player in ipairs(Players:GetPlayers()) do
+			local rebirth = getRebirthFolder(player)
+			local paperFactory = getPaperFactoryFolder(player)
 
 			if rebirth and paperFactory then
 				if not rebirth.FourthSystemsUnlocked.Value then
@@ -3591,84 +3593,84 @@ task.spawn(function()
 						paperFactory.Countdown.Value = cycleTime
 						paperProcessAnchors[player] = now
 					end
-					end
-					end
-
-					if isCharacterOnHayBlock(player) then
-						activeHayCollection[player] = true
-						local nextHayAt = hayCooldowns[player.UserId] or 0
-						if now >= nextHayAt then
-							local hayReward = getHayReward(player)
-							if hayReward > 0 then
-								addCurrency(getHayCurrencyObject(player), hayReward)
-								firePickup(player, "Hay", hayReward)
-								markDirty(player)
-							end
-							hayCooldowns[player.UserId] = now + getHayCooldown(player)
-						end
-					else
-						activeHayCollection[player] = nil
-						hayCooldowns[player.UserId] = now
-					end
-
-					local function processRuneSet(setName, activeTable)
-						local cfg = RUNE_SET_DEFS[setName]
-						if not cfg or not cfg.block then
-							activeTable[player] = nil
-							stopRuneRolling(player, setName)
-							return
-						end
-						local rebirthCount = tonumber(rebirth and rebirth.Count.Value) or 0
-						if rebirthCount < cfg.unlockRebirth then
-							activeTable[player] = nil
-							stopRuneRolling(player, setName)
-							return
-						end
-						if not isCharacterOnBlock(player, cfg.block, Vector3.new(0.8, 3.2, 0.8)) then
-							activeTable[player] = nil
-							stopRuneRolling(player, setName)
-							return
-						end
-						activeTable[player] = true
-						startRuneRolling(player, setName)
-						local session = runeRollingSessions[player]
-						local interval = getRuneRollInterval(player)
-						if session and (now - (session.lastRollAt or 0)) >= interval then
-							session.lastRollAt = now
-							local currencyObject = cfg.currency == "Paper" and getPaperCurrencyObject(player) or getCoinsObject(player)
-							if not currencyObject or safeNumber(currencyObject.Value, 0) < cfg.cost then
-								local key = "rune_no_" .. setName
-								local cd = runeOpenCooldowns[player.UserId .. key] or 0
-								if now >= cd then
-									fireSimple(player, cfg.insufficientText)
-									runeOpenCooldowns[player.UserId .. key] = now + 2
-								end
-								return
-							end
-							if not spendCurrency(currencyObject, cfg.cost) then
-								return
-							end
-							local rolled, state, denoms = rollFromSet(player, setName)
-							if rolled then
-								for _, runeId in ipairs(rolled) do
-									session.sessionCounts[runeId] = (session.sessionCounts[runeId] or 0) + 1
-								end
-								notifyEvent:FireClient(player, {
-									kind = "rune_roll_tick",
-									system = setName,
-									rolled = rolled,
-									session = session.sessionCounts,
-									state = state,
-									effectiveDenominators = denoms,
-								})
-							end
-						end
-					end
-
-					processRuneSet("Forest", activeForestRuneRolls)
-					processRuneSet("Nature", activeNatureRuneRolls)
+				end
 			end
+
+			if isCharacterOnHayBlock(player) then
+				activeHayCollection[player] = true
+				local nextHayAt = hayCooldowns[player.UserId] or 0
+				if now >= nextHayAt then
+					local hayReward = getHayReward(player)
+					if hayReward > 0 then
+						addCurrency(getHayCurrencyObject(player), hayReward)
+						firePickup(player, "Hay", hayReward)
+						markDirty(player)
+					end
+					hayCooldowns[player.UserId] = now + getHayCooldown(player)
+				end
+			else
+				activeHayCollection[player] = nil
+				hayCooldowns[player.UserId] = now
+			end
+
+			local function processRuneSet(setName, activeTable)
+				local cfg = RUNE_SET_DEFS[setName]
+				if not cfg or not cfg.block then
+					activeTable[player] = nil
+					stopRuneRolling(player, setName)
+					return
+				end
+				local rebirthCount = tonumber(rebirth and rebirth.Count.Value) or 0
+				if rebirthCount < cfg.unlockRebirth then
+					activeTable[player] = nil
+					stopRuneRolling(player, setName)
+					return
+				end
+				if not isCharacterOnBlock(player, cfg.block, Vector3.new(0.8, 3.2, 0.8)) then
+					activeTable[player] = nil
+					stopRuneRolling(player, setName)
+					return
+				end
+				activeTable[player] = true
+				startRuneRolling(player, setName)
+				local session = runeRollingSessions[player]
+				local interval = getRuneRollInterval(player)
+				if session and (now - (session.lastRollAt or 0)) >= interval then
+					session.lastRollAt = now
+					local currencyObject = cfg.currency == "Paper" and getPaperCurrencyObject(player) or getCoinsObject(player)
+					if not currencyObject or safeNumber(currencyObject.Value, 0) < cfg.cost then
+						local key = "rune_no_" .. setName
+						local cd = runeOpenCooldowns[player.UserId .. key] or 0
+						if now >= cd then
+							fireSimple(player, cfg.insufficientText)
+							runeOpenCooldowns[player.UserId .. key] = now + 2
+						end
+						return
+					end
+					if not spendCurrency(currencyObject, cfg.cost) then
+						return
+					end
+					local rolled, state, denoms = rollFromSet(player, setName)
+					if rolled then
+						for _, runeId in ipairs(rolled) do
+							session.sessionCounts[runeId] = (session.sessionCounts[runeId] or 0) + 1
+						end
+						notifyEvent:FireClient(player, {
+							kind = "rune_roll_tick",
+							system = setName,
+							rolled = rolled,
+							session = session.sessionCounts,
+							state = state,
+							effectiveDenominators = denoms,
+						})
+					end
+				end
+			end
+
+			processRuneSet("Forest", activeForestRuneRolls)
+			processRuneSet("Nature", activeNatureRuneRolls)
 		end
+	end
 end)
 
 game:BindToClose(function()
