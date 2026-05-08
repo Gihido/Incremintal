@@ -5,10 +5,17 @@ UserInputService = game:GetService("UserInputService")
 HttpService = game:GetService("HttpService")
 RunService = game:GetService("RunService")
 GuiService = game:GetService("GuiService")
+MarketplaceService = game:GetService("MarketplaceService")
 
 player = Players.LocalPlayer
 mouse = player:GetMouse()
 playerGui = player:WaitForChild("PlayerGui")
+GamepassIds = {
+	DoubleCoins = 0,
+	DoublePaper = 0,
+	DoubleWood = 0,
+	TripleRuneLuck = 0,
+}
 
 data = player:WaitForChild("PlayerData", 30)
 if not data then
@@ -1469,6 +1476,43 @@ mkEventBtn("RuneSpeedX2","x2 Rune Speed",134)
 mkEventBtn("RuneLuckX2","x2 Rune Luck",164)
 mkEventBtn("PassiveLuckX3","x3 Passive Luck",194)
 
+adminGamepassSection = Instance.new("Frame")
+adminGamepassSection.BackgroundTransparency = 1
+adminGamepassSection.Position = UDim2.new(0,0,0,108)
+adminGamepassSection.Size = UDim2.new(1,0,0,146)
+adminGamepassSection.Parent = adminSectionPersonal
+local gpTitle = Instance.new("TextLabel")
+gpTitle.BackgroundTransparency = 1
+gpTitle.Size = UDim2.new(1,0,0,22)
+gpTitle.Text = "GAMEPASSES"
+gpTitle.TextColor3 = Color3.fromRGB(240,245,255)
+gpTitle.Font = Enum.Font.GothamBlack
+gpTitle.TextScaled = true
+gpTitle.Parent = adminGamepassSection
+local function mkGamepassButton(y, text, key)
+	local b = Instance.new("TextButton")
+	b.Position = UDim2.new(0,0,0,y)
+	b.Size = UDim2.new(1,0,0,27)
+	b.Text = text
+	b.Font = Enum.Font.GothamBold
+	b.TextScaled = true
+	b.BackgroundColor3 = Color3.fromRGB(128,159,248)
+	b.TextColor3 = Color3.fromRGB(20,35,60)
+	b.Parent = adminGamepassSection
+	b.BorderSizePixel = 0
+	createCorner(b,9)
+	b.MouseButton1Click:Connect(function()
+		local owns, status = checkGamepassOwnership(key)
+		syncGamepassValue(key, owns)
+		showToast(text .. ": " .. status)
+		if updateBoards then updateBoards() end
+	end)
+end
+mkGamepassButton(24, "x2 Coins", "DoubleCoins")
+mkGamepassButton(54, "x2 Paper", "DoublePaper")
+mkGamepassButton(84, "x2 Wood", "DoubleWood")
+mkGamepassButton(114, "x3 Rune Luck", "TripleRuneLuck")
+
 toggleAdminButton = Instance.new("TextButton")
 toggleAdminButton.AnchorPoint = Vector2.new(1, 0)
 toggleAdminButton.Position = UDim2.new(1, -18, 0, 412)
@@ -1680,18 +1724,19 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
-	title.Size = UDim2.new(1, -156, 0, 21)
-	title.Position = UDim2.new(0, 52, 0, 6)
+	title.Size = UDim2.new(1, -16, 0, 21)
+	title.Position = UDim2.new(0, 8, 0, 6)
 	title.Text = compactTitle
 	title.TextColor3 = palette.text
 	title.Font = Enum.Font.GothamBlack
 	title.TextScaled = true
-	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextXAlignment = Enum.TextXAlignment.Center
 	title.Parent = topHeader
 
 	local levelPill = Instance.new("Frame")
 	levelPill.Size = UDim2.new(0, 74, 0, 19)
-	levelPill.Position = UDim2.new(0, 52, 0, 30)
+	levelPill.AnchorPoint = Vector2.new(0.5, 0)
+	levelPill.Position = UDim2.new(0.5, 0, 0, 30)
 	levelPill.BackgroundColor3 = palette.badge2
 	levelPill.BorderSizePixel = 0
 	levelPill.Parent = topHeader
@@ -1709,24 +1754,6 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 	levelLabel.TextScaled = true
 	levelLabel.Parent = levelPill
 
-	local topEffect = Instance.new("Frame")
-	topEffect.Size = UDim2.new(0, 48, 0, 24)
-	topEffect.Position = UDim2.new(1, -56, 0, 15)
-	topEffect.BackgroundColor3 = palette.badge1
-	topEffect.BorderSizePixel = 0
-	topEffect.Parent = topHeader
-	createCorner(topEffect, 999)
-	createGradient(topEffect, palette.badge1, palette.badge2, 0)
-	createStroke(topEffect, Color3.fromRGB(255, 255, 255), 1, 0.24)
-	local topEffectLabel = Instance.new("TextLabel")
-	topEffectLabel.BackgroundTransparency = 1
-	topEffectLabel.Size = UDim2.new(1, -6, 1, 0)
-	topEffectLabel.Position = UDim2.new(0, 3, 0, 0)
-	topEffectLabel.Text = tostring(bonusText or "")
-	topEffectLabel.TextColor3 = palette.badgeText or palette.text
-	topEffectLabel.Font = Enum.Font.GothamBlack
-	topEffectLabel.TextScaled = true
-	topEffectLabel.Parent = topEffect
 
 	local desc = Instance.new("TextLabel")
 	desc.BackgroundTransparency = 1
@@ -1845,11 +1872,6 @@ function createUpgradeCard(parent, titleText, descriptionText, bonusText, iconIm
 		levelPill.Position = UDim2.new(0.5, 0, 0, 86)
 		levelLabel.TextScaled = false
 		levelLabel.TextSize = 13
-		topEffect.Size = UDim2.new(0, 92, 0, 20)
-		topEffect.AnchorPoint = Vector2.new(0.5, 0)
-		topEffect.Position = UDim2.new(0.5, 0, 0, 110)
-		topEffectLabel.TextScaled = false
-		topEffectLabel.TextSize = 13
 		desc.Size = UDim2.new(1, -18, 0, 18)
 		desc.Position = UDim2.new(0, 9, 0, 140)
 		desc.TextWrapped = false
@@ -3878,7 +3900,8 @@ function createRuneOverlays()
 		else
 			listHolder.ScrollingDirection = Enum.ScrollingDirection.Y
 		end
-		listHolder.ScrollBarImageColor3 = Color3.fromRGB(196, 255, 124)
+			listHolder.ScrollBarImageColor3 = Color3.fromRGB(196, 255, 124)
+			listHolder.ScrollBarImageTransparency = 1
 		listHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
 		listHolder.Parent = panel
 
@@ -4343,6 +4366,27 @@ function showToast(text)
 		tweenOut.Completed:Wait()
 		toast:Destroy()
 	end)
+end
+
+function checkGamepassOwnership(gamepassKey)
+	local id = tonumber((GamepassIds or {})[gamepassKey]) or 0
+	if id <= 0 then
+		return false, "ID не задан"
+	end
+	local ok, owns = pcall(function()
+		return MarketplaceService:UserOwnsGamePassAsync(player.UserId, id)
+	end)
+	if not ok then
+		return false, "Ошибка проверки"
+	end
+	return owns == true, owns and "Есть" or "Нет"
+end
+
+function syncGamepassValue(gamepassKey, owns)
+	if gamepassKey == "DoubleCoins" and doubleCoinsGamepass then doubleCoinsGamepass.Value = owns and true or false end
+	if gamepassKey == "DoublePaper" and doublePaperGamepass then doublePaperGamepass.Value = owns and true or false end
+	if gamepassKey == "DoubleWood" and doubleWoodGamepass then doubleWoodGamepass.Value = owns and true or false end
+	if gamepassKey == "TripleRuneLuck" and tripleRuneLuckGamepass then tripleRuneLuckGamepass.Value = owns and true or false end
 end
 
 activeAdminEvents = {}
@@ -5306,14 +5350,13 @@ updateBoards = function()
 						local total = eff * info.base
 						local denom = tonumber((effectiveRuneDenominators or {})[runeId]) or tonumber(RUNE_VISUALS[runeId] and RUNE_VISUALS[runeId].baseDenominator) or (runeId == "Palka" and 1 or runeId == "ObrublennyKonec" and 5 or runeId == "VetvDereva" and 25 or runeId == "Brevno" and 100 or runeId == "Poleno" and 250 or runeId == "ObgorevshiyPen" and 1000 or 1)
 						local chance = "1 к " .. tostring(math.max(1, math.floor(denom + 0.5)))
-						local totalLuckForIndex = select(1, getClientEffectiveRuneStats())
-							local runtime = string.format("Количество: %s\nШанс: %s\nTotal Rune Luck: x%s\nСуммарно: +%.2fx %s", formatNumber(count), chance, formatNumber(totalLuckForIndex), total, info.target)
+							local runtime = string.format("Количество: %s\nШанс: %s\nСуммарно: +%.2fx %s", formatNumber(count), chance, total, info.target)
 						label:SetAttribute("RuntimeText", runtime)
 						label.Text = string.format("%s\n%s\nЗа 1: %s | cap x%.1f", tostring(cfg.names[runeId] or runeId), runtime, info.per, capMul)
 					end
 				end
 			end
-			if bundle.stats and bundle.stats.luck then
+				if bundle.stats and bundle.stats.luck then
 				local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
 				local speedOverflowBulk = getRuneSpeedOverflowBulk(effSpeed)
 				local effBulkBonus = math.max(0, effBulk - 1)
@@ -5321,17 +5364,9 @@ updateBoards = function()
 				bundle.stats.luck.Text = "x" .. formatNumber(effLuck)
 				bundle.stats.bulk.Text = "+" .. formatNumber(effBulkBonus)
 				bundle.stats.speed.Text = string.format("%.2fs/roll | Overflow Bulk +%s", speedSeconds, formatNumber(speedOverflowBulk))
-				if bundle.stats.gamepass then
-					bundle.stats.gamepass.Text = "x" .. formatNumber(tripleRuneLuckGamepass and tripleRuneLuckGamepass.Value and 3 or 1)
-				end
-				if bundle.stats.passive then
-					local roseStacks = math.min(20, tonumber(counts.Rose) or 0)
-					local obgPenStacks = math.min(20, tonumber(counts.ObgorevshiyPen) or 0)
-					local runePassive = 1 + roseStacks * 0.1 + obgPenStacks * 0.1
-					local eventPassive = (activeAdminEvents and activeAdminEvents.PassiveLuckX3) and 3 or 1
-					bundle.stats.passive.Text = "x" .. formatNumber(runePassive * eventPassive) .. string.format(" (Rune x%s, Event x%s)", formatNumber(runePassive), formatNumber(eventPassive))
-				end
-				bundle.stats.total.Text = "Total Rune Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulkBonus)
+					if bundle.stats.gamepass then bundle.stats.gamepass.Visible = false end
+					if bundle.stats.passive then bundle.stats.passive.Visible = false end
+				bundle.stats.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulkBonus)
 			end
 		end
 	end
