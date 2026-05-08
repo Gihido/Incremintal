@@ -8,22 +8,15 @@ function AdminService.new(context)
 	return self
 end
 
-local function isAdminName(expected, player)
-	return player and player.Name == expected
+function AdminService:isAdmin(player)
+	return player and player.Name == self.adminName
 end
 
-function AdminService:init()
-	self.isAdmin = function(_, player)
-		return isAdminName(self.adminName, player)
+function AdminService:grantCoins(player, amount)
+	if not self:isAdmin(player) then
+		return false
 	end
-end
-
-function AdminService:start()
-	task.spawn(function()
-		while true do
-			task.wait(2)
-		end
-	end)
+	return self.context.services.CurrencyService:addCoins(player, amount)
 end
 
 return AdminService

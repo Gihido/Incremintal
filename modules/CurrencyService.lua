@@ -3,27 +3,10 @@ local Players = game:GetService("Players")
 local CurrencyService = {}
 CurrencyService.__index = CurrencyService
 
-local CURRENCY_PATHS = {
-	Coins = {"PlayerData", "Coins"},
-	Wood = {"PlayerData", "Wood", "WoodCurrency"},
-	Paper = {"PlayerData", "Wood", "PaperFactory", "Paper"},
-	Hay = {"PlayerData", "Hay", "HayCurrency"},
-	XP = {"PlayerData", "XP", "XPValue"},
-}
+local CURRENCIES = {"Coins", "Wood", "Paper", "XP"}
 
 local function roundToTenth(value)
 	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
-end
-
-local function findByPath(root, path)
-	local current = root
-	for _, name in ipairs(path) do
-		if not current then
-			return nil
-		end
-		current = current:FindFirstChild(name)
-	end
-	return current
 end
 
 function CurrencyService.new(context)
@@ -34,21 +17,17 @@ function CurrencyService.new(context)
 	return self
 end
 
-function CurrencyService:getCurrencyObject(player, currencyName)
-	local path = CURRENCY_PATHS[currencyName]
-	if not path then
-		return nil
-	end
-	return findByPath(player, path)
+function CurrencyService:getState(player)
+	return self.context.services.GameState:get(player)
 end
 
 function CurrencyService:updateCurrency(player, currencyName, delta)
-	local object = self:getCurrencyObject(player, currencyName)
-	if not object or typeof(object.Value) ~= "number" then
+	if not table.find(CURRENCIES, currencyName) then
 		return false
 	end
-	object.Value = roundToTenth(object.Value + (tonumber(delta) or 0))
-	self:syncLeaderstats(player)
+	self.context.services.GameState:patch(player, function(state)
+		state[currencyName] = roundToTenth((state[currencyName] or 0) + (tonumber(delta) or 0))
+	end)
 	return true
 end
 
@@ -57,103 +36,80 @@ function CurrencyService:addCoins(player, amount)
 end
 
 function CurrencyService:spendCoins(player, amount)
-	local coins = self:getCurrencyObject(player, "Coins")
 	local spend = math.abs(tonumber(amount) or 0)
-	if not coins or typeof(coins.Value) ~= "number" or coins.Value < spend then
+	local state = self:getState(player)
+	if (state.Coins or 0) < spend then
 		return false
 	end
-	coins.Value = roundToTenth(coins.Value - spend)
-	self:syncLeaderstats(player)
-	return true
+	return self:updateCurrency(player, "Coins", -spend)
 end
 
 function CurrencyService:getCoins(player)
-	local coins = self:getCurrencyObject(player, "Coins")
-	if not coins or typeof(coins.Value) ~= "number" then
-		return 0
+	return self:getState(player).Coins or 0
+end
+
+function CurrencyService:syncPlayerDataValues(player)
+	local state = self:getState(player)
+	local data = player:FindFirstChild("PlayerData")
+	if not data then
+		return
 	end
-	return coins.Value
+	local coins = data:FindFirstChild("Coins")
+	if coins then coins.Value = state.Coins or 0 end
+	local wood = data:FindFirstChild("Wood")
+	if wood and wood:FindFirstChild("WoodCurrency") then wood.WoodCurrency.Value = state.Wood or 0 end
+	if wood and wood:FindFirstChild("PaperFactory") and wood.PaperFactory:FindFirstChild("Paper") then wood.PaperFactory.Paper.Value = state.Paper or 0 end
+	local xp = data:FindFirstChild("XP")
+	if xp and xp:FindFirstChild("XPValue") then xp.XPValue.Value = state.XP or 0 end
 end
 
 function CurrencyService:syncLeaderstats(player)
 	local stats = self.leaderstats[player]
-	if not stats then
-		return
-	end
+	if not stats then return end
 	stats.Coins.Value = self:getCoins(player)
 end
 
 function CurrencyService:ensureLeaderstats(player)
-	if self.leaderstats[player] then
-		return
-	end
+	if self.leaderstats[player] then return end
 	local folder = Instance.new("Folder")
 	folder.Name = "leaderstats"
 	folder.Parent = player
-
 	local coins = Instance.new("NumberValue")
 	coins.Name = "Coins"
-	coins.Value = self:getCoins(player)
 	coins.Parent = folder
-
-	self.leaderstats[player] = {
-		folder = folder,
-		Coins = coins,
-	}
+	self.leaderstats[player] = {folder = folder, Coins = coins}
 end
 
-function CurrencyService:bindCurrencyChanged(player)
-	local coinsObj = self:getCurrencyObject(player, "Coins")
-	if not coinsObj then
-		return
-	end
-	self.changedConnections[player] = coinsObj.Changed:Connect(function()
-		self:syncLeaderstats(player)
-	end)
-end
-
-function CurrencyService:unbindPlayer(player)
-	local changed = self.changedConnections[player]
-	if changed then
-		changed:Disconnect()
-		self.changedConnections[player] = nil
-	end
-	self.leaderstats[player] = nil
+function CurrencyService:onStateChanged(player)
+	self:syncPlayerDataValues(player)
+	self:syncLeaderstats(player)
 end
 
 function CurrencyService:onPlayerAdded(player)
 	self:ensureLeaderstats(player)
-	self:bindCurrencyChanged(player)
-	self:syncLeaderstats(player)
+	self.changedConnections[player] = self.context.services.GameState:onChanged(player, function()
+		self:onStateChanged(player)
+	end)
+	self:onStateChanged(player)
+end
+
+function CurrencyService:unbindPlayer(player)
+	local conn = self.changedConnections[player]
+	if conn then conn:Disconnect() end
+	self.changedConnections[player] = nil
+	self.leaderstats[player] = nil
 end
 
 function CurrencyService:init()
 	Players.PlayerAdded:Connect(function(player)
-		task.defer(function()
-			self:onPlayerAdded(player)
-		end)
+		task.defer(function() self:onPlayerAdded(player) end)
 	end)
-
 	Players.PlayerRemoving:Connect(function(player)
 		self:unbindPlayer(player)
 	end)
-
 	for _, player in ipairs(Players:GetPlayers()) do
-		task.defer(function()
-			self:onPlayerAdded(player)
-		end)
+		task.defer(function() self:onPlayerAdded(player) end)
 	end
-end
-
-function CurrencyService:start()
-	task.spawn(function()
-		while true do
-			task.wait(1)
-			for _, player in ipairs(Players:GetPlayers()) do
-				self:syncLeaderstats(player)
-			end
-		end
-	end)
 end
 
 return CurrencyService

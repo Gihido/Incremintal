@@ -4,23 +4,16 @@ PassiveService.__index = PassiveService
 function PassiveService.new(context)
 	local self = setmetatable({}, PassiveService)
 	self.context = context
-	self.playerPassives = {}
 	return self
 end
 
-local function buildEmptyPassive()
-	return {inventory = {}, equipped = nil}
+function PassiveService:getPassives(player)
+	return self.context.services.GameState:get(player).Passives
 end
 
-function PassiveService:init()
-	self.playerPassives.default = buildEmptyPassive()
-end
-
-function PassiveService:start()
-	task.spawn(function()
-		while true do
-			task.wait(3.5)
-		end
+function PassiveService:setPassive(player, passiveName, enabled)
+	self.context.services.GameState:patch(player, function(state)
+		state.Passives[passiveName] = enabled and true or nil
 	end)
 end
 

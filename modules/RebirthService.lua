@@ -4,26 +4,16 @@ RebirthService.__index = RebirthService
 function RebirthService.new(context)
 	local self = setmetatable({}, RebirthService)
 	self.context = context
-	self.playerRebirths = {}
 	return self
 end
 
-local function getRebirthCount(map, player)
-	map[player] = map[player] or 0
-	return map[player]
+function RebirthService:getRebirthCount(player)
+	return self.context.services.GameState:get(player).Rebirths or 0
 end
 
-function RebirthService:init()
-	self.getRebirthCount = function(_, player)
-		return getRebirthCount(self.playerRebirths, player)
-	end
-end
-
-function RebirthService:start()
-	task.spawn(function()
-		while true do
-			task.wait(1)
-		end
+function RebirthService:addRebirth(player, amount)
+	self.context.services.GameState:patch(player, function(state)
+		state.Rebirths = math.max(0, (state.Rebirths or 0) + (tonumber(amount) or 1))
 	end)
 end
 

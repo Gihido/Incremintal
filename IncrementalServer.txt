@@ -8,6 +8,7 @@ end
 
 local ServicesFolder = ServerScriptService:WaitForChild("IncrementalModules")
 
+local GameState = require(ServicesFolder:WaitForChild("GameState"))
 local CurrencyService = require(ServicesFolder:WaitForChild("CurrencyService"))
 local RuneService = require(ServicesFolder:WaitForChild("RuneService"))
 local PassiveService = require(ServicesFolder:WaitForChild("PassiveService"))
@@ -19,10 +20,9 @@ local AdminService = require(ServicesFolder:WaitForChild("AdminService"))
 local Bootstrap = {}
 
 function Bootstrap.buildContext()
-	local context = {
-		services = {},
-	}
+	local context = { services = {} }
 
+	context.services.GameState = GameState.new(context)
 	context.services.CurrencyService = CurrencyService.new(context)
 	context.services.PassiveService = PassiveService.new(context)
 	context.services.UpgradeService = UpgradeService.new(context)
@@ -35,8 +35,10 @@ function Bootstrap.buildContext()
 end
 
 function Bootstrap.initServices(context)
-	for _, service in pairs(context.services) do
-		if service.init then
+	local order = {"GameState", "CurrencyService", "PassiveService", "UpgradeService", "RebirthService", "RuneService", "SaveService", "AdminService"}
+	for _, name in ipairs(order) do
+		local service = context.services[name]
+		if service and service.init then
 			service:init()
 		end
 	end
