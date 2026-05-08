@@ -3024,27 +3024,7 @@ local function refreshPlayerGamepasses(player, savedGamepasses)
 	end
 end
 
-local function loadPlayerData(player)
-	setupPlayerDataObjects(player)
-	passiveStates[player] = emptyPassiveState()
-	writePassiveStateValue(player)
-	runeStates[player] = emptyRuneState()
-	writeRuneStateValue(player)
-
-	local success, data = pcall(function()
-		return playerDataStore:GetAsync("Player_" .. player.UserId)
-	end)
-
-	if not success then
-		warn("Не удалось загрузить " .. player.Name .. ": " .. tostring(data))
-		return
-	end
-
-	if type(data) ~= "table" then
-		refreshPlayerGamepasses(player, {})
-		return
-	end
-
+local function applyLoadedPlayerData(player, data)
 	local coins = getCoinsObject(player)
 	local coinUpgrades = getCoinUpgradesFolder(player)
 	local woodCurrency = getWoodCurrencyObject(player)
@@ -3184,6 +3164,30 @@ local function loadPlayerData(player)
 	if type(data.Position) == "table" and data.Position.X and data.Position.Y and data.Position.Z then
 		pendingTeleportTransforms[player] = data.Position
 	end
+end
+
+local function loadPlayerData(player)
+	setupPlayerDataObjects(player)
+	passiveStates[player] = emptyPassiveState()
+	writePassiveStateValue(player)
+	runeStates[player] = emptyRuneState()
+	writeRuneStateValue(player)
+
+	local success, data = pcall(function()
+		return playerDataStore:GetAsync("Player_" .. player.UserId)
+	end)
+
+	if not success then
+		warn("Не удалось загрузить " .. player.Name .. ": " .. tostring(data))
+		return
+	end
+
+	if type(data) ~= "table" then
+		refreshPlayerGamepasses(player, {})
+		return
+	end
+
+	applyLoadedPlayerData(player, data)
 end
 
 local function applyPendingTeleport(player, character)
