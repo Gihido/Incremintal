@@ -8,6 +8,11 @@ GuiService = game:GetService("GuiService")
 MarketplaceService = game:GetService("MarketplaceService")
 
 player = Players.LocalPlayer
+if not player then
+	warn("IncrementalClient must run as a LocalScript under PlayerScripts")
+	return
+end
+
 mouse = player:GetMouse()
 playerGui = player:WaitForChild("PlayerGui")
 GamepassIds = {
@@ -5085,133 +5090,98 @@ updateBoards = function()
 
 	function updateUnlockDebug()
 
-		local success, err = pcall(function()
+    local success, err = pcall(function()
 
-			local coinGoalBoostMultiplier = 1
+        local coinGoalBoostMultiplier = 1
 
-			if fourthUnlockedVisual then
-				local ok, result = pcall(function()
-					return select(1, computeGoalWoodFactor(coins.Value))
-				end)
+        if fourthUnlockedVisual then
+            local ok, result = pcall(function()
+                return select(1, computeGoalWoodFactor(coins.Value))
+            end)
 
-				if ok and result then
-					coinGoalBoostMultiplier = result
-				end
-			end
+            if ok and result then
+                coinGoalBoostMultiplier = result
+            end
+        end
 
-			if coinValueLabel and coins then
-				coinValueLabel.Text = formatNumber(coins.Value)
-			end
+        if coinValueLabel and coins then
+            coinValueLabel.Text = formatNumber(coins.Value)
+        end
 
-			if coinRewardLabel then
-				coinRewardLabel.Text = formatNumber(getCoinReward())
-			end
+        if coinRewardLabel then
+            coinRewardLabel.Text = formatNumber(getCoinReward())
+        end
 
-			if xpValueLabel and xpValue then
-				xpValueLabel.Text = formatNumber(xpValue.Value)
-			end
+        if xpValueLabel and xpValue then
+            xpValueLabel.Text = formatNumber(xpValue.Value)
+        end
 
-			if coinUpgradeMultiplierLabel then
-				coinUpgradeMultiplierLabel.Text =
-					"x" .. formatNumber(getCoinUpgradeMultiplier())
-			end
+        if coinUpgradeMultiplierLabel then
+            coinUpgradeMultiplierLabel.Text =
+                "x" .. formatNumber(getCoinUpgradeMultiplier())
+        end
 
-			if coinRebirthMultiplierLabel and rebirthCoinMultiplierBonus then
-				coinRebirthMultiplierLabel.Text =
-					"x" .. formatNumber(rebirthCoinMultiplierBonus.Value)
-			end
+        if coinRebirthMultiplierLabel and rebirthCoinMultiplierBonus then
+            coinRebirthMultiplierLabel.Text =
+                "x" .. formatNumber(rebirthCoinMultiplierBonus.Value)
+        end
 
-			if coinGoalBoostLabel then
-				coinGoalBoostLabel.Text =
-					"x" .. formatNumber(coinGoalBoostMultiplier)
-			end
+        if coinGoalBoostLabel then
+            coinGoalBoostLabel.Text =
+                "x" .. formatNumber(coinGoalBoostMultiplier)
+        end
 
-			if coinRespawnLabel then
-				coinRespawnLabel.Text =
-					formatNumber(getCoinRespawn()) .. "s"
-			end
+        if coinRespawnLabel then
+            coinRespawnLabel.Text =
+                formatNumber(getCoinRespawn()) .. "s"
+        end
 
-			if rebirthCountLabel and rebirthCount then
-				rebirthCountLabel.Text = tostring(rebirthCount.Value)
-			end
+        if rebirthCountLabel and rebirthCount then
+            rebirthCountLabel.Text = tostring(rebirthCount.Value)
+        end
 
-			refreshAdminCurrencyButtons()
+        refreshAdminCurrencyButtons()
 
-		end)
+    end)
 
-		if not success then
-			warn("updateUnlockDebug error:", err)
-		end
-	end
-	passiveEffectParts = {}
-	if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
-		table.insert(passiveEffectParts, passiveRollBlock)
-	end
-	if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
-		table.insert(passiveEffectParts, passiveInventoryBlock)
-	end
-	if runeRollBlock and runeRollBlock:IsA("BasePart") then
-		table.insert(passiveEffectParts, runeRollBlock)
-	end
-	if runeIndexBlock and runeIndexBlock:IsA("BasePart") then
-		table.insert(passiveEffectParts, runeIndexBlock)
-	end
-	if runeUpgradeBlock and runeUpgradeBlock:IsA("BasePart") then
-		table.insert(passiveEffectParts, runeUpgradeBlock)
-	end
-	if natureRuneBlock and natureRuneBlock:IsA("BasePart") then
-		table.insert(passiveEffectParts, natureRuneBlock)
-	end
-	if forestRuneBlock and forestRuneBlock:IsA("BasePart") then
-		table.insert(passiveEffectParts, forestRuneBlock)
-	end
-	if hayBlock and hayBlock:IsA("BasePart") then
-		table.insert(passiveEffectParts, hayBlock)
-	end
-	for i = 1, #(passiveEffectParts or {}) do
-		(function(p)
-			if not p:FindFirstChild("PassiveFxLight") then
-				local l = Instance.new("PointLight")
-				l.Name = "PassiveFxLight"
-				l.Range = 18
-				l.Brightness = 2.6
-				l.Color = Color3.fromRGB(181, 219, 255)
-				l.Parent = p
-			end
-			if not p:FindFirstChild("PassiveFxHighlight") then
-				local h = Instance.new("Highlight")
-				h.Name = "PassiveFxHighlight"
-				h.Adornee = p
-				h.FillColor = (p == hayBlock and Color3.fromRGB(255, 229, 128)) or ((p == runeRollBlock or p == natureRuneBlock) and Color3.fromRGB(122, 255, 220)) or (p == forestRuneBlock and Color3.fromRGB(165, 255, 145)) or Color3.fromRGB(168, 199, 255)
-				h.OutlineColor = (p == hayBlock and Color3.fromRGB(255, 247, 196)) or ((p == runeRollBlock or p == natureRuneBlock) and Color3.fromRGB(224, 255, 244)) or (p == forestRuneBlock and Color3.fromRGB(218, 255, 203)) or Color3.fromRGB(245, 249, 255)
-				h.FillTransparency = 0.7
-				h.OutlineTransparency = 0.02
-				h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-				h.Parent = p
-			end
-			if not p:FindFirstChild("PassiveFxParticles") then
-				local emitter = Instance.new("ParticleEmitter")
-				emitter.Name = "PassiveFxParticles"
-				emitter.Rate = 8
-				emitter.Lifetime = NumberRange.new(0.7, 1.2)
-				emitter.Speed = NumberRange.new(0.8, 1.8)
-				emitter.RotSpeed = NumberRange.new(-30, 30)
-				emitter.Size = NumberSequence.new(0.3, 0)
-				emitter.Transparency = NumberSequence.new({
-					NumberSequenceKeypoint.new(0, 0.35),
-					NumberSequenceKeypoint.new(1, 1),
-				})
-				emitter.Parent = p
-			end
-		end)(passiveEffectParts[i])
-	end
-
-	function triggerRuneBurst(systemName)
-		local target = runeRollBlock
-		if systemName == "Forest" and forestRuneBlock and forestRuneBlock:IsA("BasePart") then
-			target = forestRuneBlock
-		elseif systemName == "Nature" and natureRuneBlock and natureRuneBlock:IsA("BasePart") then
-			target = natureRuneBlock
+    if not success then
+        warn("updateUnlockDebug error:", err)
+    end
+end
+passiveEffectParts = {}
+if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, passiveRollBlock)
+end
+if passiveInventoryBlock and passiveInventoryBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, passiveInventoryBlock)
+end
+if runeRollBlock and runeRollBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, runeRollBlock)
+end
+if runeIndexBlock and runeIndexBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, runeIndexBlock)
+end
+if runeUpgradeBlock and runeUpgradeBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, runeUpgradeBlock)
+end
+if natureRuneBlock and natureRuneBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, natureRuneBlock)
+end
+if forestRuneBlock and forestRuneBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, forestRuneBlock)
+end
+if hayBlock and hayBlock:IsA("BasePart") then
+	table.insert(passiveEffectParts, hayBlock)
+end
+for i = 1, #(passiveEffectParts or {}) do
+	(function(p)
+		if not p:FindFirstChild("PassiveFxLight") then
+			local l = Instance.new("PointLight")
+			l.Name = "PassiveFxLight"
+			l.Range = 18
+			l.Brightness = 2.6
+			l.Color = Color3.fromRGB(181, 219, 255)
+			l.Parent = p
 		end
 		if not target or not target:IsA("BasePart") then
 			return
@@ -5725,6 +5695,8 @@ updateBoards = function()
 			end)
 		end
 	end
+end
+
 end
 
 function initializeClientBindingsAndRuntime()
