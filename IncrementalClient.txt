@@ -4966,7 +4966,9 @@ function setCardVisible(cardObj, visible)
 	end
 end
 
-local updateUnlockDebug = function() end
+local systemsReady = false
+local bindingsRegistered = false
+local runtimeStarted = false
 
 function updateWallVisual()
 	for _, part in ipairs(wallParts) do
@@ -4975,6 +4977,7 @@ function updateWallVisual()
 end
 
 updateBoards = function()
+	if not systemsReady then return end
 	local secondUnlockedVisual = secondAreaUnlocked.Value or rebirthCount.Value >= 2
 	local thirdUnlockedVisual = thirdUpgradeUnlocked.Value or rebirthCount.Value >= 3
 	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
@@ -5085,11 +5088,7 @@ updateBoards = function()
 	setWorldBoardGuiVisible("HayIndexBoardSurfaceGui", seventhUnlockedVisual)
 	setWorldBoardGuiVisible("HayUpgradeBoardSurfaceGui", seventhUnlockedVisual)
 
-	updateUnlockDebug = function()
-		-- debug panel removed in production build
-
-
-		local coinGoalBoostMultiplier = fourthUnlockedVisual and select(1, computeGoalWoodFactor(coins.Value)) or 1
+	local coinGoalBoostMultiplier = fourthUnlockedVisual and select(1, computeGoalWoodFactor(coins.Value)) or 1
 		coinValueLabel.Text = formatNumber(coins.Value)
 		coinRewardLabel.Text = formatNumber(getCoinReward())
 		xpValueLabel.Text = formatNumber(xpValue.Value)
@@ -5513,71 +5512,6 @@ updateBoards = function()
 	end
 end
 
-do
-	local runeUnlocked = secondUnlockedVisual
-	if runeUi.panel and runeUi.panel.Visible and not runeUnlocked then
-		runeUi.panel.Visible = false
-	end
-	if runeUi.sessionPanel then
-		runeUi.sessionPanel.Visible = runeUnlocked and runeRollingActive
-	end
-	local rs = parseRuneState()
-	local c = rs.counts or {}
-	function stacks(v)
-		return math.min(10, tonumber(v) or 0)
-	end
-	local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
-	if runeUi.indexText then
-		runeUi.indexText.Text = "Трава: " .. formatNumber(c.Grass or 0) .. " (эф. " .. formatNumber(stacks(c.Grass)) .. ")\n"
-			.. "Тёмная трава: " .. formatNumber(c.DarkGrass or 0) .. " (эф. " .. formatNumber(stacks(c.DarkGrass)) .. ")\n"
-			.. "Одуванчик: " .. formatNumber(c.Dandelion or 0) .. " (эф. " .. formatNumber(stacks(c.Dandelion)) .. ")\n"
-			.. "Цветок: " .. formatNumber(c.Flower or 0) .. " (эф. " .. formatNumber(stacks(c.Flower)) .. ")\n"
-			.. "Фиалка: " .. formatNumber(c.Violet or 0) .. " (эф. " .. formatNumber(stacks(c.Violet)) .. ")\n"
-			.. "Роза: " .. formatNumber(c.Rose or 0) .. " (эф. " .. formatNumber(stacks(c.Rose)) .. ")\n\n"
-			.. "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(math.max(0, effBulk - 1))
-	end
-	if runeUi.openBtn then
-		setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ FOREST RUNE (50 Coins)", coins.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
-	end
-	if runeUi.luckBtn then runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)" end
-	if runeUi.speedBtn then runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)" end
-	if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
-	refreshRuneStats()
-	local safeHayState = buildStableHaySnapshot()
-	local hayAmountLevelValue = readHayUpgradeLevel(safeHayState, "HayAmount")
-	local hayMultiplierLevelValue = readHayUpgradeLevel(safeHayState, "HayMultiplier")
-	local hayCooldownLevelValue = readHayUpgradeLevel(safeHayState, "HayCooldown")
-	local hayCurrencyValue = tonumber(type(safeHayState) == "table" and safeHayState.HayCurrency or 0) or 0
-	if hayUiRows.gain then
-		local gain = (1 + hayAmountLevelValue) * (1 + hayMultiplierLevelValue * 0.5)
-		local cooldown = math.max(0.8, 5 - hayCooldownLevelValue * 0.1)
-		hayUiRows.currency.Text = formatNumber(hayCurrencyValue)
-		hayUiRows.gain.Text = "+" .. formatNumber(gain)
-		hayUiRows.multiplier.Text = "x" .. formatNumber(1 + hayMultiplierLevelValue * 0.5)
-		hayUiRows.cooldown.Text = formatNumber(cooldown) .. "s"
-		hayUiRows.amountLvl.Text = tostring(hayAmountLevelValue) .. "/250"
-		hayUiRows.multLvl.Text = tostring(hayMultiplierLevelValue) .. "/50"
-		hayUiRows.cdLvl.Text = tostring(hayCooldownLevelValue) .. "/25"
-		hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevelValue, hayMultiplierLevelValue)
-	end
-	for idx = 1, #HAY_UPGRADE_ORDER do
-		local key = HAY_UPGRADE_ORDER[idx]
-		local def = getHayUpgradeDefSafe(key)
-		local card = getHayUpgradeCard(key)
-		if card then
-			updateCard(
-				card,
-				readHayUpgradeLevel(safeHayState, key),
-				readHayUpgradeCost(safeHayState, key),
-				true,
-				def.maxLevel,
-				hayCurrencyValue,
-				not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil,
-				"Hay"
-			)
-		end
-	end
-end
 
 if runeUpgradeCards then
 	updateCard(runeUpgradeCards.luck, runeLuckLevel.Value, math.floor(runeLuckCost.Value + 0.5), true, 4, coins.Value, nil, "Coins")
@@ -5651,7 +5585,6 @@ end
 
 updateWallVisual()
 refreshAdminCurrencyButtons()
-updateUnlockDebug()
 
 passiveEffectParts = {}
 if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
@@ -6136,6 +6069,7 @@ function registerWorldInputBindings()
 end
 
 function registerWatchedValueUpdates()
+	if bindingsRegistered then return end
 	local watchedValues = {
 		coins,
 		coinValueLevel, coinMultiplierLevel, coinSpawnLevel, coinWoodBoostLevel,
@@ -6161,6 +6095,7 @@ function registerWatchedValueUpdates()
 		local watched = watchedValues[i]
 		if watched then watched:GetPropertyChangedSignal("Value"):Connect(updateBoards) end
 	end
+	bindingsRegistered = true
 end
 
 function refreshClientUnlockVisibility()
@@ -6170,6 +6105,8 @@ function refreshClientUnlockVisibility()
 end
 
 function startRuntimeUiUpdates()
+	if runtimeStarted then return end
+	runtimeStarted = true
 	if passiveUi.hintEmoji then
 		RunService.RenderStepped:Connect(function()
 			local t = os.clock()
@@ -6237,6 +6174,11 @@ function startRuntimeUiUpdates()
 end
 
 function initializeClientBindingsAndRuntime()
+	if systemsReady then return end
+
+	-- stage 1-5: data/gui/boards/inventories/rune systems are created above this point
+
+	-- stage 6: register events and bindings
 	bindAdminCurrencySelectors()
 	bindUpgradeBoards()
 	bindPassiveAndRuneButtons()
@@ -6248,8 +6190,11 @@ function initializeClientBindingsAndRuntime()
 	secondAreaUnlocked:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
 	fourthSystemsUnlocked:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
 	sixthSystemsUnlocked:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
+
+	-- stage 7: start runtime loops only after all systems are ready
+	systemsReady = true
 	startRuntimeUiUpdates()
+	refreshClientUnlockVisibility()
 end
 
 initializeClientBindingsAndRuntime()
-refreshClientUnlockVisibility()
