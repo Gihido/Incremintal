@@ -5148,6 +5148,9 @@ updateBoards = function()
         warn("updateUnlockDebug error:", err)
     end
 end
+
+end -- закрытие updateBoards()
+
 passiveEffectParts = {}
 if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
 	table.insert(passiveEffectParts, passiveRollBlock)
@@ -5696,8 +5699,6 @@ end
 			end)
 		end
 	end
-end
-
 
 updateBoards()
 
