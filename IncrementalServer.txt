@@ -1907,6 +1907,7 @@ local function calculateFinalCoinGain(player, baseAmount)
 	local coinUpgrades = getCoinUpgradesFolder(player)
 	local woodUpgrades = getWoodUpgradesFolder(player)
 	local rebirth = getRebirthFolder(player)
+	local coinsObject = getCoinsObject(player)
 	local passiveCoin, _, passiveGlobalMultiplier = getPassiveMultipliers(player)
 	local runeCoinMultiplier = select(1, getRuneBonusMultipliers(player))
 
@@ -1916,13 +1917,14 @@ local function calculateFinalCoinGain(player, baseAmount)
 	local upgradedCoinGain = (baseCoinGain + coinValueLevel) * (1 + (multiplierLevel * 0.1))
 	local rebirthCoinMul = rebirth and syncRebirthCoinMultiplierBonus(player) or 1
 	local afterRebirthGain = upgradedCoinGain * rebirthCoinMul
+	local coinGoalBoostMultiplier = (rebirth and rebirth.FourthSystemsUnlocked.Value) and computeGoalWoodFactorFromCoins(coinsObject and coinsObject.Value or 0) or 1
 	local woodCoinBoostLevel = woodUpgrades and woodUpgrades:FindFirstChild("CoinBoostLevel") and woodUpgrades.CoinBoostLevel.Value or 0
 	local woodCoinBoostMultiplier = 1.1 ^ woodCoinBoostLevel
 	local xpUpgrades = getXPUpgradesFolder(player)
 	local xpMul = 1 + ((xpUpgrades and xpUpgrades:FindFirstChild("CoinXPLevel") and xpUpgrades.CoinXPLevel.Value or 0) * 0.2)
 	local eventCoinMul = getServerEventMultipliers()
 	local gamepassCoinMul = getGamepassMultiplier(player, "DoubleCoins", 2)
-	local finalCoinGain = afterRebirthGain * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul * gamepassCoinMul
+	local finalCoinGain = afterRebirthGain * coinGoalBoostMultiplier * woodCoinBoostMultiplier * passiveCoin * passiveGlobalMultiplier * runeCoinMultiplier * xpMul * eventCoinMul * gamepassCoinMul
 	local floorGain = baseCoinGain * rebirthCoinMul
 	return roundToTenth(math.max(finalCoinGain, floorGain))
 end
