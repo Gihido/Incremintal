@@ -3024,146 +3024,170 @@ local function refreshPlayerGamepasses(player, savedGamepasses)
 	end
 end
 
-local function applyLoadedPlayerData(player, data)
-	local coins = getCoinsObject(player)
-	local coinUpgrades = getCoinUpgradesFolder(player)
-	local woodCurrency = getWoodCurrencyObject(player)
-	local woodUpgrades = getWoodUpgradesFolder(player)
-	local hayCurrency = getHayCurrencyObject(player)
-	local hayUpgrades = getHayUpgradesFolder(player)
-	local paperFactory = getPaperFactoryFolder(player)
-	local paperUpgrades = getPaperUpgradesFolder(player)
-	local rebirth = getRebirthFolder(player)
-	local runeUpgrades = getRuneUpgradeFolder(player)
-	local xp = getXPCurrencyObject(player)
-	local xpUpgrades = getXPUpgradesFolder(player)
-	local xpBoost = getXPBoostFolder(player)
-
-	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not hayCurrency or not hayUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
-		return
+local function collectLoadContext(player)
+	local context = {
+		coins = getCoinsObject(player),
+		coinUpgrades = getCoinUpgradesFolder(player),
+		woodCurrency = getWoodCurrencyObject(player),
+		woodUpgrades = getWoodUpgradesFolder(player),
+		hayCurrency = getHayCurrencyObject(player),
+		hayUpgrades = getHayUpgradesFolder(player),
+		paperFactory = getPaperFactoryFolder(player),
+		paperUpgrades = getPaperUpgradesFolder(player),
+		rebirth = getRebirthFolder(player),
+		runeUpgrades = getRuneUpgradeFolder(player),
+		xp = getXPCurrencyObject(player),
+		xpUpgrades = getXPUpgradesFolder(player),
+		xpBoost = getXPBoostFolder(player),
+	}
+	if not context.coins or not context.coinUpgrades or not context.woodCurrency or not context.woodUpgrades or not context.hayCurrency or not context.hayUpgrades or not context.paperFactory or not context.paperUpgrades or not context.rebirth or not context.runeUpgrades or not context.xp or not context.xpUpgrades or not context.xpBoost then
+		return nil
 	end
+	return context
+end
 
-	refreshPlayerGamepasses(player, data.Gamepasses)
+local function applyCurrencyData(context, data)
+	context.coins.Value = roundToTenth(data.Coins or 0)
+	local savedWood = data.Wood or {}
+	context.woodCurrency.Value = roundToTenth(savedWood.WoodCurrency or 0)
+	context.paperFactory.Paper.Value = roundToTenth(savedWood.Paper or 0)
+	context.paperFactory.Fuel.Value = math.max(0, tonumber(savedWood.Fuel) or 0)
+	context.paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
+	context.paperFactory.IsRunning.Value = false
 
-	coins.Value = roundToTenth(data.Coins or 0)
+	local hayData = normalizeHaySaveData(data.Hay)
+	context.hayCurrency.Value = roundToTenth(hayData.HayCurrency or 0)
+end
 
+local function applyUpgradeData(context, data)
 	local savedCoin = data.CoinUpgrades or {}
-	coinUpgrades.CoinValueLevel.Value = math.max(0, tonumber(savedCoin.CoinValueLevel) or 0)
-	coinUpgrades.MultiplierLevel.Value = math.max(0, tonumber(savedCoin.MultiplierLevel) or 0)
-	coinUpgrades.SpawnSpeedLevel.Value = math.clamp(tonumber(savedCoin.SpawnSpeedLevel) or 0, 0, MAX_COIN_SPAWN_SPEED_LEVEL)
-	coinUpgrades.WoodBoostLevel.Value = math.clamp(tonumber(savedCoin.WoodBoostLevel) or 0, 0, 10)
-
-	coinUpgrades.CoinValueCost.Value = math.max(1, tonumber(savedCoin.CoinValueCost) or START_COIN_VALUE_COST)
-	coinUpgrades.MultiplierCost.Value = math.max(1, tonumber(savedCoin.MultiplierCost) or START_COIN_MULTIPLIER_COST)
-	coinUpgrades.SpawnSpeedCost.Value = coinUpgrades.SpawnSpeedLevel.Value >= MAX_COIN_SPAWN_SPEED_LEVEL and 0 or math.max(1, tonumber(savedCoin.SpawnSpeedCost) or START_COIN_SPAWN_COST)
-	coinUpgrades.WoodBoostCost.Value = coinUpgrades.WoodBoostLevel.Value >= 10 and 0 or math.max(1, tonumber(savedCoin.WoodBoostCost) or START_COIN_WOODBOOST_COST)
+	context.coinUpgrades.CoinValueLevel.Value = math.max(0, tonumber(savedCoin.CoinValueLevel) or 0)
+	context.coinUpgrades.MultiplierLevel.Value = math.max(0, tonumber(savedCoin.MultiplierLevel) or 0)
+	context.coinUpgrades.SpawnSpeedLevel.Value = math.clamp(tonumber(savedCoin.SpawnSpeedLevel) or 0, 0, MAX_COIN_SPAWN_SPEED_LEVEL)
+	context.coinUpgrades.WoodBoostLevel.Value = math.clamp(tonumber(savedCoin.WoodBoostLevel) or 0, 0, 10)
+	context.coinUpgrades.CoinValueCost.Value = math.max(1, tonumber(savedCoin.CoinValueCost) or START_COIN_VALUE_COST)
+	context.coinUpgrades.MultiplierCost.Value = math.max(1, tonumber(savedCoin.MultiplierCost) or START_COIN_MULTIPLIER_COST)
+	context.coinUpgrades.SpawnSpeedCost.Value = context.coinUpgrades.SpawnSpeedLevel.Value >= MAX_COIN_SPAWN_SPEED_LEVEL and 0 or math.max(1, tonumber(savedCoin.SpawnSpeedCost) or START_COIN_SPAWN_COST)
+	context.coinUpgrades.WoodBoostCost.Value = context.coinUpgrades.WoodBoostLevel.Value >= 10 and 0 or math.max(1, tonumber(savedCoin.WoodBoostCost) or START_COIN_WOODBOOST_COST)
 
 	local savedWood = data.Wood or {}
-	woodCurrency.Value = roundToTenth(savedWood.WoodCurrency or 0)
-	woodUpgrades.WoodValueLevel.Value = math.max(0, tonumber(savedWood.WoodValueLevel) or 0)
-	woodUpgrades.WoodMultiplierLevel.Value = math.max(0, tonumber(savedWood.WoodMultiplierLevel) or 0)
-	woodUpgrades.WoodSpeedLevel.Value = math.max(0, tonumber(savedWood.WoodSpeedLevel) or 0)
-	woodUpgrades.CoinBoostLevel.Value = math.clamp(tonumber(savedWood.CoinBoostLevel) or 0, 0, 20)
+	context.woodUpgrades.WoodValueLevel.Value = math.max(0, tonumber(savedWood.WoodValueLevel) or 0)
+	context.woodUpgrades.WoodMultiplierLevel.Value = math.max(0, tonumber(savedWood.WoodMultiplierLevel) or 0)
+	context.woodUpgrades.WoodSpeedLevel.Value = math.max(0, tonumber(savedWood.WoodSpeedLevel) or 0)
+	context.woodUpgrades.CoinBoostLevel.Value = math.clamp(tonumber(savedWood.CoinBoostLevel) or 0, 0, 20)
+	context.woodUpgrades.WoodValueCost.Value = math.max(1, tonumber(savedWood.WoodValueCost) or START_WOOD_VALUE_COST)
+	context.woodUpgrades.WoodMultiplierCost.Value = math.max(1, tonumber(savedWood.WoodMultiplierCost) or START_WOOD_MULTIPLIER_COST)
+	context.woodUpgrades.WoodSpeedCost.Value = math.max(1, tonumber(savedWood.WoodSpeedCost) or START_WOOD_SPEED_COST)
+	context.woodUpgrades.CoinBoostCost.Value = context.woodUpgrades.CoinBoostLevel.Value >= 20 and 0 or math.max(1, tonumber(savedWood.CoinBoostCost) or START_WOOD_COINBOOST_COST)
 
-	woodUpgrades.WoodValueCost.Value = math.max(1, tonumber(savedWood.WoodValueCost) or START_WOOD_VALUE_COST)
-	woodUpgrades.WoodMultiplierCost.Value = math.max(1, tonumber(savedWood.WoodMultiplierCost) or START_WOOD_MULTIPLIER_COST)
-	woodUpgrades.WoodSpeedCost.Value = math.max(1, tonumber(savedWood.WoodSpeedCost) or START_WOOD_SPEED_COST)
-	woodUpgrades.CoinBoostCost.Value = woodUpgrades.CoinBoostLevel.Value >= 20 and 0 or math.max(1, tonumber(savedWood.CoinBoostCost) or START_WOOD_COINBOOST_COST)
+	local savedHay = normalizeHaySaveData(data.Hay)
+	context.hayUpgrades.HayAmountLevel.Value = math.clamp(tonumber(savedHay.HayAmountLevel) or 0, 0, HAY_UPGRADES.HayAmount.maxLevel)
+	context.hayUpgrades.HayMultiplierLevel.Value = math.clamp(tonumber(savedHay.HayMultiplierLevel) or 0, 0, HAY_UPGRADES.HayMultiplier.maxLevel)
+	context.hayUpgrades.HayCooldownLevel.Value = math.clamp(tonumber(savedHay.HayCooldownLevel) or 0, 0, HAY_UPGRADES.HayCooldown.maxLevel)
+	context.hayUpgrades.HayAmountCost.Value = context.hayUpgrades.HayAmountLevel.Value >= HAY_UPGRADES.HayAmount.maxLevel and 0 or math.max(1, tonumber(savedHay.HayAmountCost) or HAY_UPGRADES.HayAmount.startCost)
+	context.hayUpgrades.HayMultiplierCost.Value = context.hayUpgrades.HayMultiplierLevel.Value >= HAY_UPGRADES.HayMultiplier.maxLevel and 0 or math.max(1, tonumber(savedHay.HayMultiplierCost) or HAY_UPGRADES.HayMultiplier.startCost)
+	context.hayUpgrades.HayCooldownCost.Value = context.hayUpgrades.HayCooldownLevel.Value >= HAY_UPGRADES.HayCooldown.maxLevel and 0 or math.max(1, tonumber(savedHay.HayCooldownCost) or HAY_UPGRADES.HayCooldown.startCost)
 
-	paperFactory.Paper.Value = roundToTenth(savedWood.Paper or 0)
-	paperFactory.Fuel.Value = math.max(0, tonumber(savedWood.Fuel) or 0)
-	paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
-	paperFactory.IsRunning.Value = false
+	local savedPaperUpgrades = data.PaperUpgrades or {}
+	context.paperUpgrades.PaperValueLevel.Value = math.max(0, tonumber(savedPaperUpgrades.PaperValueLevel) or 0)
+	context.paperUpgrades.PaperMultiplierLevel.Value = math.max(0, tonumber(savedPaperUpgrades.PaperMultiplierLevel) or 0)
+	context.paperUpgrades.PaperSpeedLevel.Value = math.clamp(tonumber(savedPaperUpgrades.PaperSpeedLevel) or 0, 0, 10)
+	context.paperUpgrades.PaperValueCost.Value = math.max(1, tonumber(savedPaperUpgrades.PaperValueCost) or START_PAPER_VALUE_COST)
+	context.paperUpgrades.PaperMultiplierCost.Value = math.max(1, tonumber(savedPaperUpgrades.PaperMultiplierCost) or START_PAPER_MULTIPLIER_COST)
+	context.paperUpgrades.PaperSpeedCost.Value = context.paperUpgrades.PaperSpeedLevel.Value >= 10 and 0 or math.max(1, tonumber(savedPaperUpgrades.PaperSpeedCost) or START_PAPER_SPEED_COST)
 
+	local savedRuneUpgrades = data.RuneUpgrades or {}
+	context.runeUpgrades.RuneLuckLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneLuckLevel) or 0, 0, RUNE_UPGRADES.Luck.maxLevel)
+	context.runeUpgrades.RuneSpeedLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneSpeedLevel) or 0, 0, RUNE_UPGRADES.Speed.maxLevel)
+	context.runeUpgrades.RuneBulkLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneBulkLevel) or 0, 0, RUNE_UPGRADES.Bulk.maxLevel)
+	context.runeUpgrades.RuneLuckCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneLuckCost) or RUNE_UPGRADES.Luck.startCost)
+	context.runeUpgrades.RuneSpeedCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneSpeedCost) or RUNE_UPGRADES.Speed.startCost)
+	context.runeUpgrades.RuneBulkCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneBulkCost) or RUNE_UPGRADES.Bulk.startCost)
+
+	local savedXPUpgrades = (data.XP or {}).Upgrades or {}
+	for _, cfg in pairs(XP_UPGRADES) do
+		local levelObject = context.xpUpgrades:FindFirstChild(cfg.levelName)
+		if levelObject then
+			levelObject.Value = math.clamp(tonumber(savedXPUpgrades[cfg.levelName]) or 0, 0, cfg.maxLevel)
+		end
+		local costObject = context.xpUpgrades:FindFirstChild(cfg.costName)
+		if costObject then
+			costObject.Value = math.max(0, tonumber(savedXPUpgrades[cfg.costName]) or cfg.startCost)
+		end
+	end
+
+	updateUpgradeActiveFlags(context.coinUpgrades, COIN_UPGRADES)
+	updateUpgradeActiveFlags(context.woodUpgrades, WOOD_UPGRADES)
+	updateUpgradeActiveFlags(context.paperUpgrades, PAPER_UPGRADES)
+end
+
+local function applyProgressionData(player, context, data)
+	local savedRebirth = data.Rebirth or {}
+	context.rebirth.Count.Value = math.clamp(tonumber(savedRebirth.Count) or 0, 0, MAX_REBIRTH_COUNT)
+	recalculateRebirthStats(player)
+
+	local savedXP = data.XP or {}
+	context.xp.Value = roundToTenth(tonumber(savedXP.Value) or 0)
+	local savedXPBoost = savedXP.Boost or {}
+	context.xpBoost.Level.Value = math.clamp(tonumber(savedXPBoost.Level) or 0, 0, XP_BOOST_CONFIG.maxLevel)
+	context.xpBoost.NextCost.Value = context.xpBoost.Level.Value >= XP_BOOST_CONFIG.maxLevel and 0 or math.max(1, tonumber(savedXPBoost.NextCost) or XP_BOOST_CONFIG.startCost)
+end
+
+local function applyPassiveData(player, data)
+	local savedPassives = data.Passives
+	if type(savedPassives) == "table" and type(savedPassives.inventory) == "table" then
+		passiveStates[player] = { inventory = savedPassives.inventory, equippedUid = tostring(savedPassives.equippedUid or "") }
+	else
+		passiveStates[player] = emptyPassiveState()
+	end
+	writePassiveStateValue(player)
+end
+
+local function applyRuneData(player, data)
+	local savedRunes = data.Runes
+	if type(savedRunes) ~= "table" then
+		runeStates[player] = emptyRuneState()
+		writeRuneStateValue(player)
+		return
+	end
+	local loaded = emptyRuneState()
+	local savedNature = type(savedRunes.natureCounts) == "table" and savedRunes.natureCounts or (type(savedRunes.counts) == "table" and savedRunes.counts or {})
+	for runeId, _ in pairs(loaded.natureCounts) do
+		loaded.natureCounts[runeId] = math.max(0, tonumber(savedNature[runeId]) or 0)
+		loaded.counts[runeId] = loaded.natureCounts[runeId]
+	end
+	local savedForest = type(savedRunes.forestCounts) == "table" and savedRunes.forestCounts or {}
+	for runeId, _ in pairs(loaded.forestCounts) do
+		loaded.forestCounts[runeId] = math.max(0, tonumber(savedForest[runeId]) or 0)
+	end
+	runeStates[player] = loaded
+	writeRuneStateValue(player)
+end
+
+local function applyVisualData(player, data)
+	if type(data.Position) == "table" and data.Position.X and data.Position.Y and data.Position.Z then
+		pendingTeleportTransforms[player] = data.Position
+	end
+end
+
+local function applyLoadedPlayerData(player, data)
+	local context = collectLoadContext(player)
+	if not context then
+		return
+	end
 	data.Hay = type(data.Hay) == "table" and data.Hay or {}
 	data.Hay.HayUpgrades = type(data.Hay.HayUpgrades) == "table" and data.Hay.HayUpgrades or {}
 	data.Hay.HayUpgrades.HayAmount = tonumber(data.Hay.HayUpgrades.HayAmount) or tonumber(data.Hay.HayAmountLevel) or 0
 	data.Hay.HayUpgrades.HayMultiplier = tonumber(data.Hay.HayUpgrades.HayMultiplier) or tonumber(data.Hay.HayMultiplierLevel) or 0
 	data.Hay.HayUpgrades.HayCooldown = tonumber(data.Hay.HayUpgrades.HayCooldown) or tonumber(data.Hay.HayCooldownLevel) or 0
-	local savedHay = normalizeHaySaveData(data.Hay)
-	hayCurrency.Value = roundToTenth(savedHay.HayCurrency or 0)
-	hayUpgrades.HayAmountLevel.Value = math.clamp(tonumber(savedHay.HayAmountLevel) or 0, 0, HAY_UPGRADES.HayAmount.maxLevel)
-	hayUpgrades.HayMultiplierLevel.Value = math.clamp(tonumber(savedHay.HayMultiplierLevel) or 0, 0, HAY_UPGRADES.HayMultiplier.maxLevel)
-	hayUpgrades.HayCooldownLevel.Value = math.clamp(tonumber(savedHay.HayCooldownLevel) or 0, 0, HAY_UPGRADES.HayCooldown.maxLevel)
-	hayUpgrades.HayAmountCost.Value = hayUpgrades.HayAmountLevel.Value >= HAY_UPGRADES.HayAmount.maxLevel and 0 or math.max(1, tonumber(savedHay.HayAmountCost) or HAY_UPGRADES.HayAmount.startCost)
-	hayUpgrades.HayMultiplierCost.Value = hayUpgrades.HayMultiplierLevel.Value >= HAY_UPGRADES.HayMultiplier.maxLevel and 0 or math.max(1, tonumber(savedHay.HayMultiplierCost) or HAY_UPGRADES.HayMultiplier.startCost)
-	hayUpgrades.HayCooldownCost.Value = hayUpgrades.HayCooldownLevel.Value >= HAY_UPGRADES.HayCooldown.maxLevel and 0 or math.max(1, tonumber(savedHay.HayCooldownCost) or HAY_UPGRADES.HayCooldown.startCost)
 
-	local savedPaperUpgrades = data.PaperUpgrades or {}
-	paperUpgrades.PaperValueLevel.Value = math.max(0, tonumber(savedPaperUpgrades.PaperValueLevel) or 0)
-	paperUpgrades.PaperMultiplierLevel.Value = math.max(0, tonumber(savedPaperUpgrades.PaperMultiplierLevel) or 0)
-	paperUpgrades.PaperSpeedLevel.Value = math.clamp(tonumber(savedPaperUpgrades.PaperSpeedLevel) or 0, 0, 10)
-
-	paperUpgrades.PaperValueCost.Value = math.max(1, tonumber(savedPaperUpgrades.PaperValueCost) or START_PAPER_VALUE_COST)
-	paperUpgrades.PaperMultiplierCost.Value = math.max(1, tonumber(savedPaperUpgrades.PaperMultiplierCost) or START_PAPER_MULTIPLIER_COST)
-	paperUpgrades.PaperSpeedCost.Value = paperUpgrades.PaperSpeedLevel.Value >= 10 and 0 or math.max(1, tonumber(savedPaperUpgrades.PaperSpeedCost) or START_PAPER_SPEED_COST)
-
-	local savedRebirth = data.Rebirth or {}
-	rebirth.Count.Value = math.clamp(tonumber(savedRebirth.Count) or 0, 0, MAX_REBIRTH_COUNT)
-	recalculateRebirthStats(player)
-
-	local savedRuneUpgrades = data.RuneUpgrades or {}
-	runeUpgrades.RuneLuckLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneLuckLevel) or 0, 0, RUNE_UPGRADES.Luck.maxLevel)
-	runeUpgrades.RuneSpeedLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneSpeedLevel) or 0, 0, RUNE_UPGRADES.Speed.maxLevel)
-	runeUpgrades.RuneBulkLevel.Value = math.clamp(tonumber(savedRuneUpgrades.RuneBulkLevel) or 0, 0, RUNE_UPGRADES.Bulk.maxLevel)
-	runeUpgrades.RuneLuckCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneLuckCost) or RUNE_UPGRADES.Luck.startCost)
-	runeUpgrades.RuneSpeedCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneSpeedCost) or RUNE_UPGRADES.Speed.startCost)
-	runeUpgrades.RuneBulkCost.Value = math.max(1, tonumber(savedRuneUpgrades.RuneBulkCost) or RUNE_UPGRADES.Bulk.startCost)
-
-	local savedXP = data.XP or {}
-	xp.Value = roundToTenth(tonumber(savedXP.Value) or 0)
-	local savedXPUpgrades = savedXP.Upgrades or {}
-	for key, cfg in pairs(XP_UPGRADES) do
-		local lvl = xpUpgrades:FindFirstChild(cfg.levelName)
-		local cost = xpUpgrades:FindFirstChild(cfg.costName)
-		if lvl then
-			lvl.Value = math.clamp(tonumber(savedXPUpgrades[cfg.levelName]) or 0, 0, cfg.maxLevel)
-		end
-		if cost then
-			local fallbackCost = cfg.startCost
-			cost.Value = math.max(0, tonumber(savedXPUpgrades[cfg.costName]) or fallbackCost)
-		end
-	end
-	local savedXPBoost = savedXP.Boost or {}
-	xpBoost.Level.Value = math.clamp(tonumber(savedXPBoost.Level) or 0, 0, XP_BOOST_CONFIG.maxLevel)
-	xpBoost.NextCost.Value = xpBoost.Level.Value >= XP_BOOST_CONFIG.maxLevel and 0 or math.max(1, tonumber(savedXPBoost.NextCost) or XP_BOOST_CONFIG.startCost)
-
-	local savedPassives = data.Passives
-	if type(savedPassives) == "table" and type(savedPassives.inventory) == "table" then
-		passiveStates[player] = {
-			inventory = savedPassives.inventory,
-			equippedUid = tostring(savedPassives.equippedUid or ""),
-		}
-	else
-		passiveStates[player] = emptyPassiveState()
-	end
-	writePassiveStateValue(player)
-
-	local savedRunes = data.Runes
-	if type(savedRunes) == "table" then
-		local loaded = emptyRuneState()
-		local savedNature = type(savedRunes.natureCounts) == "table" and savedRunes.natureCounts or (type(savedRunes.counts) == "table" and savedRunes.counts or {})
-		local savedForest = type(savedRunes.forestCounts) == "table" and savedRunes.forestCounts or {}
-		for runeId, _ in pairs(loaded.natureCounts) do
-			loaded.natureCounts[runeId] = math.max(0, tonumber(savedNature[runeId]) or 0)
-			loaded.counts[runeId] = loaded.natureCounts[runeId]
-		end
-		for runeId, _ in pairs(loaded.forestCounts) do
-			loaded.forestCounts[runeId] = math.max(0, tonumber(savedForest[runeId]) or 0)
-		end
-		runeStates[player] = loaded
-	else
-		runeStates[player] = emptyRuneState()
-	end
-	writeRuneStateValue(player)
-
-	updateUpgradeActiveFlags(coinUpgrades, COIN_UPGRADES)
-	updateUpgradeActiveFlags(woodUpgrades, WOOD_UPGRADES)
-	updateUpgradeActiveFlags(paperUpgrades, PAPER_UPGRADES)
-
-	if type(data.Position) == "table" and data.Position.X and data.Position.Y and data.Position.Z then
-		pendingTeleportTransforms[player] = data.Position
-	end
+	refreshPlayerGamepasses(player, data.Gamepasses)
+	applyCurrencyData(context, data)
+	applyUpgradeData(context, data)
+	applyProgressionData(player, context, data)
+	applyPassiveData(player, data)
+	applyRuneData(player, data)
+	applyVisualData(player, data)
 end
 
 local function loadPlayerData(player)
