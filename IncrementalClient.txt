@@ -4966,7 +4966,10 @@ function setCardVisible(cardObj, visible)
 	end
 end
 
-local updateUnlockDebug = function() end
+local updateUnlockDebug
+local systemsReady = false
+local bindingsRegistered = false
+local runtimeStarted = false
 
 function updateWallVisual()
 	for _, part in ipairs(wallParts) do
@@ -4975,6 +4978,7 @@ function updateWallVisual()
 end
 
 updateBoards = function()
+	if not systemsReady then return end
 	local secondUnlockedVisual = secondAreaUnlocked.Value or rebirthCount.Value >= 2
 	local thirdUnlockedVisual = thirdUpgradeUnlocked.Value or rebirthCount.Value >= 3
 	local fourthUnlockedVisual = fourthSystemsUnlocked.Value or rebirthCount.Value >= 4
@@ -6136,6 +6140,7 @@ function registerWorldInputBindings()
 end
 
 function registerWatchedValueUpdates()
+	if bindingsRegistered then return end
 	local watchedValues = {
 		coins,
 		coinValueLevel, coinMultiplierLevel, coinSpawnLevel, coinWoodBoostLevel,
@@ -6161,6 +6166,7 @@ function registerWatchedValueUpdates()
 		local watched = watchedValues[i]
 		if watched then watched:GetPropertyChangedSignal("Value"):Connect(updateBoards) end
 	end
+	bindingsRegistered = true
 end
 
 function refreshClientUnlockVisibility()
@@ -6170,6 +6176,8 @@ function refreshClientUnlockVisibility()
 end
 
 function startRuntimeUiUpdates()
+	if runtimeStarted then return end
+	runtimeStarted = true
 	if passiveUi.hintEmoji then
 		RunService.RenderStepped:Connect(function()
 			local t = os.clock()
@@ -6237,6 +6245,11 @@ function startRuntimeUiUpdates()
 end
 
 function initializeClientBindingsAndRuntime()
+	if systemsReady then return end
+
+	-- stage 1-5: data/gui/boards/inventories/rune systems are created above this point
+
+	-- stage 6: register events and bindings
 	bindAdminCurrencySelectors()
 	bindUpgradeBoards()
 	bindPassiveAndRuneButtons()
@@ -6248,8 +6261,11 @@ function initializeClientBindingsAndRuntime()
 	secondAreaUnlocked:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
 	fourthSystemsUnlocked:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
 	sixthSystemsUnlocked:GetPropertyChangedSignal("Value"):Connect(refreshClientUnlockVisibility)
+
+	-- stage 7: start runtime loops only after all systems are ready
+	systemsReady = true
 	startRuntimeUiUpdates()
+	refreshClientUnlockVisibility()
 end
 
 initializeClientBindingsAndRuntime()
-refreshClientUnlockVisibility()
