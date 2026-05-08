@@ -5698,7 +5698,6 @@ end
 	end
 end
 
-end
 
 function initializeClientBindingsAndRuntime()
 	bindAdminCurrencySelectors()
