@@ -2937,23 +2937,39 @@ local function captureTransform(player)
 end
 
 local function buildSaveData(player)
-	local coins = getCoinsObject(player)
-	local coinUpgrades = getCoinUpgradesFolder(player)
-	local woodCurrency = getWoodCurrencyObject(player)
-	local woodUpgrades = getWoodUpgradesFolder(player)
-	local hayCurrency = getHayCurrencyObject(player)
-	local hayUpgrades = getHayUpgradesFolder(player)
-	local paperFactory = getPaperFactoryFolder(player)
-	local paperUpgrades = getPaperUpgradesFolder(player)
-	local rebirth = getRebirthFolder(player)
-	local runeUpgrades = getRuneUpgradeFolder(player)
-	local xp = getXPCurrencyObject(player)
-	local xpUpgrades = getXPUpgradesFolder(player)
-	local xpBoost = getXPBoostFolder(player)
-
-	if not coins or not coinUpgrades or not woodCurrency or not woodUpgrades or not hayCurrency or not hayUpgrades or not paperFactory or not paperUpgrades or not rebirth or not runeUpgrades or not xp or not xpUpgrades or not xpBoost then
-		return nil
+	local refs = {
+		coins = getCoinsObject(player),
+		coinUpgrades = getCoinUpgradesFolder(player),
+		woodCurrency = getWoodCurrencyObject(player),
+		woodUpgrades = getWoodUpgradesFolder(player),
+		hayCurrency = getHayCurrencyObject(player),
+		hayUpgrades = getHayUpgradesFolder(player),
+		paperFactory = getPaperFactoryFolder(player),
+		paperUpgrades = getPaperUpgradesFolder(player),
+		rebirth = getRebirthFolder(player),
+		runeUpgrades = getRuneUpgradeFolder(player),
+		xp = getXPCurrencyObject(player),
+		xpUpgrades = getXPUpgradesFolder(player),
+		xpBoost = getXPBoostFolder(player),
+	}
+	for _, ref in pairs(refs) do
+		if not ref then
+			return nil
+		end
 	end
+	local coins = refs.coins
+	local coinUpgrades = refs.coinUpgrades
+	local woodCurrency = refs.woodCurrency
+	local woodUpgrades = refs.woodUpgrades
+	local hayCurrency = refs.hayCurrency
+	local hayUpgrades = refs.hayUpgrades
+	local paperFactory = refs.paperFactory
+	local paperUpgrades = refs.paperUpgrades
+	local rebirth = refs.rebirth
+	local runeUpgrades = refs.runeUpgrades
+	local xp = refs.xp
+	local xpUpgrades = refs.xpUpgrades
+	local xpBoost = refs.xpBoost
 
 	return {
 			Version = 10,
