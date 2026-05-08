@@ -4964,6 +4964,10 @@ function updateWallVisual()
 	end
 end
 
+local function updateUnlockDebug()
+	-- debug panel removed in production build
+end
+
 updateBoards = function()
 	local secondUnlockedVisual = secondAreaUnlocked.Value or rebirthCount.Value >= 2
 	local thirdUnlockedVisual = thirdUpgradeUnlocked.Value or rebirthCount.Value >= 3
@@ -5074,10 +5078,6 @@ updateBoards = function()
 	setWorldBoardGuiVisible("ForestRuneStatsBoardSurfaceGui", secondUnlockedVisual)
 	setWorldBoardGuiVisible("HayIndexBoardSurfaceGui", seventhUnlockedVisual)
 	setWorldBoardGuiVisible("HayUpgradeBoardSurfaceGui", seventhUnlockedVisual)
-
-	function updateUnlockDebug()
-		-- debug panel removed in production build
-	end
 
 	local coinGoalBoostMultiplier = fourthUnlockedVisual and select(1, computeGoalWoodFactor(coins.Value)) or 1
 	coinValueLabel.Text = formatNumber(coins.Value)
