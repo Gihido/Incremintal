@@ -147,4 +147,101 @@ function RuneService.getRuneRollInterval(player, deps)
 	return math.max(0.2, interval)
 end
 
+
+
+RuneService.runtime = {
+	activeSessions = {},
+	timers = {},
+	caches = {},
+	runtimeData = {},
+}
+
+function RuneService.configureRuntime(config)
+	RuneService.runtime.config = config or {}
+end
+
+function RuneService.StartRolling(player, setName)
+	local sessions = RuneService.runtime.activeSessions
+	local session = sessions[player] or {}
+	if session.active and session.setName == setName then return session end
+	session.active = true
+	session.setName = setName
+	session.lastRollAt = 0
+	session.sessionCounts = session.sessionCounts or {}
+	sessions[player] = session
+	local notifyEvent = RuneService.runtime.config and RuneService.runtime.config.notifyEvent
+	if notifyEvent then
+		notifyEvent:FireClient(player, {kind = "rune_roll_state", active = true, system = setName})
+	end
+	return session
+end
+
+function RuneService.StopRolling(player, setName)
+	local session = RuneService.runtime.activeSessions[player]
+	if not session or not session.active or (setName and session.setName ~= setName) then return end
+	session.active = false
+	local notifyEvent = RuneService.runtime.config and RuneService.runtime.config.notifyEvent
+	if notifyEvent then
+		notifyEvent:FireClient(player, {kind = "rune_roll_state", active = false, system = session.setName, session = session.sessionCounts})
+	end
+end
+
+function RuneService.UpdateSession(player, now, setName, deps)
+	local cfg = deps.RUNE_SET_DEFS[setName]
+	if not cfg or not cfg.block then
+		RuneService.StopRolling(player, setName)
+		return false
+	end
+	local rebirth = deps.getRebirthFolder(player)
+	local rebirthCount = tonumber(rebirth and rebirth.Count.Value) or 0
+	if rebirthCount < cfg.unlockRebirth then
+		RuneService.StopRolling(player, setName)
+		return false
+	end
+	if not RuneService.isCharacterOnBlock(player, cfg.block, Vector3.new(0.8, 3.2, 0.8)) then
+		RuneService.StopRolling(player, setName)
+		return false
+	end
+
+	local session = RuneService.StartRolling(player, setName)
+	local interval = RuneService.getRuneRollInterval(player, deps)
+	if now - (session.lastRollAt or 0) < interval then return true end
+	session.lastRollAt = now
+	RuneService.RollRune(player, setName, session, now, deps)
+	return true
+end
+
+function RuneService.RollRune(player, setName, session, now, deps)
+	local cfg = deps.RUNE_SET_DEFS[setName]
+	local currencyObject = cfg.currency == "Paper" and deps.getPaperCurrencyObject(player) or deps.getCoinsObject(player)
+	if not currencyObject or deps.safeNumber(currencyObject.Value, 0) < cfg.cost then
+		local key = player.UserId .. "rune_no_" .. setName
+		local cd = RuneService.runtime.timers[key] or 0
+		if now >= cd then
+			deps.fireSimple(player, cfg.insufficientText)
+			RuneService.runtime.timers[key] = now + 2
+		end
+		return
+	end
+	if not deps.spendCurrency(currencyObject, cfg.cost) then return end
+	local rolled, state, denoms = RuneService.rollFromSet(player, setName, deps)
+	if not rolled then return end
+	for _, runeId in ipairs(rolled) do
+		session.sessionCounts[runeId] = (session.sessionCounts[runeId] or 0) + 1
+	end
+	deps.notifyEvent:FireClient(player, {kind = "rune_roll_tick", system = setName, rolled = rolled, session = session.sessionCounts, state = state, effectiveDenominators = denoms})
+end
+
+function RuneService.StartPlayerRuneSession(player)
+	RuneService.runtime.activeSessions[player] = RuneService.runtime.activeSessions[player] or {active=false, sessionCounts={}}
+end
+
+function RuneService.StopPlayerRuneSession(player)
+	RuneService.runtime.activeSessions[player] = nil
+end
+
+function RuneService.CalculateStats(player, deps)
+	return RuneService.getEffectiveRuneStats(player, deps)
+end
+
 return RuneService

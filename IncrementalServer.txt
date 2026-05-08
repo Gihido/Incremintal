@@ -568,10 +568,6 @@ local paperProcessAnchors = {}
 local passiveStates = {}
 local passiveRollCooldowns = {}
 local runeStates = {}
-local runeOpenCooldowns = {}
-local runeRollingSessions = {}
-local activeForestRuneRolls = {}
-local activeNatureRuneRolls = {}
 local activeHayCollection = {}
 local activeAdminEvents = {}
 local ADMIN_EVENT_DURATION = 300
@@ -2476,64 +2472,28 @@ local RUNE_SET_DEFS = RuneService.createSetDefs({
 	runeRollBlock = runeRollBlock,
 })
 
-function getEffectiveRuneChanceDenominator(baseDenominator, runeLuck)
-	return RuneService.getEffectiveRuneChanceDenominator(baseDenominator, runeLuck)
-end
+local RUNE_RUNTIME_DEPS = {
+	RUNE_SET_DEFS = RUNE_SET_DEFS,
+	getRuneState = getRuneState,
+	getEffectiveRuneStats = getEffectiveRuneStats,
+	writeRuneStateValue = writeRuneStateValue,
+	markDirty = markDirty,
+	getRuneUpgradeFolder = getRuneUpgradeFolder,
+	getXPUpgradesFolder = getXPUpgradesFolder,
+	getRuneBonusMultipliers = getRuneBonusMultipliers,
+	getPassiveSpecialBoosts = getPassiveSpecialBoosts,
+	getServerRuneEventBoosts = getServerRuneEventBoosts,
+	getRebirthFolder = getRebirthFolder,
+	getGamepassMultiplier = getGamepassMultiplier,
+	getPaperCurrencyObject = getPaperCurrencyObject,
+	getCoinsObject = getCoinsObject,
+	spendCurrency = spendCurrency,
+	safeNumber = safeNumber,
+	fireSimple = fireSimple,
+	notifyEvent = notifyEvent,
+}
 
-local function isCharacterOnBlock(player, block, tolerance)
-	return RuneService.isCharacterOnBlock(player, block, tolerance)
-end
-
-local function rollFromSet(player, setName)
-	return RuneService.rollFromSet(player, setName, {
-		RUNE_SET_DEFS = RUNE_SET_DEFS,
-		getRuneState = getRuneState,
-		getEffectiveRuneStats = getEffectiveRuneStats,
-		writeRuneStateValue = writeRuneStateValue,
-		markDirty = markDirty,
-	})
-end
-
-local function getRuneRollInterval(player)
-	return RuneService.getRuneRollInterval(player, {
-		getRuneUpgradeFolder = getRuneUpgradeFolder,
-		getXPUpgradesFolder = getXPUpgradesFolder,
-		getRuneBonusMultipliers = getRuneBonusMultipliers,
-		getPassiveSpecialBoosts = getPassiveSpecialBoosts,
-		getServerRuneEventBoosts = getServerRuneEventBoosts,
-		getRebirthFolder = getRebirthFolder,
-		getGamepassMultiplier = getGamepassMultiplier,
-		safeNumber = safeNumber,
-	})
-end
-
-local function startRuneRolling(player, setName)
-	local session = runeRollingSessions[player] or {}
-	if session.active and session.setName == setName then
-		return
-	end
-	runeRollingSessions[player] = {
-		active = true,
-		setName = setName,
-		lastRollAt = 0,
-		sessionCounts = {},
-	}
-	notifyEvent:FireClient(player, {kind = "rune_roll_state", active = true, system = setName})
-end
-
-local function stopRuneRolling(player, setName)
-	local session = runeRollingSessions[player]
-	if not session or not session.active or (setName and session.setName ~= setName) then
-		return
-	end
-	session.active = false
-	notifyEvent:FireClient(player, {
-		kind = "rune_roll_state",
-		active = false,
-		system = session.setName,
-		session = session.sessionCounts,
-	})
-end
+RuneService.configureRuntime({notifyEvent = notifyEvent})
 
 local function isCharacterOnHayBlock(player)
 	if not hayBlock then
@@ -2543,7 +2503,7 @@ local function isCharacterOnHayBlock(player)
 	if not rebirth or (tonumber(rebirth.Count.Value) or 0) < 7 then
 		return false
 	end
-	return isCharacterOnBlock(player, hayBlock, Vector3.new(0.2, 3, 0.2))
+	return RuneService.isCharacterOnBlock(player, hayBlock, Vector3.new(0.2, 3, 0.2))
 end
 
 local function tryBuyRuneUpgrade(player, upgradeKey, silent)
@@ -3242,6 +3202,7 @@ end
 
 local function setupPlayer(player)
 	loadPlayerData(player)
+	RuneService.StartPlayerRuneSession(player)
 	paperProcessAnchors[player] = os.clock()
 
 	player.CharacterAdded:Connect(function(character)
@@ -3428,13 +3389,10 @@ Players.PlayerRemoving:Connect(function(player)
 	woodCooldowns[player.UserId] = nil
 	hayCooldowns[player.UserId] = nil
 	passiveRollCooldowns[player.UserId] = nil
-	runeOpenCooldowns[player.UserId] = nil
 	paperProcessAnchors[player] = nil
 	passiveStates[player] = nil
 	runeStates[player] = nil
-	runeRollingSessions[player] = nil
-	activeForestRuneRolls[player] = nil
-	activeNatureRuneRolls[player] = nil
+	RuneService.StopPlayerRuneSession(player)
 	activeHayCollection[player] = nil
 end)
 
@@ -3522,62 +3480,8 @@ task.spawn(function()
 				hayCooldowns[player.UserId] = now
 			end
 
-			local function processRuneSet(setName, activeTable)
-				local cfg = RUNE_SET_DEFS[setName]
-				if not cfg or not cfg.block then
-					activeTable[player] = nil
-					stopRuneRolling(player, setName)
-					return
-				end
-				local rebirthCount = tonumber(rebirth and rebirth.Count.Value) or 0
-				if rebirthCount < cfg.unlockRebirth then
-					activeTable[player] = nil
-					stopRuneRolling(player, setName)
-					return
-				end
-				if not isCharacterOnBlock(player, cfg.block, Vector3.new(0.8, 3.2, 0.8)) then
-					activeTable[player] = nil
-					stopRuneRolling(player, setName)
-					return
-				end
-				activeTable[player] = true
-				startRuneRolling(player, setName)
-				local session = runeRollingSessions[player]
-				local interval = getRuneRollInterval(player)
-				if session and (now - (session.lastRollAt or 0)) >= interval then
-					session.lastRollAt = now
-					local currencyObject = cfg.currency == "Paper" and getPaperCurrencyObject(player) or getCoinsObject(player)
-					if not currencyObject or safeNumber(currencyObject.Value, 0) < cfg.cost then
-						local key = "rune_no_" .. setName
-						local cd = runeOpenCooldowns[player.UserId .. key] or 0
-						if now >= cd then
-							fireSimple(player, cfg.insufficientText)
-							runeOpenCooldowns[player.UserId .. key] = now + 2
-						end
-						return
-					end
-					if not spendCurrency(currencyObject, cfg.cost) then
-						return
-					end
-					local rolled, state, denoms = rollFromSet(player, setName)
-					if rolled then
-						for _, runeId in ipairs(rolled) do
-							session.sessionCounts[runeId] = (session.sessionCounts[runeId] or 0) + 1
-						end
-						notifyEvent:FireClient(player, {
-							kind = "rune_roll_tick",
-							system = setName,
-							rolled = rolled,
-							session = session.sessionCounts,
-							state = state,
-							effectiveDenominators = denoms,
-						})
-					end
-				end
-			end
-
-			processRuneSet("Forest", activeForestRuneRolls)
-			processRuneSet("Nature", activeNatureRuneRolls)
+			RuneService.UpdateSession(player, now, "Forest", RUNE_RUNTIME_DEPS)
+			RuneService.UpdateSession(player, now, "Nature", RUNE_RUNTIME_DEPS)
 		end
 	end
 end)
