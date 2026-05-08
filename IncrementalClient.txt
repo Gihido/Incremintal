@@ -3210,7 +3210,7 @@ function createPassiveUi()
 	ui.slotsList.ScrollBarThickness = getGuiPreset().scrollBar
 	ui.slotsList.ScrollBarImageColor3 = Color3.fromRGB(158, 182, 240)
 	ui.slotsList.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
-	ui.slotsList.CanvasSize = UDim2.new(0, 0, 0, 0)
+	ui.slotsList.CanvasSize = UDim2.new(0, 0, 0, 240)
 	ui.slotsList.Parent = ui.inventoryPanel
 	createCorner(ui.slotsList, 14)
 	createStroke(ui.slotsList, Color3.fromRGB(202, 174, 255), 1.4, 0.2)
@@ -4130,7 +4130,8 @@ end
 
 function getEquippedPassiveDef()
 	local state = parsePassiveState()
-	for _, entry in ipairs(state.inventory) do
+	local passiveInventory = (state and state.inventory) or {}
+	for _, entry in ipairs(passiveInventory) do
 		if type(entry) == "table" and entry.uid and entry.passiveId and entry.uid == state.equippedUid then
 			return PASSIVE_DEFS[entry.passiveId]
 		end
@@ -5083,6 +5084,7 @@ updateBoards = function()
 	end
 		if passiveUi.inventoryPanel then
 			local state = parsePassiveState()
+			local passiveInventory = (state and state.inventory) or {}
 			passiveUi.lastState = state
 			local renderSignature = passiveStateJson.Value .. "|" .. tostring(passiveUi.selectedUid or "") .. "|" .. tostring(fifthUnlockedVisual) .. "|" .. tostring(math.floor(paperValue.Value + 0.5))
 			if passiveUi.lastRenderSignature ~= renderSignature then
@@ -5096,7 +5098,7 @@ updateBoards = function()
 						child:Destroy()
 					end
 				end
-				for _, entry in ipairs(state.inventory) do
+				for _, entry in ipairs(passiveInventory) do
 				if type(entry) == "table" and entry.passiveId and entry.uid then
 				local def = PASSIVE_DEFS[entry.passiveId]
 				if def then
@@ -5222,7 +5224,7 @@ updateBoards = function()
 				end
 				end
 				local selectedStillExists = false
-				for _, entry in ipairs(state.inventory) do
+				for _, entry in ipairs(passiveInventory) do
 					if type(entry) == "table" and entry.uid == passiveUi.selectedUid then
 						selectedStillExists = true
 						break
@@ -5233,14 +5235,14 @@ updateBoards = function()
 					passiveUi.manageTitle.Text = "Выбери пассив"
 					passiveUi.manageInfo.Text = "Нажми слева на пассив"
 				end
-				passiveUi.emptyState.Visible = #state.inventory == 0
+				passiveUi.emptyState.Visible = #passiveInventory == 0
 				passiveUi.equippedText.Text = "EQUIPPED: " .. string.upper(tostring(equippedName))
 			end
 			if passiveUi.rollButton then
-				setButtonVisual(passiveUi.rollButton, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
+				setButtonVisual(passiveUi.rollButton, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #passiveInventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
 			end
 			if passiveUi.rollButtonInventory then
-				setButtonVisual(passiveUi.rollButtonInventory, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #state.inventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
+				setButtonVisual(passiveUi.rollButtonInventory, "ROLL PASSIVE (50 Paper)", paperValue.Value >= PASSIVE_ROLL_COST and #passiveInventory < PASSIVE_INVENTORY_CAPACITY and fifthUnlockedVisual, false, Color3.fromRGB(255, 216, 120), Color3.fromRGB(136, 148, 175), Color3.fromRGB(48, 55, 71), not fifthUnlockedVisual)
 			end
 		end
 
