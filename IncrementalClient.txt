@@ -5079,12 +5079,13 @@ updateBoards = function()
 	if runeUi.sessionPanel and not secondUnlockedVisual then runeUi.sessionPanel.Visible = false end
 	if xpProgressUi and xpProgressUi.panel then xpProgressUi.panel.Visible = secondUnlockedVisual end
 
-	if passiveUi.hintGui then
-		passiveUi.hintGui.Enabled = fifthUnlockedVisual
-	end
-		if passiveUi.inventoryPanel then
-			local state = parsePassiveState()
-			local passiveInventory = (state and state.inventory) or {}
+		if passiveUi.hintGui then
+			passiveUi.hintGui.Enabled = fifthUnlockedVisual
+		end
+		local passiveInventory = {}
+			if passiveUi.inventoryPanel then
+				local state = parsePassiveState()
+				passiveInventory = (state and state.inventory) or {}
 			passiveUi.lastState = state
 			local renderSignature = passiveStateJson.Value .. "|" .. tostring(passiveUi.selectedUid or "") .. "|" .. tostring(fifthUnlockedVisual) .. "|" .. tostring(math.floor(paperValue.Value + 0.5))
 			if passiveUi.lastRenderSignature ~= renderSignature then
@@ -5250,7 +5251,7 @@ updateBoards = function()
 		local rs = parseRuneState()
 		local natureCounts = rs.natureCounts or rs.counts or {}
 		local forestCounts = rs.forestCounts or {}
-		for systemId, bundle in pairs(runeSystemBoards) do
+		for systemId, bundle in pairs(runeSystemBoards or {}) do
 			local counts = systemId == "Forest" and forestCounts or natureCounts
 			local cfg = RUNE_SYSTEM_UI_CONFIG[systemId]
 			if bundle.index and bundle.index.rows and cfg then
@@ -5452,7 +5453,7 @@ end
 if hayBlock and hayBlock:IsA("BasePart") then
 	table.insert(passiveEffectParts, hayBlock)
 end
-for i = 1, #passiveEffectParts do
+for i = 1, #(passiveEffectParts or {}) do
 	(function(p)
 		if not p:FindFirstChild("PassiveFxLight") then
 			local l = Instance.new("PointLight")
@@ -5674,7 +5675,7 @@ function bindUpgradeBoards()
 			{xpUpgradeCards.runeBulk, "RuneBulkXP"},
 			{xpUpgradeCards.runeSpeed, "RuneSpeedXP"},
 		}
-		for idx = 1, #xpBindings do
+		for idx = 1, #(xpBindings or {}) do
 			local binding = xpBindings[idx]
 			bindUpgradeCard(binding[1], "XP", binding[2])
 		end
@@ -5834,7 +5835,7 @@ function registerNotifyEventListeners()
 			end
 		elseif payload.kind == "rune_roll_result" then
 			local rolled = payload.rolled or {}
-			showToast("Открыто рун: " .. tostring(#rolled))
+			showToast("Открыто рун: " .. tostring(#(rolled or {})))
 		elseif payload.kind == "rune_roll_state" then
 			local systemName = tostring(rawget(payload, "system") or "Nature")
 			if systemName ~= "Nature" and systemName ~= "Forest" then
@@ -5932,7 +5933,7 @@ function registerWatchedValueUpdates()
 			xpValue, coinXpLevel, woodXpLevel, paperXpLevel, xpMultiplierLevel, runeLuckXpLevel, runeBulkXpLevel, runeSpeedXpLevel,
 		coinXpCost, woodXpCost, paperXpCost, xpMultiplierCost, runeLuckXpCost, runeBulkXpCost, runeSpeedXpCost, xpBoostLevel, xpBoostNextCost,
 	}
-	for i = 1, #watchedValues do
+	for i = 1, #(watchedValues or {}) do
 		local watched = watchedValues[i]
 		if watched then watched:GetPropertyChangedSignal("Value"):Connect(updateBoards) end
 	end
@@ -5971,7 +5972,7 @@ function startRuntimeUiUpdates()
 	end
 
 	function tickAdminEventTimers()
-		if #activeAdminEvents == 0 then return end
+		if type(activeAdminEvents) ~= "table" or #activeAdminEvents == 0 then return end
 		local nextEvents = {}
 		for idx = 1, #activeAdminEvents do
 			local ev = activeAdminEvents[idx]
@@ -5998,7 +5999,7 @@ function startRuntimeUiUpdates()
 		end
 	end)
 
-	if #passiveEffectParts > 0 then
+	if #(passiveEffectParts or {}) > 0 then
 		RunService.RenderStepped:Connect(function()
 			local t = os.clock()
 			for idx, part in ipairs(passiveEffectParts) do
