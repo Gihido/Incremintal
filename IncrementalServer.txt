@@ -11,7 +11,6 @@ MessagingService = game:GetService("MessagingService")
 
 local ModulesFolder = script:FindFirstChild("Modules")
 local RuneSystemService = ModulesFolder and require(ModulesFolder:WaitForChild("RuneSystemService")) or nil
-local LeaderboardService = ModulesFolder and require(ModulesFolder:WaitForChild("LeaderboardService")) or nil
 
 local zonePart = Workspace:WaitForChild("ZonePart")
 local coinTemplate = ServerStorage:WaitForChild("CoinPart")
