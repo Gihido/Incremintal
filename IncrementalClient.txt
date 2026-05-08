@@ -5661,7 +5661,6 @@ end
 updateWallVisual()
 refreshAdminCurrencyButtons()
 updateUnlockDebug()
-end
 
 passiveEffectParts = {}
 if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
