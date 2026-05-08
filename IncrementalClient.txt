@@ -4966,7 +4966,6 @@ function setCardVisible(cardObj, visible)
 	end
 end
 
-local updateUnlockDebug
 local systemsReady = false
 local bindingsRegistered = false
 local runtimeStarted = false
@@ -5089,11 +5088,7 @@ updateBoards = function()
 	setWorldBoardGuiVisible("HayIndexBoardSurfaceGui", seventhUnlockedVisual)
 	setWorldBoardGuiVisible("HayUpgradeBoardSurfaceGui", seventhUnlockedVisual)
 
-	updateUnlockDebug = function()
-		-- debug panel removed in production build
-
-
-		local coinGoalBoostMultiplier = fourthUnlockedVisual and select(1, computeGoalWoodFactor(coins.Value)) or 1
+	local coinGoalBoostMultiplier = fourthUnlockedVisual and select(1, computeGoalWoodFactor(coins.Value)) or 1
 		coinValueLabel.Text = formatNumber(coins.Value)
 		coinRewardLabel.Text = formatNumber(getCoinReward())
 		xpValueLabel.Text = formatNumber(xpValue.Value)
@@ -5655,7 +5650,6 @@ end
 
 updateWallVisual()
 refreshAdminCurrencyButtons()
-updateUnlockDebug()
 
 passiveEffectParts = {}
 if passiveRollBlock and passiveRollBlock:IsA("BasePart") then
