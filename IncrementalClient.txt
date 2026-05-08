@@ -2743,8 +2743,6 @@ function createRuneStatsBoard(runeSystemConfig)
 		luck = createStatRow(body, "Rune Luck"),
 		bulk = createStatRow(body, "Rune Bulk"),
 		speed = createStatRow(body, "Rune Speed"),
-		passive = runeSystemConfig["id"] == "Forest" and nil or createStatRow(body, "Passive Luck"),
-		gamepass = createStatRow(body, "Gamepass Bonus"),
 		total = createStatRow(body, "Итог"),
 	}
 end
@@ -4182,8 +4180,28 @@ function updateRuneSummaryGui()
 end
 
 function updateRuneWorldDisplay()
-	updateRuneSummaryGui()
+	refreshRuneStats()
 	updateRuneSessionGui()
+end
+
+function refreshRuneStats()
+	local ok = pcall(function()
+		updateRuneSummaryGui()
+		updateRuneSessionGui()
+		for _, bundle in pairs(runeSystemBoards or {}) do
+			if bundle and bundle.stats and bundle.stats.luck then
+				local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+				local speedOverflowBulk = getRuneSpeedOverflowBulk(effSpeed)
+				local effBulkBonus = math.max(0, effBulk - 1)
+				local speedSeconds = getRuneRollIntervalFromSpeed(effSpeed)
+				bundle.stats.luck.Text = formatRuneStatValue(effLuck) .. "x"
+				bundle.stats.bulk.Text = "+" .. formatRuneStatValue(effBulkBonus)
+				bundle.stats.speed.Text = string.format("%ss/roll | Overflow Bulk +%s", formatRuneStatValue(speedSeconds), formatRuneStatValue(speedOverflowBulk))
+				bundle.stats.total.Text = "Luck " .. formatRuneStatValue(effLuck) .. "x | Speed " .. formatRuneStatValue(effSpeed) .. "x | Bulk +" .. formatRuneStatValue(effBulkBonus)
+			end
+		end
+	end)
+	return ok
 end
 
 function startRuneRolling(systemName)
@@ -4194,7 +4212,7 @@ function startRuneRolling(systemName)
 		runeUi.sessionPanel.Visible = true
 	end
 	updateRuneSessionGui()
-	updateRuneSummaryGui()
+	refreshRuneStats()
 end
 
 function stopRuneRolling(systemName)
@@ -4340,6 +4358,15 @@ end
 function getRuneRollIntervalFromSpeed(speedStat)
 	local baseInterval = 1 / math.max(1, (1 + (math.max(0, speedStat) * 0.5)))
 	return math.max(0.01, baseInterval)
+end
+
+function formatRuneStatValue(value)
+	local v = tonumber(value) or 0
+	local rounded = math.floor(v * 10 + 0.5) / 10
+	if math.abs(rounded - math.floor(rounded + 0.0001)) < 0.0001 then
+		return tostring(math.floor(rounded + 0.0001))
+	end
+	return string.format("%.1f", rounded)
 end
 
 function getClientEffectiveRuneStats()
@@ -5293,8 +5320,8 @@ updateBoards = function()
 				title.Font = Enum.Font.GothamBlack
 				title.TextSize = mobileInventory and 12 or (compactInventory and 14 or 18)
 				title.TextColor3 = Color3.fromRGB(245, 250, 255)
-				title.Text = compactInventory and "" or def.name
-				title.Visible = not compactInventory
+				title.Text = ""
+				title.Visible = false
 				title.Parent = b
 				local info = Instance.new("TextLabel")
 					info.Size = UDim2.new(1, mobileInventory and -90 or -90, 0, mobileInventory and 48 or 40)
@@ -5306,8 +5333,8 @@ updateBoards = function()
 				info.TextScaled = true
 				info.Font = Enum.Font.GothamSemibold
 				info.TextColor3 = Color3.fromRGB(228, 236, 255)
-				info.Text = tostring(def.effect or "") .. " | " .. tostring(def.currencyType or "") .. " | " .. tostring(def.rarity or "")
-				info.Visible = not compactInventory
+				info.Text = ""
+				info.Visible = false
 					info.Parent = b
 				local status = Instance.new("TextLabel")
 					status.Size = UDim2.new(1, mobileInventory and -90 or -90, 0, mobileInventory and 24 or 20)
@@ -5328,8 +5355,8 @@ updateBoards = function()
 					effectBadge.BorderSizePixel = 0
 					effectBadge.Font = Enum.Font.GothamBold
 					effectBadge.TextScaled = true
-					effectBadge.Text = tostring(def.effect or "")
-					effectBadge.Visible = not compactInventory
+					effectBadge.Text = ""
+					effectBadge.Visible = false
 						effectBadge.Parent = b
 					createCorner(effectBadge, 8)
 					b.MouseButton1Click:Connect(function()
@@ -5406,13 +5433,11 @@ updateBoards = function()
 				local speedOverflowBulk = getRuneSpeedOverflowBulk(effSpeed)
 				local effBulkBonus = math.max(0, effBulk - 1)
 				local speedSeconds = getRuneRollIntervalFromSpeed(effSpeed)
-				bundle.stats.luck.Text = "x" .. formatNumber(effLuck)
-				bundle.stats.bulk.Text = "+" .. formatNumber(effBulkBonus)
-				bundle.stats.speed.Text = string.format("%.2fs/roll | Overflow Bulk +%s", speedSeconds, formatNumber(speedOverflowBulk))
-					if bundle.stats.gamepass then bundle.stats.gamepass.Visible = false end
-					if bundle.stats.passive then bundle.stats.passive.Visible = false end
-				bundle.stats.total.Text = "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(effBulkBonus)
-			end
+				bundle.stats.luck.Text = formatRuneStatValue(effLuck) .. "x"
+				bundle.stats.bulk.Text = "+" .. formatRuneStatValue(effBulkBonus)
+				bundle.stats.speed.Text = string.format("%ss/roll | Overflow Bulk +%s", formatRuneStatValue(speedSeconds), formatRuneStatValue(speedOverflowBulk))
+				bundle.stats.total.Text = "Luck " .. formatRuneStatValue(effLuck) .. "x | Speed " .. formatRuneStatValue(effSpeed) .. "x | Bulk +" .. formatRuneStatValue(effBulkBonus)
+				end
 		end
 	end
 
@@ -5445,8 +5470,7 @@ updateBoards = function()
 		if runeUi.luckBtn then runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)" end
 		if runeUi.speedBtn then runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)" end
 		if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
-		updateRuneSummaryGui()
-		updateRuneWorldDisplay()
+		refreshRuneStats()
 		local safeHayState = buildStableHaySnapshot()
 		local hayAmountLevelValue = readHayUpgradeLevel(safeHayState, "HayAmount")
 		local hayMultiplierLevelValue = readHayUpgradeLevel(safeHayState, "HayMultiplier")
@@ -5786,11 +5810,11 @@ function bindUpgradeBoards()
 		{coinGainCard, "Coin", "CoinValue"},
 		{coinMultiCard, "Coin", "Multiplier"},
 		{coinSpawnCard, "Coin", "SpawnSpeed"},
-		{coinWoodBoostCard, "Coin", "Wood Boost"},
+			{coinWoodBoostCard, "Coin", "WoodBoost"},
 		{treeGainCard, "Wood", "WoodValue"},
 		{treeMultiCard, "Wood", "WoodMultiplier"},
-		{treeSpeedCard, "Wood", "Wood Speed"},
-		{treeCoinBoostCard, "Wood", "Coin Boost"},
+			{treeSpeedCard, "Wood", "WoodSpeed"},
+			{treeCoinBoostCard, "Wood", "CoinBoost"},
 	}
 	for i = 1, #upgrades do
 		local cfg = upgrades[i]
@@ -5800,7 +5824,7 @@ function bindUpgradeBoards()
 	if paperUpgradeCards then
 		bindUpgradeCard(paperUpgradeCards.gain, "Paper", "PaperValue")
 		bindUpgradeCard(paperUpgradeCards.multi, "Paper", "PaperMultiplier")
-		bindUpgradeCard(paperUpgradeCards.speed, "Paper", "Paper Speed")
+		bindUpgradeCard(paperUpgradeCards.speed, "Paper", "PaperSpeed")
 	end
 
 	if runeUpgradeCards then
@@ -5995,8 +6019,7 @@ function registerNotifyEventListeners()
 			effectiveRuneDenominators = payload.effectiveDenominators or effectiveRuneDenominators
 			if not runeRollingActive or activeRuneSystem ~= systemName then startRuneRolling(systemName) end
 			updateRuneSession(systemName, session)
-			updateRuneSummaryGui()
-			updateRuneWorldDisplay()
+			refreshRuneStats()
 			triggerRuneBurst(systemName)
 		elseif payload.kind == "admin_event_state" then
 			activeAdminEvents = normalizeAdminEvents(payload.events)
