@@ -5444,6 +5444,82 @@ updateBoards = function()
 		end
 	end
 
+	do
+		local runeUnlocked = secondUnlockedVisual
+		if runeUi.panel and runeUi.panel.Visible and not runeUnlocked then
+			runeUi.panel.Visible = false
+		end
+		if runeUi.sessionPanel then
+			runeUi.sessionPanel.Visible = runeUnlocked and runeRollingActive
+		end
+		local rs = parseRuneState()
+		local c = rs.counts or {}
+		function stacks(v)
+			return math.min(10, tonumber(v) or 0)
+		end
+		local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+		if runeUi.indexText then
+			runeUi.indexText.Text = "Трава: " .. formatNumber(c.Grass or 0) .. " (эф. " .. formatNumber(stacks(c.Grass)) .. ")\n"
+				.. "Тёмная трава: " .. formatNumber(c.DarkGrass or 0) .. " (эф. " .. formatNumber(stacks(c.DarkGrass)) .. ")\n"
+				.. "Одуванчик: " .. formatNumber(c.Dandelion or 0) .. " (эф. " .. formatNumber(stacks(c.Dandelion)) .. ")\n"
+				.. "Цветок: " .. formatNumber(c.Flower or 0) .. " (эф. " .. formatNumber(stacks(c.Flower)) .. ")\n"
+				.. "Фиалка: " .. formatNumber(c.Violet or 0) .. " (эф. " .. formatNumber(stacks(c.Violet)) .. ")\n"
+				.. "Роза: " .. formatNumber(c.Rose or 0) .. " (эф. " .. formatNumber(stacks(c.Rose)) .. ")\n\n"
+				.. "Luck x" .. formatNumber(effLuck) .. " | Speed x" .. formatNumber(effSpeed) .. " | Bulk +" .. formatNumber(math.max(0, effBulk - 1))
+		end
+		if runeUi.openBtn then
+			setButtonVisual(runeUi.openBtn, "ОТКРЫТЬ FOREST RUNE (50 Coins)", coins.Value >= 50 and runeUnlocked, false, Color3.fromRGB(151, 227, 184), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 56, 41), not runeUnlocked)
+		end
+		if runeUi.luckBtn then runeUi.luckBtn.Text = "Luck (" .. tostring(runeLuckCost.Value) .. " C)" end
+		if runeUi.speedBtn then runeUi.speedBtn.Text = "Speed (" .. tostring(runeSpeedCost.Value) .. " W)" end
+		if runeUi.bulkBtn then runeUi.bulkBtn.Text = "Bulk (" .. tostring(runeBulkCost.Value) .. " P)" end
+		refreshRuneStats()
+		local safeHayState = buildStableHaySnapshot()
+		local hayAmountLevelValue = readHayUpgradeLevel(safeHayState, "HayAmount")
+		local hayMultiplierLevelValue = readHayUpgradeLevel(safeHayState, "HayMultiplier")
+		local hayCooldownLevelValue = readHayUpgradeLevel(safeHayState, "HayCooldown")
+		local hayCurrencyValue = tonumber(type(safeHayState) == "table" and safeHayState.HayCurrency or 0) or 0
+		if hayUiRows.gain then
+			local gain = (1 + hayAmountLevelValue) * (1 + hayMultiplierLevelValue * 0.5)
+			local cooldown = math.max(0.8, 5 - hayCooldownLevelValue * 0.1)
+			hayUiRows.currency.Text = formatNumber(hayCurrencyValue)
+			hayUiRows.gain.Text = "+" .. formatNumber(gain)
+			hayUiRows.multiplier.Text = "x" .. formatNumber(1 + hayMultiplierLevelValue * 0.5)
+			hayUiRows.cooldown.Text = formatNumber(cooldown) .. "s"
+			hayUiRows.amountLvl.Text = tostring(hayAmountLevelValue) .. "/250"
+			hayUiRows.multLvl.Text = tostring(hayMultiplierLevelValue) .. "/50"
+			hayUiRows.cdLvl.Text = tostring(hayCooldownLevelValue) .. "/25"
+			hayUiRows.formula.Text = string.format("(%d + 1) * (1 + %d*0.5)", hayAmountLevelValue, hayMultiplierLevelValue)
+		end
+		for idx = 1, #HAY_UPGRADE_ORDER do
+			local key = HAY_UPGRADE_ORDER[idx]
+			local def = getHayUpgradeDefSafe(key)
+			local card = getHayUpgradeCard(key)
+			if card then
+				updateCard(
+					card,
+					readHayUpgradeLevel(safeHayState, key),
+					readHayUpgradeCost(safeHayState, key),
+					true,
+					def.maxLevel,
+					hayCurrencyValue,
+					not seventhUnlockedVisual and "Откроется на 7-м перерождении" or nil,
+					"Hay"
+				)
+			end
+		end
+		if bundle.stats and bundle.stats.luck then
+			local effLuck, effSpeed, effBulk = getClientEffectiveRuneStats()
+			local speedOverflowBulk = getRuneSpeedOverflowBulk(effSpeed)
+			local effBulkBonus = math.max(0, effBulk - 1)
+			local speedSeconds = getRuneRollIntervalFromSpeed(effSpeed)
+			bundle.stats.luck.Text = formatRuneStatValue(effLuck) .. "x"
+			bundle.stats.bulk.Text = "+" .. formatRuneStatValue(effBulkBonus)
+			bundle.stats.speed.Text = string.format("%ss/roll | Overflow Bulk +%s", formatRuneStatValue(speedSeconds), formatRuneStatValue(speedOverflowBulk))
+			bundle.stats.total.Text = "Luck " .. formatRuneStatValue(effLuck) .. "x | Speed " .. formatRuneStatValue(effSpeed) .. "x | Bulk +" .. formatRuneStatValue(effBulkBonus)
+		end
+	end
+end
 
 do
 	local runeUnlocked = secondUnlockedVisual
@@ -5562,6 +5638,46 @@ if xpProgressUi then
 end
 
 
+if xpProgressUi then
+	local boostValue = 1 + xpBoostLevel.Value
+	xpProgressUi.valueText.Text = "x" .. formatNumber(boostValue)
+	xpProgressUi.costText.Text = xpBoostNextCost.Value <= 0 and "MAX" or (formatNumber(math.floor(xpBoostNextCost.Value + 0.5)) .. " XP")
+	if xpProgressUi.currentText then
+		xpProgressUi.currentText.Text = formatNumber(xpValue.Value)
+	end
+	if xpProgressUi.collectText then
+		xpProgressUi.collectText.Text = formatNumber(getClientXpPerCollectEstimate()) .. " XP/sec"
+	end
+	if xpProgressUi.needText then
+		xpProgressUi.needText.Text = xpBoostNextCost.Value <= 0 and "0" or formatNumber(math.max(0, xpBoostNextCost.Value - xpValue.Value))
+	end
+	if xpProgressUi.multText then
+		xpProgressUi.multText.Text = "x" .. formatNumber(1 + xpMultiplierLevel.Value)
+	end
+	if xpProgressUi.levelText then
+		xpProgressUi.levelText.Text = tostring(xpBoostLevel.Value)
+	end
+	if xpProgressUi.nextUnlockText then
+		local nxt = xpBoostLevel.Value < 5 and "Rune XP Tier" or (xpBoostLevel.Value < 10 and "Advanced Rune Tier" or "MAX TIER")
+		xpProgressUi.nextUnlockText.Text = nxt
+	end
+	local progress = xpBoostNextCost.Value > 0 and safeClamp(xpValue.Value / xpBoostNextCost.Value, 0, 1) or 1
+	TweenService:Create(xpProgressUi.barFill, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
+	if xpProgressUi.barGlow then
+		local boost = (xpProgressLastValue and xpValue.Value > xpProgressLastValue) and 0.58 or 0.75
+		xpProgressUi.barGlow.BackgroundTransparency = boost
+		TweenService:Create(xpProgressUi.barGlow, TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {BackgroundTransparency = 0.8}):Play()
+	end
+	if xpProgressLastValue and xpValue.Value > xpProgressLastValue and xpProgressUi.valueText then
+		xpProgressUi.valueText.TextColor3 = Color3.fromRGB(170, 255, 230)
+		TweenService:Create(xpProgressUi.valueText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(236, 255, 228)}):Play()
+	end
+	xpProgressLastValue = xpValue.Value
+	setButtonVisual(xpProgressUi.buyButton, "UPGRADE XP BOOST", secondUnlockedVisual and xpValue.Value >= xpBoostNextCost.Value, xpBoostNextCost.Value <= 0, Color3.fromRGB(100, 243, 211), Color3.fromRGB(136, 148, 175), Color3.fromRGB(22, 48, 62), not secondUnlockedVisual)
+	if xpProgressLockedOverlay then
+		xpProgressLockedOverlay.Visible = false
+	end
+end
 
 -- Safety pass against stale visual lock states.
 if thirdUnlockedVisual then
