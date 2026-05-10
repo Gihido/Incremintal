@@ -68,6 +68,8 @@ function XPSystem.ResetXPProgress(player)
 			xpBoost[XP_BOOST_CONFIG.costName].Value = XP_BOOST_CONFIG.startCost
 		end
 	end
+
+	PlayerDataSystem.MarkDirty(player)
 end
 
 function XPSystem.HandleXPAction(player, actionName)

@@ -118,7 +118,8 @@ local function processRuneSet(player, setName, activeTable, now)
 
 	RuneSessionSystem.SetLastRollAt(player, now)
 	local currencyObject = RuneCurrencySystem.GetCurrencyObjectForSet(player, cfg)
-	if not currencyObject or (tonumber(currencyObject.Value) or 0) < cfg.cost then
+	local openCost = RuneCurrencySystem.GetOpenCostForSet(cfg)
+	if not currencyObject or not openCost or (tonumber(currencyObject.Value) or 0) < openCost then
 		local key = "rune_no_" .. setName
 		local cd = runeOpenCooldowns[player.UserId .. key] or 0
 		if now >= cd then
