@@ -14,6 +14,7 @@ local REMOTE_NAMES = {
 	PassiveAction = "PassiveAction",
 	RuneAction = "RuneAction",
 	XPAction = "XPAction",
+	LeaderboardRequest = "LeaderboardRequest",
 }
 
 local remotesFolder = nil
