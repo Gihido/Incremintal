@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local PlayerDataSystem = {}
 
@@ -139,6 +140,7 @@ local REBIRTH_STAGES = {
 		unlockSixthSystems = true,
 	},
 }
+local MAX_REBIRTH_COUNT = 7
 
 local COIN_UPGRADES = {
 	CoinValue = {
@@ -466,6 +468,19 @@ function PlayerDataSystem.GetRuneUpgradeFolder(player)
 	return folder and folder:FindFirstChild("Upgrades") or nil
 end
 
+function PlayerDataSystem.GetCurrencyObjectForName(player, currencyName)
+	if currencyName == "Coins" then
+		return PlayerDataSystem.GetCoinsObject(player)
+	elseif currencyName == "Wood" then
+		return PlayerDataSystem.GetWoodCurrencyObject(player)
+	elseif currencyName == "Paper" then
+		return PlayerDataSystem.GetPaperCurrencyObject(player)
+	elseif currencyName == "Hay" then
+		return PlayerDataSystem.GetHayCurrencyObject(player)
+	end
+	return nil
+end
+
 function PlayerDataSystem.SetupPlayerDataObjects(player)
 	local playerData = ensureFolder(player, "PlayerData")
 
@@ -622,7 +637,126 @@ function PlayerDataSystem.RecalculateRebirthStats(player)
 	end
 end
 
+function PlayerDataSystem.ResetCoinProgress(player)
+	local coins = PlayerDataSystem.GetCoinsObject(player)
+	local coinUpgrades = PlayerDataSystem.GetCoinUpgradesFolder(player)
+	if coins then
+		coins.Value = 0
+	end
+	if coinUpgrades then
+		for _, config in pairs(COIN_UPGRADES) do
+			local levelObject = coinUpgrades:FindFirstChild(config.levelName)
+			local costObject = coinUpgrades:FindFirstChild(config.costName)
+			if levelObject then levelObject.Value = 0 end
+			if costObject then costObject.Value = config.startCost end
+		end
+		updateUpgradeActiveFlags(coinUpgrades, COIN_UPGRADES)
+	end
+end
+
+function PlayerDataSystem.ResetWoodProgress(player)
+	local woodCurrency = PlayerDataSystem.GetWoodCurrencyObject(player)
+	local woodUpgrades = PlayerDataSystem.GetWoodUpgradesFolder(player)
+	local hayCurrency = PlayerDataSystem.GetHayCurrencyObject(player)
+	local hayUpgrades = PlayerDataSystem.GetHayUpgradesFolder(player)
+	local paperFactory = PlayerDataSystem.GetPaperFactoryFolder(player)
+	local paperUpgrades = PlayerDataSystem.GetPaperUpgradesFolder(player)
+
+	if woodCurrency then woodCurrency.Value = 0 end
+	if woodUpgrades then
+		for _, config in pairs(WOOD_UPGRADES) do
+			local levelObject = woodUpgrades:FindFirstChild(config.levelName)
+			local costObject = woodUpgrades:FindFirstChild(config.costName)
+			if levelObject then levelObject.Value = 0 end
+			if costObject then costObject.Value = config.startCost end
+		end
+		updateUpgradeActiveFlags(woodUpgrades, WOOD_UPGRADES)
+	end
+
+	if hayCurrency then hayCurrency.Value = 0 end
+	if hayUpgrades then
+		for _, config in pairs(HAY_UPGRADES) do
+			local levelObject = hayUpgrades:FindFirstChild(config.levelName)
+			local costObject = hayUpgrades:FindFirstChild(config.costName)
+			if levelObject then levelObject.Value = 0 end
+			if costObject then costObject.Value = config.startCost end
+		end
+		updateUpgradeActiveFlags(hayUpgrades, HAY_UPGRADES)
+	end
+
+	if paperFactory then
+		paperFactory.Paper.Value = 0
+		paperFactory.Fuel.Value = 0
+		paperFactory.Countdown.Value = BASE_PAPER_PRODUCTION_TIME
+		paperFactory.IsRunning.Value = false
+	end
+	if paperUpgrades then
+		for _, config in pairs(PAPER_UPGRADES) do
+			local levelObject = paperUpgrades:FindFirstChild(config.levelName)
+			local costObject = paperUpgrades:FindFirstChild(config.costName)
+			if levelObject then levelObject.Value = 0 end
+			if costObject then costObject.Value = config.startCost end
+		end
+		updateUpgradeActiveFlags(paperUpgrades, PAPER_UPGRADES)
+	end
+end
+
+function PlayerDataSystem.TryPurchaseRebirth(player)
+	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
+	if not rebirth then
+		return false, "NO_REBIRTH"
+	end
+	local currentCount = rebirth.Count.Value
+	if currentCount >= MAX_REBIRTH_COUNT then
+		return false, "MAX"
+	end
+	local nextStage = REBIRTH_STAGES[currentCount + 1]
+	if not nextStage then
+		return false, "MAX"
+	end
+	local currencyObject = PlayerDataSystem.GetCurrencyObjectForName(player, nextStage.currency)
+	if not currencyObject then
+		return false, "NO_CURRENCY"
+	end
+	if currencyObject.Value < nextStage.cost then
+		return false, "NO_MONEY", nextStage.currency
+	end
+	if not PlayerDataSystem.SpendCurrency(currencyObject, nextStage.cost) then
+		return false, "NO_MONEY", nextStage.currency
+	end
+
+	rebirth.Count.Value += 1
+	PlayerDataSystem.RecalculateRebirthStats(player)
+	PlayerDataSystem.ResetCoinProgress(player)
+	PlayerDataSystem.ResetWoodProgress(player)
+	PlayerDataSystem.MarkDirty(player)
+	return true
+end
+
 function PlayerDataSystem.Init()
+	local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+	local purchaseRebirthEvent = Remotes:WaitForChild("PurchaseRebirth")
+	local notifyEvent = Remotes:WaitForChild("NotifyClient")
+
+	purchaseRebirthEvent.OnServerEvent:Connect(function(player)
+		local success, reason, currencyName = PlayerDataSystem.TryPurchaseRebirth(player)
+		if success then
+			notifyEvent:FireClient(player, {kind = "Simple", text = "Перерождение куплено"})
+			return
+		end
+
+		if reason == "MAX" then
+			notifyEvent:FireClient(player, {kind = "Simple", text = "Перерождение уже в MAX"})
+		elseif reason == "NO_MONEY" then
+			local messageByCurrency = {
+				Coins = "Не хватает монет для перерождения",
+				Wood = "Не хватает дерева для перерождения",
+				Paper = "Не хватает бумаги для перерождения",
+			}
+			notifyEvent:FireClient(player, {kind = "Simple", text = messageByCurrency[currencyName] or "Не хватает ресурса для перерождения"})
+		end
+	end)
+
 	for _, player in ipairs(Players:GetPlayers()) do
 		PlayerDataSystem.SetupPlayerDataObjects(player)
 		PlayerDataSystem.RecalculateRebirthStats(player)
