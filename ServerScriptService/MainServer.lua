@@ -26,43 +26,74 @@ local RuneSessionSystem = require(RuneSystems:WaitForChild("RuneSessionSystem"))
 local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
 
-local function findFirstDescendantByName(root, targetName, maxDepth)
-	maxDepth = maxDepth or 6
-	local queue = {{node = root, depth = 0}}
-	while #queue > 0 do
-		local item = table.remove(queue, 1)
-		if item.node.Name == targetName then
-			return item.node
+local function findLeaderboardModuleCandidates()
+	local candidates = {}
+	local rootModules = script.Parent.Parent:FindFirstChild("Modules")
+	if rootModules and rootModules:FindFirstChild("LeaderboardService") then
+		candidates[#candidates + 1] = rootModules:FindFirstChild("LeaderboardService")
+	end
+
+	local serverModules = script.Parent:FindFirstChild("Modules")
+	if serverModules and serverModules:FindFirstChild("LeaderboardService") then
+		candidates[#candidates + 1] = serverModules:FindFirstChild("LeaderboardService")
+	end
+
+	if Systems:FindFirstChild("LeaderboardSystem") then
+		candidates[#candidates + 1] = Systems:FindFirstChild("LeaderboardSystem")
+	end
+
+	return candidates
+end
+
+local function ensureLeaderboardServiceContract(service, moduleScript)
+	if type(service) ~= "table" then
+		return false, "module did not return a table"
+	end
+
+	if not service.BuildEntries and service.BuildLeaderboardEntries then
+		function service:BuildEntries(...)
+			return self:BuildLeaderboardEntries(...)
 		end
-		if item.depth < maxDepth then
-			for _, child in ipairs(item.node:GetChildren()) do
-				queue[#queue + 1] = {node = child, depth = item.depth + 1}
+	end
+
+	if not service.GetTopPlayers then
+		function service:GetTopPlayers(entries, topCount)
+			local result = {}
+			local limit = math.max(1, tonumber(topCount) or 10)
+			for i = 1, math.min(limit, #(entries or {})) do
+				result[i] = entries[i]
 			end
+			return result
 		end
 	end
-	return nil
+
+	if type(service.BuildEntries) ~= "function" then
+		local moduleName = moduleScript and moduleScript:GetFullName() or "unknown"
+		return false, moduleName .. " has no BuildEntries/BuildLeaderboardEntries method"
+	end
+
+	return true
 end
 
-local function resolveLeaderboardModule()
-	local direct = script.Parent.Parent:FindFirstChild("Modules")
-	if direct and direct:FindFirstChild("LeaderboardService") then
-		return direct:FindFirstChild("LeaderboardService")
+local function requireLeaderboardService()
+	local errors = {}
+	for _, moduleScript in ipairs(findLeaderboardModuleCandidates()) do
+		local ok, service = pcall(require, moduleScript)
+		if ok then
+			local hasContract, reason = ensureLeaderboardServiceContract(service, moduleScript)
+			if hasContract then
+				return service
+			end
+			errors[#errors + 1] = reason
+		else
+			errors[#errors + 1] = moduleScript:GetFullName() .. " failed to require: " .. tostring(service)
+		end
 	end
 
-	local inServerScriptService = script.Parent:FindFirstChild("Modules")
-	if inServerScriptService and inServerScriptService:FindFirstChild("LeaderboardService") then
-		return inServerScriptService:FindFirstChild("LeaderboardService")
-	end
-
-	local scannedModules = findFirstDescendantByName(game, "Modules", 4)
-	if scannedModules and scannedModules:FindFirstChild("LeaderboardService") then
-		return scannedModules:FindFirstChild("LeaderboardService")
-	end
-
-	error("LeaderboardService module not found (expected in game.Modules or ServerScriptService.Modules)")
+	error("Valid LeaderboardService module not found (expected game.Modules.LeaderboardService, ServerScriptService.Modules.LeaderboardService, or ServerScriptService.Systems.LeaderboardSystem). " .. table.concat(errors, "; "))
 end
 
-local LeaderboardService = require(resolveLeaderboardModule())
+local LeaderboardService = requireLeaderboardService()
 local ADMIN_NAME = "Gihido"
 local LEADERBOARD_REQUEST_COOLDOWN = 0.35
 local leaderboardRequestCooldowns = {}
