@@ -1,4 +1,3 @@
-local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 
 local CoreSystems = script.Parent.Parent:WaitForChild("Core")
@@ -16,6 +15,8 @@ local NatureRune = require(Runes:WaitForChild("NatureRune"))
 local ForestRune = require(Runes:WaitForChild("ForestRune"))
 local PaperRune = require(Runes:WaitForChild("PaperRune"))
 local HayRune = require(Runes:WaitForChild("HayRune"))
+local RuneRuntimeSystem = require(script.Parent.Parent:WaitForChild("RuntimeLoops"):WaitForChild("RuneRuntimeSystem"))
+local RuneActionSystem = require(script.Parent:WaitForChild("RuneActionSystem"))
 
 local RuneRollSystem = {}
 
@@ -220,43 +221,22 @@ function RuneRollSystem.HandleRuneAction(player, actionName)
 	local wood = PlayerDataSystem.GetWoodCurrencyObject(player)
 	if not rebirth or not runeUpgrades or not wood then return end
 
-	if actionName == "Open" or actionName == "OpenNature" then
-		fireSimple(player, "Nature Rune работает автоматически, пока стоишь на NatureRuneBlock")
-		return
-	elseif actionName == "OpenForest" then
-		fireSimple(player, "Forest Rune работает автоматически, пока стоишь на ForestRuneBlock")
-		return
-	elseif not rebirth.SecondAreaUnlocked.Value then
-		fireSimple(player, "Система Nature Rune откроется после 2-го перерождения")
-		return
-	elseif actionName == "UpgradeLuck" then
-		RuneLuckSystem.TryBuy(player, false)
-	elseif actionName == "UpgradeLuckMax" then
-		RuneLuckSystem.TryBuyMax(player)
-	elseif actionName == "UpgradeSpeed" then
-		RuneSpeedSystem.TryBuy(player, false)
-	elseif actionName == "UpgradeSpeedMax" then
-		RuneSpeedSystem.TryBuyMax(player)
-	elseif actionName == "UpgradeBulk" then
-		RuneBulkSystem.TryBuy(player, false)
-	elseif actionName == "UpgradeBulkMax" then
-		RuneBulkSystem.TryBuyMax(player)
-	elseif actionName == "RequestIndex" then
-		RuneIndexSystem.PushIndexState(player, NATURE_RUNE_ORDER, FOREST_RUNE_ORDER)
-	end
+	RuneActionSystem.Handle(player, actionName, {
+		fireSimple = fireSimple,
+		canUseRunes = function(currentPlayer)
+			local currentRebirth = PlayerDataSystem.GetRebirthFolder(currentPlayer)
+			return currentRebirth and currentRebirth.SecondAreaUnlocked.Value
+		end,
+		buyLuck = function(currentPlayer) RuneLuckSystem.TryBuy(currentPlayer, false) end,
+		buyLuckMax = RuneLuckSystem.TryBuyMax,
+		buySpeed = function(currentPlayer) RuneSpeedSystem.TryBuy(currentPlayer, false) end,
+		buySpeedMax = RuneSpeedSystem.TryBuyMax,
+		buyBulk = function(currentPlayer) RuneBulkSystem.TryBuy(currentPlayer, false) end,
+		buyBulkMax = RuneBulkSystem.TryBuyMax,
+		pushIndex = function(currentPlayer) RuneIndexSystem.PushIndexState(currentPlayer, NATURE_RUNE_ORDER, FOREST_RUNE_ORDER) end,
+	})
 end
 
-local function startRuneRuntimeLoop()
-	task.spawn(function()
-		while true do
-			task.wait(0.2)
-			local now = os.clock()
-			for _, player in ipairs(Players:GetPlayers()) do
-				RuneRollSystem.UpdatePlayerRuneRolling(player, now)
-			end
-		end
-	end)
-end
 
 local function buildRuneSetDefs()
 	for key in pairs(RUNE_SET_DEFS) do
@@ -290,7 +270,7 @@ function RuneRollSystem.Init()
 		RuneRollSystem.HandleRuneAction(player, actionName)
 	end)
 
-	startRuneRuntimeLoop()
+	RuneRuntimeSystem.Start(RuneRollSystem.UpdatePlayerRuneRolling)
 end
 
 function RuneRollSystem.GetRuneSetDefs()

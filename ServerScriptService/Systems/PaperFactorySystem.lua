@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local CoreSystems = script.Parent:WaitForChild("Core")
 local PlayerDataSystem = require(CoreSystems:WaitForChild("PlayerDataSystem"))
 local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
+local PaperRuntimeSystem = require(script.Parent:WaitForChild("RuntimeLoops"):WaitForChild("PaperRuntimeSystem"))
 
 local PaperFactorySystem = {}
 
@@ -160,19 +161,6 @@ function PaperFactorySystem.UpdatePlayerFactory(player, now)
 	end
 end
 
-local function startPaperRuntimeLoop()
-	task.spawn(function()
-		while true do
-			task.wait(0.2)
-			local now = os.clock()
-
-			for _, player in ipairs(Players:GetPlayers()) do
-				PaperFactorySystem.UpdatePlayerFactory(player, now)
-			end
-		end
-	end)
-end
-
 function PaperFactorySystem.Init(customDependencies)
 	if initialized then
 		return
@@ -192,7 +180,7 @@ function PaperFactorySystem.Init(customDependencies)
 		PaperFactorySystem.HandleFactoryAction(player, actionName)
 	end)
 
-	startPaperRuntimeLoop()
+	PaperRuntimeSystem.Start(PaperFactorySystem.UpdatePlayerFactory)
 end
 
 return PaperFactorySystem
