@@ -12,6 +12,7 @@ function ClientContext.Create()
 		remotesFolder = remotesFolder,
 		notifyRemote = remotesFolder:WaitForChild("Notify"),
 		leaderboardRemote = remotesFolder:WaitForChild("LeaderboardRequest"),
+		adminRemote = remotesFolder:WaitForChild("AdminAction"),
 	}
 end
 
