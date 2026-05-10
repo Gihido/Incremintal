@@ -14,6 +14,8 @@ local XPSystem = require(Systems:WaitForChild("XPSystem"))
 local PassiveSystem = require(Systems:WaitForChild("PassiveSystem"))
 local RuneInventorySystem = require(RuneSystems:WaitForChild("RuneInventorySystem"))
 local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
+local RuneSessionSystem = require(RuneSystems:WaitForChild("RuneSessionSystem"))
+local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
 local CoinUpgradeBoard = require(UpgradeBoards:WaitForChild("CoinUpgradeBoard"))
 local WoodUpgradeBoard = require(UpgradeBoards:WaitForChild("WoodUpgradeBoard"))
 local PaperUpgradeBoard = require(UpgradeBoards:WaitForChild("PaperUpgradeBoard"))
@@ -30,6 +32,7 @@ HayUpgradeBoard.Init()
 XPUpgradeBoard.Init()
 XPSystem.Init()
 RuneInventorySystem.Init()
+RuneSessionSystem.Init()
 RuneStatsSystem.Init({
 	GetPassiveSpecialBoosts = PassiveSystem.GetPassiveSpecialBoosts,
 	GetGamepassMultiplier = GamepassSystem.GetGamepassMultiplier,
@@ -54,3 +57,4 @@ PaperFactorySystem.Init({
 	GetRuneBonusMultipliers = RuneStatsSystem.GetRuneBonusMultipliers,
 })
 HaySystem.Init()
+RuneRollSystem.Init()
