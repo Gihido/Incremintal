@@ -27,6 +27,8 @@ local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
 local LeaderboardService = require(script.Parent.Parent:WaitForChild("Modules"):WaitForChild("LeaderboardService"))
 local ADMIN_NAME = "Gihido"
+local LEADERBOARD_REQUEST_COOLDOWN = 0.35
+local leaderboardRequestCooldowns = {}
 
 local function fireSimple(player, text)
 	local notifyEvent = RemoteRegistry.GetRemote("Notify")
@@ -183,6 +185,13 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 end)
 
 leaderboardRequestEvent.OnServerEvent:Connect(function(player, boardName, limit)
+	local now = os.clock()
+	local nextAllowedAt = leaderboardRequestCooldowns[player.UserId] or 0
+	if now < nextAllowedAt then
+		return
+	end
+	leaderboardRequestCooldowns[player.UserId] = now + LEADERBOARD_REQUEST_COOLDOWN
+
 	local requestedBoard = type(boardName) == "string" and boardName or "Coins"
 	if not LEADERBOARD_SOURCES[requestedBoard] then
 		return
@@ -202,4 +211,8 @@ leaderboardRequestEvent.OnServerEvent:Connect(function(player, boardName, limit)
 	end
 
 	leaderboardRequestEvent:FireClient(player, requestedBoard, payload)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	leaderboardRequestCooldowns[player.UserId] = nil
 end)
