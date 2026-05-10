@@ -209,3 +209,38 @@ StarterPlayer
 - Server Rune sets: `BaseRuneSet`, `NatureRune`, `ForestRune`, `PaperRune`, `HayRune`.
 - Server Runtime: `CoinAnimationSystem`, `PaperRuntimeSystem`, `HayRuntimeSystem`, `RuneRuntimeSystem`.
 - Client Core/UI Runtime: `ClientContext`, `GuiFactory`, `ResponsiveUI`, `ClientFormatters`, `GUIUpdater`, `BoardVisualSystem`, `UpgradeBoardUI`, `XPProgressUI`, `PassiveInventoryUI`, `RuneBoardUI`, `RuneInventoryUI`, `RuneSessionUI`, `LeaderboardUI`, `AdminPanelUI`, `NotificationUI`, `InputBindingSystem`, `RuntimeLoopSystem`.
+
+
+## Текущий статус реализации (2026-05-10)
+
+### Server systems: текущий этап
+- Сервер находится на позднем этапе переноса: базовые Core/Gamepay/Board/Rune/Runtime системы уже вынесены в `ServerScriptService/Systems` и подключены через `MainServer.lua`.
+- По фиксированному маршруту миграции фактически закрыты этапы 1-13.
+- В работе остаётся закрытие хвоста серверного маршрута (этапы 14-17), но **без** создания новых слоёв миграции.
+
+### Server systems: что осталось перенести
+- `RebirthSystem` (этап 14).
+- `AdminEventSystem` (этап 15).
+- `LeaderboardSystem` (этап 16).
+- `SaveSystem` + финальный server bootstrap cleanup (этап 17).
+
+### Когда переход на client systems
+- Переход на финальную клиентскую фазу планируется после закрытия серверного этапа 17 (когда серверные данные/remote-контракты стабилизированы).
+- Частичный клиентский перенос допускается только для уже закрытых серверных доменов, строго по dependency order: `Core -> Gameplay data contract -> UI`.
+
+### Какие client systems делать первыми
+1. `ClientContext`
+2. `GuiFactory`
+3. `ResponsiveUI`
+4. `ClientFormatters`
+5. `NotificationUI`
+6. `AdminPanelUI`
+
+Далее — board/rune UI по target order из раздела **Client bootstrap flow**.
+
+### Какие systems уже стабилизированы
+- **Server Core:** `RemoteRegistry`, `PlayerDataSystem`, `GamepassSystem`.
+- **Server Gameplay:** `CoinSystem`, `WoodSystem`, `PaperFactorySystem`, `HaySystem`, `XPSystem`, `PassiveSystem`.
+- **Server Upgrade Boards:** `CoinUpgradeBoard`, `WoodUpgradeBoard`, `PaperUpgradeBoard`, `HayUpgradeBoard`, `XPUpgradeBoard`, `UpgradePurchaseSystem`, `UpgradeActiveFlagsSystem`, `UpgradeCostSystem`, `UpgradeEligibilitySystem`, `UpgradeNotifySystem`.
+- **Server Rune systems:** `RuneRollSystem`, `RuneStatsSystem`, `RuneInventorySystem`, `RuneSessionSystem`, `RuneActionSystem`, `RuneLuckSystem`, `RuneSpeedSystem`, `RuneBulkSystem`, `RuneIndexSystem`, `RuneBlockCheckSystem`, `RuneCurrencySystem`, `RuneDenominatorSystem`, `RuneNotifySystem`, `RuneSetRuntimeSystem`.
+- **Server Runtime loops:** `CoinAnimationSystem`, `PaperRuntimeSystem`, `HayRuntimeSystem`, `RuneRuntimeSystem`.
