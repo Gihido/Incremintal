@@ -362,6 +362,32 @@ function PassiveSystem.HandlePassiveAction(player, actionName, argument)
 	end
 end
 
+function PassiveSystem.HasPassiveDef(passiveId)
+	return PASSIVE_DEFS[tostring(passiveId or "")] ~= nil
+end
+
+function PassiveSystem.GrantPassive(player, passiveId)
+	local resolvedPassiveId = tostring(passiveId or "")
+	if not PassiveSystem.HasPassiveDef(resolvedPassiveId) then
+		return false, "NOT_FOUND"
+	end
+
+	local state = PassiveSystem.GetPassiveState(player)
+	if #state.inventory >= PASSIVE_INVENTORY_CAPACITY then
+		return false, "INVENTORY_FULL"
+	end
+
+	table.insert(state.inventory, {
+		uid = HttpService:GenerateGUID(false),
+		passiveId = resolvedPassiveId,
+	})
+
+	PassiveSystem.WritePassiveStateValue(player)
+	PlayerDataSystem.MarkDirty(player)
+	firePassiveRoll(player, resolvedPassiveId)
+	return true
+end
+
 function PassiveSystem.Init(customDependencies)
 	if initialized then
 		return
