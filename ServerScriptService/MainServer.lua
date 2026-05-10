@@ -106,9 +106,6 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 	if player.Name ~= ADMIN_NAME then
 		return
 	end
-	if actionName ~= "GiveCurrency" then
-		return
-	end
 
 	local targetPlayer = resolveTargetPlayer(player, actionValue)
 	if not targetPlayer then
@@ -116,19 +113,39 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 		return
 	end
 
-	local amount = PlayerDataSystem.RoundToTenth(type(actionValue) == "table" and actionValue.amount or actionValue)
-	if amount <= 0 then
-		fireSimple(player, "Введи число больше нуля")
-		return
-	end
+	if actionName == "GiveCurrency" then
+		local amount = PlayerDataSystem.RoundToTenth(type(actionValue) == "table" and actionValue.amount or actionValue)
+		if amount <= 0 then
+			fireSimple(player, "Введи число больше нуля")
+			return
+		end
 
-	local currencyObject = PlayerDataSystem.GetCurrencyObjectForName(targetPlayer, currencyName)
-	if not currencyObject then
-		fireSimple(player, "Неизвестная валюта")
-		return
-	end
+		local currencyObject = PlayerDataSystem.GetCurrencyObjectForName(targetPlayer, currencyName)
+		if not currencyObject then
+			fireSimple(player, "Неизвестная валюта")
+			return
+		end
 
-	PlayerDataSystem.AddCurrency(currencyObject, amount)
-	PlayerDataSystem.MarkDirty(targetPlayer)
-	fireSimple(player, "Валюта выдана: " .. targetPlayer.Name)
+		PlayerDataSystem.AddCurrency(currencyObject, amount)
+		PlayerDataSystem.MarkDirty(targetPlayer)
+		fireSimple(player, "Валюта выдана: " .. targetPlayer.Name)
+	elseif actionName == "GivePassive" then
+		local passiveId = tostring(currencyName or "")
+		local success, reason = PassiveSystem.GrantPassive(targetPlayer, passiveId)
+		if not success then
+			if reason == "NOT_FOUND" then
+				fireSimple(player, "Пассив не найден")
+			elseif reason == "INVENTORY_FULL" then
+				fireSimple(player, "Инвентарь пассивов заполнен")
+			end
+			return
+		end
+		fireSimple(player, "Пассив добавлен: " .. passiveId .. " -> " .. targetPlayer.Name)
+	elseif actionName == "AdminRuneBoost" then
+		if not PlayerDataSystem.ApplyAdminRuneBoost(targetPlayer, 20) then
+			fireSimple(player, "Не удалось применить rune boost")
+			return
+		end
+		fireSimple(player, "Rune boosts x20 применены -> " .. targetPlayer.Name)
+	end
 end)

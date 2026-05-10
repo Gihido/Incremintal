@@ -733,6 +733,27 @@ function PlayerDataSystem.TryPurchaseRebirth(player)
 	return true
 end
 
+function PlayerDataSystem.ApplyAdminRuneBoost(player, minLevel)
+	local runeUpgrades = PlayerDataSystem.GetRuneUpgradeFolder(player)
+	if not runeUpgrades then
+		return false
+	end
+
+	local targetLevel = math.max(0, math.floor(tonumber(minLevel) or 20))
+	local luck = runeUpgrades:FindFirstChild("RuneLuckLevel")
+	local speed = runeUpgrades:FindFirstChild("RuneSpeedLevel")
+	local bulk = runeUpgrades:FindFirstChild("RuneBulkLevel")
+	if not (luck and speed and bulk) then
+		return false
+	end
+
+	luck.Value = math.max(luck.Value, targetLevel)
+	speed.Value = math.max(speed.Value, targetLevel)
+	bulk.Value = math.max(bulk.Value, targetLevel)
+	PlayerDataSystem.MarkDirty(player)
+	return true
+end
+
 function PlayerDataSystem.Init()
 	local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 	local purchaseRebirthEvent = Remotes:WaitForChild("PurchaseRebirth")
