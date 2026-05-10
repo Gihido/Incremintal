@@ -80,14 +80,6 @@ function LeaderboardUI.Init(context)
 		end
 	end)
 
-	task.spawn(function()
-		while true do
-			for _, boardName in ipairs(BOARD_ORDER) do
-				context.leaderboardRemote:FireServer(boardName, 5)
-			end
-			task.wait(2.5)
-		end
-	end)
 end
 
 return LeaderboardUI

@@ -5,7 +5,9 @@ local ClientContext = {}
 
 function ClientContext.Create()
 	local player = Players.LocalPlayer
-	local remotesFolder = ReplicatedStorage:WaitForChild("IncrementalRemotes")
+	local remotesFolder = ReplicatedStorage:FindFirstChild("IncrementalRemotes")
+		or ReplicatedStorage:FindFirstChild("Remotes")
+		or ReplicatedStorage:WaitForChild("IncrementalRemotes")
 	return {
 		player = player,
 		playerGui = player:WaitForChild("PlayerGui"),
