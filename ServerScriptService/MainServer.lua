@@ -26,74 +26,9 @@ local RuneSessionSystem = require(RuneSystems:WaitForChild("RuneSessionSystem"))
 local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
 
-local function findLeaderboardModuleCandidates()
-	local candidates = {}
-	local rootModules = script.Parent.Parent:FindFirstChild("Modules")
-	if rootModules and rootModules:FindFirstChild("LeaderboardService") then
-		candidates[#candidates + 1] = rootModules:FindFirstChild("LeaderboardService")
-	end
+local Modules = script.Parent.Parent:WaitForChild("Modules")
+local LeaderboardService = require(Modules:WaitForChild("LeaderboardService"))
 
-	local serverModules = script.Parent:FindFirstChild("Modules")
-	if serverModules and serverModules:FindFirstChild("LeaderboardService") then
-		candidates[#candidates + 1] = serverModules:FindFirstChild("LeaderboardService")
-	end
-
-	if Systems:FindFirstChild("LeaderboardSystem") then
-		candidates[#candidates + 1] = Systems:FindFirstChild("LeaderboardSystem")
-	end
-
-	return candidates
-end
-
-local function ensureLeaderboardServiceContract(service, moduleScript)
-	if type(service) ~= "table" then
-		return false, "module did not return a table"
-	end
-
-	if not service.BuildEntries and service.BuildLeaderboardEntries then
-		function service:BuildEntries(...)
-			return self:BuildLeaderboardEntries(...)
-		end
-	end
-
-	if not service.GetTopPlayers then
-		function service:GetTopPlayers(entries, topCount)
-			local result = {}
-			local limit = math.max(1, tonumber(topCount) or 10)
-			for i = 1, math.min(limit, #(entries or {})) do
-				result[i] = entries[i]
-			end
-			return result
-		end
-	end
-
-	if type(service.BuildEntries) ~= "function" then
-		local moduleName = moduleScript and moduleScript:GetFullName() or "unknown"
-		return false, moduleName .. " has no BuildEntries/BuildLeaderboardEntries method"
-	end
-
-	return true
-end
-
-local function requireLeaderboardService()
-	local errors = {}
-	for _, moduleScript in ipairs(findLeaderboardModuleCandidates()) do
-		local ok, service = pcall(require, moduleScript)
-		if ok then
-			local hasContract, reason = ensureLeaderboardServiceContract(service, moduleScript)
-			if hasContract then
-				return service
-			end
-			errors[#errors + 1] = reason
-		else
-			errors[#errors + 1] = moduleScript:GetFullName() .. " failed to require: " .. tostring(service)
-		end
-	end
-
-	error("Valid LeaderboardService module not found (expected game.Modules.LeaderboardService, ServerScriptService.Modules.LeaderboardService, or ServerScriptService.Systems.LeaderboardSystem). " .. table.concat(errors, "; "))
-end
-
-local LeaderboardService = requireLeaderboardService()
 local ADMIN_NAME = "Gihido"
 local LEADERBOARD_REQUEST_COOLDOWN = 0.35
 local leaderboardRequestCooldowns = {}
