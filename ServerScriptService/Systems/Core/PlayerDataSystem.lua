@@ -557,13 +557,80 @@ function PlayerDataSystem.SetupPlayerDataObjects(player)
 	return playerData
 end
 
+
+function PlayerDataSystem.GetRebirthCoinMultiplier(count)
+	local c = math.max(0, math.floor(tonumber(count) or 0))
+	if c == 0 then return 1 end
+	if c == 1 then return 2 end
+	if c == 2 then return 10 end
+	if c == 3 then return 100 end
+
+	local mul = 1
+	for i = 1, c do
+		local stage = REBIRTH_STAGES[i]
+		if stage then
+			mul *= (tonumber(stage.coinMultiplier) or 1)
+		end
+	end
+	return mul
+end
+
+function PlayerDataSystem.RecalculateRebirthStats(player)
+	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
+	if not rebirth then
+		return
+	end
+
+	local count = tonumber(rebirth.Count.Value) or 0
+	local totalSpawnBonus = 0
+	local totalWoodMultiplier = 1
+	local secondUnlocked = false
+	local thirdUnlocked = false
+	local fourthUnlocked = false
+	local fifthUnlocked = false
+	local sixthUnlocked = false
+
+	for i = 1, count do
+		local stage = REBIRTH_STAGES[i]
+		if stage then
+			totalSpawnBonus += tonumber(stage.spawnBonus) or 0
+			totalWoodMultiplier *= tonumber(stage.woodMultiplier) or 1
+			if stage.unlockTree then secondUnlocked = true end
+			if stage.unlockThirdUpgrades then thirdUnlocked = true end
+			if stage.unlockFourthSystems then fourthUnlocked = true end
+			if stage.unlockFifthSystems then fifthUnlocked = true end
+			if stage.unlockSixthSystems then sixthUnlocked = true end
+		end
+	end
+
+	rebirth.CoinMultiplierBonus.Value = PlayerDataSystem.GetRebirthCoinMultiplier(count)
+	rebirth.SpawnSpeedBonus.Value = totalSpawnBonus
+	rebirth.WoodMultiplierBonus.Value = totalWoodMultiplier
+	rebirth.SecondAreaUnlocked.Value = secondUnlocked
+	rebirth.ThirdUpgradeUnlocked.Value = thirdUnlocked
+	rebirth.FourthSystemsUnlocked.Value = fourthUnlocked
+	rebirth.FifthSystemsUnlocked.Value = fifthUnlocked
+	rebirth.SixthSystemsUnlocked.Value = sixthUnlocked
+
+	local nextStage = REBIRTH_STAGES[count + 1]
+	if nextStage then
+		rebirth.NextCost.Value = nextStage.cost
+		rebirth.NextCurrency.Value = nextStage.currency
+	else
+		rebirth.NextCost.Value = 0
+		rebirth.NextCurrency.Value = "None"
+	end
+end
+
 function PlayerDataSystem.Init()
 	for _, player in ipairs(Players:GetPlayers()) do
 		PlayerDataSystem.SetupPlayerDataObjects(player)
+		PlayerDataSystem.RecalculateRebirthStats(player)
 	end
 
 	Players.PlayerAdded:Connect(function(player)
 		PlayerDataSystem.SetupPlayerDataObjects(player)
+		PlayerDataSystem.RecalculateRebirthStats(player)
 	end)
 end
 
