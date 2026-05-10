@@ -14,6 +14,17 @@ local function fireSimple(player, text)
 	end
 end
 
+local function getCurrencyObject(player, currencyName)
+	if currencyName == "Wood" then
+		return PlayerDataSystem.GetWoodCurrencyObject(player)
+	elseif currencyName == "Paper" then
+		return PlayerDataSystem.GetPaperCurrencyObject(player)
+	elseif currencyName == "Hay" then
+		return PlayerDataSystem.GetHayCurrencyObject(player)
+	end
+	return PlayerDataSystem.GetCoinsObject(player)
+end
+
 function RuneLuckSystem.TryBuy(player, silent)
 	local cfg = RUNE_UPGRADES.Luck
 	local upgrades = RuneInventorySystem.GetRuneUpgradeFolder(player)
@@ -25,7 +36,7 @@ function RuneLuckSystem.TryBuy(player, silent)
 	end
 	local levelObj = upgrades:FindFirstChild(cfg.levelName)
 	local costObj = upgrades:FindFirstChild(cfg.costName)
-	local currencyObj = PlayerDataSystem.GetCoinsObject(player)
+	local currencyObj = getCurrencyObject(player, cfg.currency)
 	if not levelObj or not costObj or not currencyObj then return false end
 	if levelObj.Value >= cfg.maxLevel then
 		if not silent then fireSimple(player, "Улучшение на максимуме") end
