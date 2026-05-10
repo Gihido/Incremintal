@@ -1,0 +1,17 @@
+local Systems = script.Parent:WaitForChild("Systems")
+local CoreSystems = Systems:WaitForChild("Core")
+local UpgradeBoards = Systems:WaitForChild("UpgradeBoards")
+
+local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
+local PlayerDataSystem = require(CoreSystems:WaitForChild("PlayerDataSystem"))
+local CoinSystem = require(Systems:WaitForChild("CoinSystem"))
+local WoodSystem = require(Systems:WaitForChild("WoodSystem"))
+local CoinUpgradeBoard = require(UpgradeBoards:WaitForChild("CoinUpgradeBoard"))
+local WoodUpgradeBoard = require(UpgradeBoards:WaitForChild("WoodUpgradeBoard"))
+
+RemoteRegistry.Init()
+PlayerDataSystem.Init()
+CoinUpgradeBoard.Init()
+WoodUpgradeBoard.Init()
+CoinSystem.Init()
+WoodSystem.Init()
