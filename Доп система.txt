@@ -1,0 +1,235 @@
+CLIENT SIDE
+Итоговая структура
+StarterPlayer
+L-- StarterPlayerScripts
+    +-- MainClient.lua
+    L-- ClientSystems
+        +-- Core
+        ¦   +-- ClientContext.lua
+        ¦   +-- GuiFactory.lua
+        ¦   +-- ResponsiveUI.lua
+        ¦   L-- ClientFormatters.lua
+        +-- GUIUpdater.lua
+        +-- BoardVisualSystem.lua
+        +-- UpgradeBoardUI.lua
+        +-- XPProgressUI.lua
+        +-- PassiveInventoryUI.lua
+        +-- RuneBoardUI.lua
+        +-- RuneInventoryUI.lua
+        +-- RuneSessionUI.lua
+        +-- LeaderboardUI.lua
+        +-- AdminPanelUI.lua
+        +-- NotificationUI.lua
+        +-- InputBindingSystem.lua
+        L-- RuntimeLoopSystem.lua
+Client bootstrap
+StarterPlayerScripts/MainClient.lua
+Type: client bootstrap.
+
+Responsibility:
+
+require ClientSystems/Core/ClientContext.lua;
+require UI/runtime modules;
+call Init() in dependency order;
+contain no board creation details, no purchase state logic, no animation implementation, no GUI update loop.
+Init order target:
+
+ClientContext
+GuiFactory
+ResponsiveUI
+ClientFormatters
+NotificationUI
+AdminPanelUI
+UpgradeBoardUI
+XPProgressUI
+PassiveInventoryUI
+RuneInventoryUI
+RuneBoardUI
+RuneSessionUI
+BoardVisualSystem
+LeaderboardUI
+InputBindingSystem
+GUIUpdater
+RuntimeLoopSystem
+Client core modules
+ClientSystems/Core/ClientContext.lua
+Type: client shared context.
+
+Responsibility:
+
+keep references to Players, ReplicatedStorage, Workspace, MarketplaceService, local player, PlayerGui, IncrementalRemotes;
+keep player data references exactly as current client expects them;
+keep workspace references for boards/blocks/gates;
+expose existing constants such as ADMIN_NAME, MAX_REBIRTH_COUNT, PASSIVE_ROLL_COST, PASSIVE_INVENTORY_CAPACITY.
+ClientSystems/Core/GuiFactory.lua
+Type: client UI helper module.
+
+Responsibility:
+
+preserve shared UI creation helpers: corners, strokes, gradients, hover scale, panel animation, decorative dots, world board creation, headers, upgrade cards, scrollers;
+no gameplay rules.
+ClientSystems/Core/ResponsiveUI.lua
+Type: client UI helper module.
+
+Responsibility:
+
+preserve device detection/profile/preset logic;
+apply responsive scale/panels;
+refresh scrollers for device changes.
+ClientSystems/Core/ClientFormatters.lua
+Type: client helper module.
+
+Responsibility:
+
+preserve formatNumber, roundToTenth, currency colors, rarity colors, rune stat formatting, cost formatting;
+keep icon asset lookup helpers.
+Client UI/runtime systems
+ClientSystems/GUIUpdater.lua
+Type: client runtime UI system.
+
+Responsibility:
+
+preserve main updateBoards behavior;
+update text/visibility/state of existing boards;
+update button visuals based on current purchasability;
+subscribe to value changes that currently trigger board refreshes.
+ClientSystems/BoardVisualSystem.lua
+Type: client world visual system.
+
+Responsibility:
+
+preserve world node/board visibility logic;
+preserve wall/tree/gate visual updates;
+preserve unlock debug behavior if still needed;
+preserve rune/hay burst visual triggers.
+ClientSystems/UpgradeBoardUI.lua
+Type: client board UI system.
+
+Responsibility:
+
+create and update coin, wood, paper, hay, and generic upgrade board cards;
+bind PurchaseUpgrade, rune upgrade buttons, and max-buy buttons through existing remotes;
+preserve purchase-state checks and button visual behavior.
+ClientSystems/XPProgressUI.lua
+Type: client board UI system.
+
+Responsibility:
+
+create/update XP progress board;
+create/update XP upgrade cards;
+display XP estimates and XP boost state;
+use existing XPAction remote for XP purchases.
+ClientSystems/PassiveInventoryUI.lua
+Type: client UI system.
+
+Responsibility:
+
+create passive roll board/inventory/index UI;
+parse passive state;
+display slot grid/index grid/equipped passive;
+preserve roll animation and reward reveal;
+bind passive roll/equip actions to PassiveAction.
+ClientSystems/RuneBoardUI.lua
+Type: client world rune board UI system.
+
+Responsibility:
+
+create rune roll/index/stats boards for each rune system;
+preserve rune board themes and visuals;
+display rune chances/effects/details;
+update rune world displays.
+ClientSystems/RuneInventoryUI.lua
+Type: client rune UI system.
+
+Responsibility:
+
+parse rune state;
+render owned rune counts/effective stacks;
+update rune summary GUI;
+support rune index display without changing state format.
+ClientSystems/RuneSessionUI.lua
+Type: client rune runtime UI system.
+
+Responsibility:
+
+preserve rune session screen;
+update active session rows/order;
+start/stop rune rolling client actions through RuneAction;
+display active roll timers and bulk/speed/luck stats.
+ClientSystems/LeaderboardUI.lua
+Type: client UI system.
+
+Responsibility:
+
+own client-side leaderboard display if present in IncrementalClient;
+consume server-created leaderboard values without changing names.
+ClientSystems/AdminPanelUI.lua
+Type: client admin UI system.
+
+Responsibility:
+
+preserve admin panel layout/device refresh;
+preserve quick currency buttons, event buttons, gamepass buttons;
+bind admin controls to AdminAction;
+render active admin events from Notify payloads.
+ClientSystems/NotificationUI.lua
+Type: client UI system.
+
+Responsibility:
+
+preserve toast notifications;
+preserve pickup popups;
+preserve passive roll notification handling;
+subscribe to Notify.OnClientEvent.
+ClientSystems/InputBindingSystem.lua
+Type: client binding system.
+
+Responsibility:
+
+preserve world input bindings;
+bind upgrade cards, passive buttons, rune buttons, admin panel actions;
+no UI drawing beyond connecting events.
+ClientSystems/RuntimeLoopSystem.lua
+Type: client runtime system.
+
+Responsibility:
+
+preserve periodic UI update loops;
+preserve admin event timer ticks;
+preserve runtime refresh cadence;
+call public refresh methods from other client systems.
+Suggested migration stages
+Each stage moves only two systems, then the game should be tested before continuing.
+
+RemoteRegistry + PlayerDataSystem.
+CoinSystem + CoinUpgradeBoard.
+WoodSystem + WoodUpgradeBoard.
+PaperFactorySystem + PaperUpgradeBoard.
+HaySystem + HayUpgradeBoard.
+XPSystem + XPProgressUI.
+PassiveSystem + PassiveInventoryUI.
+RuneInventorySystem + RuneInventoryUI.
+RuneStatsSystem + RuneBoardUI.
+RuneSessionSystem + RuneSessionUI.
+RuneRollSystem + rune set modules.
+RuneLuckSystem + RuneSpeedSystem.
+RuneBulkSystem + RuneIndexSystem.
+RebirthSystem + BoardVisualSystem.
+AdminEventSystem + AdminPanelUI.
+LeaderboardSystem + LeaderboardUI.
+SaveSystem + final bootstrap cleanup.
+GUIUpdater + RuntimeLoopSystem final client cleanup.
+Required checks after every migration stage
+Player joins without output errors.
+PlayerData contains the same folders/values as before.
+All RemoteEvent names still exist in ReplicatedStorage.IncrementalRemotes.
+Coins spawn and can be collected.
+Upgrade boards display correct costs/levels/max state.
+Rebirth wall/tree/area unlocks match old behavior.
+Wood, paper, hay systems unlock at the same rebirths as before.
+Passive roll/inventory/equip still works.
+Rune roll, rune inventory, rune index, rune stats, speed/luck/bulk still work.
+XP progress and XP upgrades still work.
+Save/load keeps all old fields.
+Admin events and notifications still render.
+No old loops are accidentally duplicated after moving a system.
