@@ -1,62 +1,121 @@
+local GuiFactory = require(script.Parent:WaitForChild("GuiFactory"))
 local ClientFormatters = require(script.Parent:WaitForChild("ClientFormatters"))
 
 local LeaderboardUI = {}
 
 local BOARD_ORDER = {"Coins", "Wood", "Paper", "Hay", "XP"}
+local BOARD_PART_CANDIDATES = {
+	"LederstartsBoard",
+	"LeaderstartsBoard",
+	"LeaderstatsBoard",
+	"LeaderboardBoard",
+	"LeaderBoard",
+	"Leaderboard",
+}
 
-local function createRow(parent, y, text)
+local function createRow(parent, text, textColor, height)
 	local row = Instance.new("TextLabel")
 	row.BackgroundTransparency = 1
-	row.Size = UDim2.fromScale(1, 0)
-	row.AutomaticSize = Enum.AutomaticSize.Y
-	row.Position = UDim2.fromScale(0, y)
-	row.Font = Enum.Font.Gotham
-	row.TextSize = 16
+	row.Size = UDim2.new(1, 0, 0, height or 22)
+	row.Font = Enum.Font.GothamBold
+	row.TextSize = 18
+	row.TextScaled = true
+	row.TextWrapped = true
 	row.TextXAlignment = Enum.TextXAlignment.Left
-	row.TextColor3 = Color3.fromRGB(235, 235, 235)
+	row.TextColor3 = textColor or Color3.fromRGB(235, 235, 235)
 	row.Text = text
 	row.Parent = parent
 	return row
 end
 
-local function ensureGui(playerGui)
-	local gui = playerGui:FindFirstChild("LeaderboardGui")
-	if not gui then
-		gui = Instance.new("ScreenGui")
-		gui.Name = "LeaderboardGui"
-		gui.ResetOnSpawn = false
-		gui.Parent = playerGui
+local function createSection(parent, boardName)
+	local section = GuiFactory.CreateFrame(parent, {
+		name = boardName .. "Section",
+		size = UDim2.new(0, 172, 1, -8),
+		backgroundColor3 = Color3.fromRGB(25, 28, 38),
+		backgroundTransparency = 0.05,
+		cornerRadius = 12,
+	})
+	GuiFactory.CreateStroke(section, Color3.fromRGB(255, 220, 120), 1, 0.45)
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0, 8)
+	padding.PaddingBottom = UDim.new(0, 8)
+	padding.PaddingLeft = UDim.new(0, 8)
+	padding.PaddingRight = UDim.new(0, 8)
+	padding.Parent = section
+
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 3)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = section
+
+	local header = createRow(section, boardName .. " TOP", Color3.fromRGB(255, 220, 120), 26)
+	header.Font = Enum.Font.GothamBlack
+	header.TextXAlignment = Enum.TextXAlignment.Center
+
+	local rows = {}
+	for i = 1, 5 do
+		rows[i] = createRow(section, "#" .. i .. " ...", Color3.fromRGB(238, 242, 255), 24)
 	end
 
-	local frame = gui:FindFirstChild("Frame")
-	if not frame then
-		frame = Instance.new("Frame")
-		frame.Name = "Frame"
-		frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-		frame.BackgroundTransparency = 0.2
-		frame.Size = UDim2.fromOffset(300, 320)
-		frame.Position = UDim2.new(1, -320, 0, 24)
-		frame.Parent = gui
+	return {header = header, rows = rows}
+end
 
-		local uiList = Instance.new("UIListLayout")
-		uiList.Padding = UDim.new(0, 4)
-		uiList.Parent = frame
+local function createWorldLeaderboard(playerGui)
+	local boardPart = GuiFactory.FindWorkspacePart(BOARD_PART_CANDIDATES, 10)
+	if not boardPart then
+		warn("Leaderboard board part not found. Expected one of: " .. table.concat(BOARD_PART_CANDIDATES, ", "))
+		return nil
 	end
 
-	return frame
+	local surfaceGui = GuiFactory.CreateSurfaceGui(playerGui, "LeaderboardBoardSurfaceGui", boardPart, Enum.NormalId.Front, 72)
+	local root = GuiFactory.CreateFrame(surfaceGui, {
+		name = "Root",
+		size = UDim2.fromScale(1, 1),
+		backgroundColor3 = Color3.fromRGB(12, 14, 20),
+		backgroundTransparency = 0.02,
+		cornerRadius = 18,
+	})
+	GuiFactory.CreateStroke(root, Color3.fromRGB(255, 220, 120), 2, 0.08)
+
+	GuiFactory.CreateTextLabel(root, {
+		name = "Title",
+		position = UDim2.fromOffset(16, 10),
+		size = UDim2.new(1, -32, 0, 40),
+		text = "SERVER LEADERBOARDS",
+		textColor3 = Color3.fromRGB(255, 220, 120),
+		font = Enum.Font.GothamBlack,
+		textScaled = true,
+		textXAlignment = Enum.TextXAlignment.Center,
+	})
+
+	local content = GuiFactory.CreateFrame(root, {
+		name = "Content",
+		position = UDim2.fromOffset(12, 58),
+		size = UDim2.new(1, -24, 1, -70),
+		backgroundTransparency = 1,
+	})
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.Padding = UDim.new(0, 8)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = content
+
+	return content
 end
 
 function LeaderboardUI.Init(context)
-	local frame = ensureGui(context.playerGui)
-	local rowsByBoard = {}
+	local parent = createWorldLeaderboard(context.playerGui)
+	if not parent then
+		return
+	end
 
+	local rowsByBoard = {}
 	for _, boardName in ipairs(BOARD_ORDER) do
-		local header = createRow(frame, 0, boardName .. " TOP:")
-		header.TextColor3 = Color3.fromRGB(255, 220, 120)
-		rowsByBoard[boardName] = {header = header, rows = {}}
-		for i = 1, 5 do
-			rowsByBoard[boardName].rows[i] = createRow(frame, 0, "#" .. i .. " ...")
-		end
+		rowsByBoard[boardName] = createSection(parent, boardName)
 	end
 
 	context.leaderboardRemote.OnClientEvent:Connect(function(boardName, payload)
@@ -79,7 +138,6 @@ function LeaderboardUI.Init(context)
 			end
 		end
 	end)
-
 end
 
 return LeaderboardUI

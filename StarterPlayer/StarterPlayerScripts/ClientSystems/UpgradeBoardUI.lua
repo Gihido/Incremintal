@@ -24,7 +24,7 @@ local function readValue(root, path, defaultValue)
 end
 
 local function createSurfaceRoot(context, partName, guiName, titleText, accentColor)
-	local part = workspace:FindFirstChild(partName)
+	local part = GuiFactory.FindWorkspacePart(partName)
 	if not part then
 		warn("Upgrade board part not found: " .. partName)
 		return nil
