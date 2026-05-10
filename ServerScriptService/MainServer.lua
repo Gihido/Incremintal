@@ -5,6 +5,11 @@ local UpgradeBoards = Systems:WaitForChild("UpgradeBoards")
 local RuneSystems = Systems:WaitForChild("RuneSystems")
 
 local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
+
+-- Create remotes before loading heavier systems. If a later optional dependency is
+-- missing, clients should still be able to find IncrementalRemotes and build UI.
+RemoteRegistry.Init()
+
 local PlayerDataSystem = require(CoreSystems:WaitForChild("PlayerDataSystem"))
 local GamepassSystem = require(CoreSystems:WaitForChild("GamepassSystem"))
 
@@ -26,8 +31,80 @@ local RuneSessionSystem = require(RuneSystems:WaitForChild("RuneSessionSystem"))
 local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
 
-local Modules = script.Parent.Parent:WaitForChild("Modules")
-local LeaderboardService = require(Modules:WaitForChild("LeaderboardService"))
+local function createFallbackLeaderboardService()
+	local fallback = {}
+
+	local function normalizeValue(value)
+		return tonumber(value) or 0
+	end
+
+	function fallback:BuildEntries(players, valueGetter, formatter)
+		local entries = {}
+		local getValue = valueGetter or function()
+			return 0
+		end
+		local formatValue = formatter or tostring
+
+		for _, player in ipairs(players or {}) do
+			entries[#entries + 1] = {
+				player = player,
+				value = normalizeValue(getValue(player)),
+			}
+		end
+
+		table.sort(entries, function(a, b)
+			if a.value == b.value then
+				return tostring(a.player and a.player.Name or "") < tostring(b.player and b.player.Name or "")
+			end
+			return a.value > b.value
+		end)
+
+		for index, entry in ipairs(entries) do
+			entry.rank = index
+			entry.formattedValue = formatValue(entry.value)
+		end
+
+		return entries
+	end
+
+	function fallback:GetTopPlayers(entries, topCount)
+		local result = {}
+		local sourceEntries = entries or {}
+		local limit = math.max(1, tonumber(topCount) or 10)
+
+		for i = 1, math.min(limit, #sourceEntries) do
+			result[i] = sourceEntries[i]
+		end
+
+		return result
+	end
+
+	return fallback
+end
+
+local function findLeaderboardServiceModule()
+	local gameRoot = script:FindFirstAncestorOfClass("DataModel") or game
+	local candidates = {
+		gameRoot:FindFirstChild("Modules"),
+		script.Parent:FindFirstChild("Modules"),
+		Systems:FindFirstChild("Modules"),
+	}
+
+	for _, folder in ipairs(candidates) do
+		local module = folder and folder:FindFirstChild("LeaderboardService")
+		if module and module:IsA("ModuleScript") then
+			return module
+		end
+	end
+
+	return nil
+end
+
+local leaderboardServiceModule = findLeaderboardServiceModule()
+local LeaderboardService = leaderboardServiceModule and require(leaderboardServiceModule) or createFallbackLeaderboardService()
+if not leaderboardServiceModule then
+	warn("Modules/LeaderboardService was not found; using built-in leaderboard fallback. Add the Modules folder under DataModel or ServerScriptService to use the shared service module.")
+end
 
 local ADMIN_NAME = "Gihido"
 local LEADERBOARD_REQUEST_COOLDOWN = 0.35
@@ -88,7 +165,6 @@ local function buildLeaderboardTop(boardName, topCount)
 end
 
 -- Core
-RemoteRegistry.Init()
 PlayerDataSystem.Init()
 GamepassSystem.Init()
 
