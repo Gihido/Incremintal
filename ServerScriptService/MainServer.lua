@@ -1,6 +1,7 @@
 local Systems = script.Parent:WaitForChild("Systems")
 local CoreSystems = Systems:WaitForChild("Core")
 local UpgradeBoards = Systems:WaitForChild("UpgradeBoards")
+local RuneSystems = Systems:WaitForChild("RuneSystems")
 
 local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
 local PlayerDataSystem = require(CoreSystems:WaitForChild("PlayerDataSystem"))
@@ -11,6 +12,8 @@ local PaperFactorySystem = require(Systems:WaitForChild("PaperFactorySystem"))
 local HaySystem = require(Systems:WaitForChild("HaySystem"))
 local XPSystem = require(Systems:WaitForChild("XPSystem"))
 local PassiveSystem = require(Systems:WaitForChild("PassiveSystem"))
+local RuneInventorySystem = require(RuneSystems:WaitForChild("RuneInventorySystem"))
+local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local CoinUpgradeBoard = require(UpgradeBoards:WaitForChild("CoinUpgradeBoard"))
 local WoodUpgradeBoard = require(UpgradeBoards:WaitForChild("WoodUpgradeBoard"))
 local PaperUpgradeBoard = require(UpgradeBoards:WaitForChild("PaperUpgradeBoard"))
@@ -26,18 +29,28 @@ PaperUpgradeBoard.Init()
 HayUpgradeBoard.Init()
 XPUpgradeBoard.Init()
 XPSystem.Init()
-PassiveSystem.Init()
+RuneInventorySystem.Init()
+RuneStatsSystem.Init({
+	GetPassiveSpecialBoosts = PassiveSystem.GetPassiveSpecialBoosts,
+	GetGamepassMultiplier = GamepassSystem.GetGamepassMultiplier,
+})
+PassiveSystem.Init({
+	GetRuneBonusMultipliers = RuneStatsSystem.GetRuneBonusMultipliers,
+})
 CoinSystem.Init({
 	GetXPBoostMultiplier = XPSystem.GetXPBoostMultiplier,
 	GetPassiveMultipliers = PassiveSystem.GetPassiveMultipliers,
 	GetPassiveSpecialBoosts = PassiveSystem.GetPassiveSpecialBoosts,
+	GetRuneBonusMultipliers = RuneStatsSystem.GetRuneBonusMultipliers,
 	GetGamepassMultiplier = GamepassSystem.GetGamepassMultiplier,
 })
 WoodSystem.Init({
 	GetPassiveMultipliers = PassiveSystem.GetPassiveMultipliers,
+	GetRuneBonusMultipliers = RuneStatsSystem.GetRuneBonusMultipliers,
 	GetGamepassMultiplier = GamepassSystem.GetGamepassMultiplier,
 })
 PaperFactorySystem.Init({
 	GetGamepassMultiplier = GamepassSystem.GetGamepassMultiplier,
+	GetRuneBonusMultipliers = RuneStatsSystem.GetRuneBonusMultipliers,
 })
 HaySystem.Init()
