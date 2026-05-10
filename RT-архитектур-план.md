@@ -1,15 +1,17 @@
-# RT-архитектур-план (актуальный)
+# RT-архитектур-план (master architecture plan)
 
 ## Главный принцип
 - Игра **не переписывается с нуля**.
 - `IncrementalServer`/`IncrementalClient` остаются источником legacy-логики.
-- Переносим рабочие блоки в модули, сохраняя совместимость имён `RemoteEvent`, `PlayerData` и текущих gameplay-формул.
-- `MainServer.lua` — только bootstrap/controller (инициализация и wiring).
+- Переносим только рабочие блоки в модульные системы, сохраняя совместимость `RemoteEvent`, `PlayerData`, формул и текущих геймплейных контрактов.
+- `MainServer.lua` и `MainClient.lua` — только bootstrap/controller (инициализация, wiring, вызов `Init()` по зависимостям).
+- После этого плана **не создаём новые migration-over-migration слои**: продолжаем прямой перенос legacy-логики в уже утверждённые systems/modules.
 
 ---
 
-## Актуальная структура (server)
+## Единая структура проекта
 
+### Server structure
 ```text
 ServerScriptService
 ├── MainServer.lua                        # bootstrap-only
@@ -24,19 +26,19 @@ ServerScriptService
     ├── HaySystem.lua                     # server/gameplay/runtime-driven
     ├── XPSystem.lua                      # server/gameplay
     ├── PassiveSystem.lua                 # server/gameplay
-    ├── UpgradeBoards                     # server/upgrade systems
+    ├── UpgradeBoards                     # board systems (server)
     │   ├── CoinUpgradeBoard.lua
     │   ├── WoodUpgradeBoard.lua
     │   ├── PaperUpgradeBoard.lua
     │   ├── XPUpgradeBoard.lua
     │   ├── HayUpgradeBoard.lua
-    │   ├── UpgradePurchaseSystem.lua     # shared purchase pipeline
-    │   ├── UpgradeActiveFlagsSystem.lua  # shared active-flag updates
-    │   ├── UpgradeCostSystem.lua         # shared cost progression
-    │   ├── UpgradeEligibilitySystem.lua  # shared lock checks
-    │   └── UpgradeNotifySystem.lua       # shared notify helper
-    ├── RuneSystems                       # server/rune systems
-    │   ├── RuneRollSystem.lua            # main rune runtime/controller
+    │   ├── UpgradePurchaseSystem.lua
+    │   ├── UpgradeActiveFlagsSystem.lua
+    │   ├── UpgradeCostSystem.lua
+    │   ├── UpgradeEligibilitySystem.lua
+    │   └── UpgradeNotifySystem.lua
+    ├── RuneSystems                       # rune systems (server)
+    │   ├── RuneRollSystem.lua
     │   ├── RuneStatsSystem.lua
     │   ├── RuneInventorySystem.lua
     │   ├── RuneSessionSystem.lua
@@ -56,74 +58,154 @@ ServerScriptService
     │   ├── ForestRune.lua
     │   ├── PaperRune.lua
     │   └── HayRune.lua
-    └── RuntimeLoops                      # runtime-only helper loops
+    └── RuntimeLoops                      # runtime systems (server)
         ├── CoinAnimationSystem.lua
         ├── PaperRuntimeSystem.lua
         ├── HayRuntimeSystem.lua
         └── RuneRuntimeSystem.lua
 ```
 
+### Client structure
+```text
+StarterPlayer
+└── StarterPlayerScripts
+    ├── MainClient.lua                    # bootstrap-only
+    └── ClientSystems
+        ├── Core
+        │   ├── ClientContext.lua
+        │   ├── GuiFactory.lua
+        │   ├── ResponsiveUI.lua
+        │   └── ClientFormatters.lua
+        ├── GUIUpdater.lua
+        ├── BoardVisualSystem.lua
+        ├── UpgradeBoardUI.lua
+        ├── XPProgressUI.lua
+        ├── PassiveInventoryUI.lua
+        ├── RuneBoardUI.lua
+        ├── RuneInventoryUI.lua
+        ├── RuneSessionUI.lua
+        ├── LeaderboardUI.lua
+        ├── AdminPanelUI.lua
+        ├── NotificationUI.lua
+        ├── InputBindingSystem.lua
+        └── RuntimeLoopSystem.lua
+```
+
 ---
 
-## Роли файлов
+## Системы и зоны ответственности
 
-### Bootstrap-only
-- `ServerScriptService/MainServer.lua`
-  - Подключает системы.
-  - Вызывает `Init()` в порядке зависимостей.
-  - Не хранит gameplay-формулы и тяжёлые runtime-блоки.
+### Existing systems (уже существующие целевые домены)
+- Core systems: `RemoteRegistry`, `PlayerDataSystem`, `GamepassSystem`.
+- Gameplay systems: `CoinSystem`, `WoodSystem`, `PaperFactorySystem`, `HaySystem`, `XPSystem`, `PassiveSystem`.
+- Board systems: серверные `UpgradeBoards/*` + клиентские `UpgradeBoardUI`, `XPProgressUI`, `RuneBoardUI`, `BoardVisualSystem`.
+- Rune systems: `RuneSystems/*` + `Runes/*` + клиентские `RuneInventoryUI`, `RuneSessionUI`.
+- Runtime systems: `RuntimeLoops/*` (server), `RuntimeLoopSystem`, `GUIUpdater` (client).
+- UI systems: `NotificationUI`, `AdminPanelUI`, `LeaderboardUI`, `PassiveInventoryUI`, `InputBindingSystem`, `ResponsiveUI`, `GuiFactory`, `ClientFormatters`.
+- Player systems: всё, что работает с PlayerData, прогрессией, валютами, апгрейдами, инвентарями и ребёртом.
 
-### Runtime-only helper modules
-- `Systems/RuntimeLoops/*`
-  - Только циклы/heartbeat и периодические вызовы переданных callback.
+### Responsibilities
+- Server bootstrap (`MainServer.lua`): только require + `Init()` + wiring.
+- Client bootstrap (`MainClient.lua`): только require + `Init()` в порядке зависимостей; без реализации board/runtime логики внутри bootstrap.
+- Core: хранение ссылок/контекста/констант, remotes, доступ к данным и gamepass-флагам.
+- Board/UI modules: рендер/обновление интерфейсов и привязка к существующим remote-контрактам.
+- Runtime modules: только циклы/tick/heartbeat и вызовы публичных refresh/update API.
 
-### Server gameplay systems
-- `CoinSystem`, `WoodSystem`, `PaperFactorySystem`, `HaySystem`, `XPSystem`, `PassiveSystem`.
-  - Рабочая логика валют/апгрейдов/пассивов/выплат.
+---
 
-### Server upgrade board systems
-- `UpgradeBoards/*UpgradeBoard.lua`
-  - Endpoint обработки `PurchaseUpgrade` по семействам (`Coin/Wood/Paper/XP/Hay`).
-- Shared внутри `UpgradeBoards`:
-  - `UpgradePurchaseSystem` — единый пайплайн покупки уровня.
-  - `UpgradeActiveFlagsSystem` — синхронизация active-флагов.
-  - `UpgradeCostSystem` — стоимость следующего уровня.
-  - `UpgradeEligibilitySystem` — проверки unlock/required rebirth.
-  - `UpgradeNotifySystem` — отправка `Notify` сообщений.
+## Bootstrap flow
 
-### Server rune systems
-- `RuneRollSystem` — orchestrator/runtime-controller рун.
-- `RuneActionSystem` — маршрутизация `RuneAction`.
-- `RuneLuck/Speed/BulkSystem` — апгрейды рун.
-- `RuneStatsSystem` — итоговые множители/эффективные статы.
-- `RuneInventorySystem` — состояние рун в данных игрока.
-- `RuneSessionSystem` — активные roll-сессии.
-- `RuneIndexSystem` — payload состояния index/discovered.
-- `RuneBlockCheckSystem` — проверка нахождения игрока на rune-block.
-- `RuneCurrencySystem` — выбор валюты набора/списание цены открытия.
-- `RuneDenominatorSystem` — effective denominators/шансы.
-- `RuneNotifySystem` — уведомления по rune-событиям.
-- `RuneSetRuntimeSystem` — правила остановки/продолжения roll runtime.
+### Server bootstrap flow
+1. Init `RemoteRegistry`.
+2. Init `PlayerDataSystem`.
+3. Init `GamepassSystem`.
+4. Init gameplay systems (`Coin/Wood/PaperFactory/Hay/XP/Passive`).
+5. Init board systems (`UpgradeBoards/*` + shared board helpers).
+6. Init rune systems (`RuneSystems/*`) и подключение `Runes/*` конфигов.
+7. Init runtime loops (`RuntimeLoops/*`).
 
-### Rune set modules
-- `Systems/Runes/*`
-  - Конфиги наборов, порядок рун, unlock/cost/denominator профиль.
+### Client bootstrap flow (target order)
+1. `ClientContext`
+2. `GuiFactory`
+3. `ResponsiveUI`
+4. `ClientFormatters`
+5. `NotificationUI`
+6. `AdminPanelUI`
+7. `UpgradeBoardUI`
+8. `XPProgressUI`
+9. `PassiveInventoryUI`
+10. `RuneInventoryUI`
+11. `RuneBoardUI`
+12. `RuneSessionUI`
+13. `BoardVisualSystem`
+14. `LeaderboardUI`
+15. `InputBindingSystem`
+16. `GUIUpdater`
+17. `RuntimeLoopSystem`
 
-### Core systems
-- `RemoteRegistry` — создание/получение remotes (имена неизменны).
-- `PlayerDataSystem` — инициализация/доступ/мутаторы PlayerData.
-- `GamepassSystem` — проверка gamepass и мультипликаторы.
+---
+
+## Dependency order (единый)
+- Всегда: `Core -> Gameplay -> Boards/Rune -> Runtime -> Visual/UI polish`.
+- Запрещено подключать runtime-петли до готовности доменных систем, чтобы избежать дублирования старых и новых циклов.
+- Любой перенос: сначала серверный источник данных и remote-контракт, потом клиентское отображение.
+
+---
+
+## Migration stages (фиксированный маршрут)
+Каждый этап переносит ограниченный набор систем и завершается тестами:
+1. `RemoteRegistry` + `PlayerDataSystem`
+2. `CoinSystem` + `CoinUpgradeBoard`
+3. `WoodSystem` + `WoodUpgradeBoard`
+4. `PaperFactorySystem` + `PaperUpgradeBoard`
+5. `HaySystem` + `HayUpgradeBoard`
+6. `XPSystem` + `XPProgressUI`
+7. `PassiveSystem` + `PassiveInventoryUI`
+8. `RuneInventorySystem` + `RuneInventoryUI`
+9. `RuneStatsSystem` + `RuneBoardUI`
+10. `RuneSessionSystem` + `RuneSessionUI`
+11. `RuneRollSystem` + `Runes/*`
+12. `RuneLuckSystem` + `RuneSpeedSystem`
+13. `RuneBulkSystem` + `RuneIndexSystem`
+14. `RebirthSystem` + `BoardVisualSystem`
+15. `AdminEventSystem` + `AdminPanelUI`
+16. `LeaderboardSystem` + `LeaderboardUI`
+17. `SaveSystem` + финальный bootstrap cleanup
+18. `GUIUpdater` + `RuntimeLoopSystem` final client cleanup
+
+> Дальше — только реализация по этому маршруту; без новых migration layers, architecture rewrites, temporary wrappers и parallel systems.
+
+---
+
+## Checks after migration (после каждого этапа)
+- Игрок входит без ошибок в output.
+- `PlayerData` содержит те же folders/values, что и раньше.
+- Все `RemoteEvent` имена существуют в `ReplicatedStorage.IncrementalRemotes`.
+- Монеты спавнятся и собираются.
+- Upgrade boards показывают корректные cost/level/max состояния.
+- Rebirth wall/tree/area unlocks совпадают со старым поведением.
+- Wood/paper/hay открываются на тех же rebirth-порогах.
+- Passive roll/inventory/equip работает.
+- Rune roll/inventory/index/stats/speed/luck/bulk работает.
+- XP progress и XP upgrades работают.
+- Save/load сохраняет все старые поля.
+- Admin events и notifications отображаются.
+- Нет дублирования старых и новых loops после переноса.
 
 ---
 
 ## Неприкосновенные контракты совместимости
-- Не переименовывать remotes:
-  - `PurchaseUpgrade`, `PurchaseRebirth`, `AdminAction`, `Notify`, `WoodClick`, `FactoryAction`, `PassiveAction`, `RuneAction`, `XPAction`.
-- Не переименовывать `PlayerData` folders/values, которые клиент ждёт через `WaitForChild`.
-- Переносить только рабочую legacy-логику (без пустых/stub систем).
+- Не переименовывать remotes: `PurchaseUpgrade`, `PurchaseRebirth`, `AdminAction`, `Notify`, `WoodClick`, `FactoryAction`, `PassiveAction`, `RuneAction`, `XPAction`.
+- Не переименовывать `PlayerData` folders/values, которые клиент ожидает через `WaitForChild`.
+- Не менять названия уже подключённых системных модулей без обновления всех точек require/wiring.
 
 ---
 
-## Правило этапа
-- Делаем по **5 систем** за этап.
-- После каждого этапа обязательно обновляем этот файл (`RT-архитектур-план.md`), чтобы он оставался единственным актуальным источником структуры.
+## Already created modules (реестр уже заведённых модулей)
+- Server Core: `RemoteRegistry`, `PlayerDataSystem`, `GamepassSystem`.
+- Server Gameplay: `CoinSystem`, `WoodSystem`, `PaperFactorySystem`, `HaySystem`, `XPSystem`, `PassiveSystem`.
+- Server Boards: `Coin/Wood/Paper/XP/HayUpgradeBoard` + `UpgradePurchaseSystem`, `UpgradeActiveFlagsSystem`, `UpgradeCostSystem`, `UpgradeEligibilitySystem`, `UpgradeNotifySystem`.
+- Server Runes: `RuneRollSystem`, `RuneStatsSystem`, `RuneInventorySystem`, `RuneSessionSystem`, `RuneActionSystem`, `RuneLuckSystem`, `RuneSpeedSystem`, `RuneBulkSystem`, `RuneIndexSystem`, `RuneBlockCheckSystem`, `RuneCurrencySystem`, `RuneDenominatorSystem`, `RuneNotifySystem`, `RuneSetRuntimeSystem`.
+- Server Rune sets: `BaseRuneSet`, `NatureRune`, `ForestRune`, `PaperRune`, `HayRune`.
+- Server Runtime: `CoinAnimationSystem`, `PaperRuntimeSystem`, `HayRuntimeSystem`, `RuneRuntimeSystem`.
+- Client Core/UI Runtime: `ClientContext`, `GuiFactory`, `ResponsiveUI`, `ClientFormatters`, `GUIUpdater`, `BoardVisualSystem`, `UpgradeBoardUI`, `XPProgressUI`, `PassiveInventoryUI`, `RuneBoardUI`, `RuneInventoryUI`, `RuneSessionUI`, `LeaderboardUI`, `AdminPanelUI`, `NotificationUI`, `InputBindingSystem`, `RuntimeLoopSystem`.
