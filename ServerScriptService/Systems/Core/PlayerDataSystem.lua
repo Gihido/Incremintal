@@ -701,6 +701,16 @@ function PlayerDataSystem.ResetWoodProgress(player)
 	end
 end
 
+function PlayerDataSystem.ResetRebirthProgress(player)
+	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
+	if not rebirth then
+		return
+	end
+
+	rebirth.Count.Value = 0
+	PlayerDataSystem.RecalculateRebirthStats(player)
+end
+
 function PlayerDataSystem.TryPurchaseRebirth(player)
 	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
 	if not rebirth then
@@ -752,6 +762,13 @@ function PlayerDataSystem.ApplyAdminRuneBoost(player, minLevel)
 	bulk.Value = math.max(bulk.Value, targetLevel)
 	PlayerDataSystem.MarkDirty(player)
 	return true
+end
+
+function PlayerDataSystem.ResetAllPlayerDataCore(player)
+	PlayerDataSystem.ResetCoinProgress(player)
+	PlayerDataSystem.ResetWoodProgress(player)
+	PlayerDataSystem.ResetRebirthProgress(player)
+	PlayerDataSystem.MarkDirty(player)
 end
 
 function PlayerDataSystem.Init()

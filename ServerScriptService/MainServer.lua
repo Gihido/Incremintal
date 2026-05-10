@@ -147,5 +147,11 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 			return
 		end
 		fireSimple(player, "Rune boosts x20 применены -> " .. targetPlayer.Name)
+	elseif actionName == "ResetSelf" then
+		PlayerDataSystem.ResetAllPlayerDataCore(targetPlayer)
+		XPSystem.ResetXPProgress(targetPlayer)
+		PassiveSystem.SetPassiveState(targetPlayer, PassiveSystem.EmptyPassiveState())
+		RuneInventorySystem.ResetRuneState(targetPlayer)
+		fireSimple(player, "Данные сброшены: " .. targetPlayer.Name)
 	end
 end)
