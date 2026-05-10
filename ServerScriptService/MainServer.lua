@@ -1,6 +1,5 @@
 local Systems = script.Parent:WaitForChild("Systems")
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreSystems = Systems:WaitForChild("Core")
 local UpgradeBoards = Systems:WaitForChild("UpgradeBoards")
 local RuneSystems = Systems:WaitForChild("RuneSystems")
@@ -26,13 +25,13 @@ local RuneInventorySystem = require(RuneSystems:WaitForChild("RuneInventorySyste
 local RuneSessionSystem = require(RuneSystems:WaitForChild("RuneSessionSystem"))
 local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
+local LeaderboardService = require(script.Parent.Parent:WaitForChild("Modules"):WaitForChild("LeaderboardService"))
 local ADMIN_NAME = "Gihido"
 
 local function fireSimple(player, text)
-	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-	local notifyEvent = remotes and remotes:FindFirstChild(RemoteRegistry.Remotes.NotifyClient)
+	local notifyEvent = RemoteRegistry.GetRemote("Notify")
 	if notifyEvent then
-		notifyEvent:FireClient(player, {kind = "Simple", text = text})
+		notifyEvent:FireClient(player, {kind = "simple", text = text})
 	end
 end
 
@@ -54,6 +53,24 @@ local function resolveTargetPlayer(sourcePlayer, payload)
 		end
 	end
 	return nil
+end
+
+local function formatLeaderboardValue(value)
+	local n = tonumber(value) or 0
+	if n >= 1000000 then
+		return string.format("%.2fM", n / 1000000)
+	elseif n >= 1000 then
+		return string.format("%.1fK", n / 1000)
+	end
+	return tostring(math.floor(n + 0.5))
+end
+
+local function buildCoinLeaderboardTop(topCount)
+	local entries = LeaderboardService:BuildEntries(Players:GetPlayers(), function(plr)
+		local coinsObj = PlayerDataSystem.GetCoinsObject(plr)
+		return coinsObj and coinsObj.Value or 0
+	end, formatLeaderboardValue)
+	return LeaderboardService:GetTopPlayers(entries, topCount or 10)
 end
 
 -- Core
@@ -100,8 +117,8 @@ XPUpgradeBoard.Init()
 -- Rune runtime
 RuneRollSystem.Init()
 
-local remotes = ReplicatedStorage:WaitForChild("Remotes")
-local adminActionEvent = remotes:WaitForChild(RemoteRegistry.Remotes.AdminAction)
+local adminActionEvent = RemoteRegistry.GetRemote("AdminAction")
+local leaderboardRequestEvent = RemoteRegistry.GetRemote("LeaderboardRequest")
 adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName, actionValue)
 	if player.Name ~= ADMIN_NAME then
 		return
@@ -154,4 +171,25 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 		RuneInventorySystem.ResetRuneState(targetPlayer)
 		fireSimple(player, "Данные сброшены: " .. targetPlayer.Name)
 	end
+end)
+
+leaderboardRequestEvent.OnServerEvent:Connect(function(player, boardName, limit)
+	if boardName ~= nil and boardName ~= "Coins" then
+		return
+	end
+
+	local topCount = math.clamp(math.floor(tonumber(limit) or 10), 1, 30)
+	local topEntries = buildCoinLeaderboardTop(topCount)
+	local payload = {}
+	for _, entry in ipairs(topEntries) do
+		payload[#payload + 1] = {
+			name = entry.player and entry.player.Name or "Unknown",
+			displayName = entry.player and entry.player.DisplayName or "",
+			value = entry.value or 0,
+			formattedValue = entry.formattedValue or tostring(entry.value or 0),
+			rank = entry.rank or 0,
+		}
+	end
+
+	leaderboardRequestEvent:FireClient(player, "Coins", payload)
 end)

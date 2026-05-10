@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreSystems = script.Parent
+local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
 
 local PlayerDataSystem = {}
 
@@ -772,26 +773,25 @@ function PlayerDataSystem.ResetAllPlayerDataCore(player)
 end
 
 function PlayerDataSystem.Init()
-	local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-	local purchaseRebirthEvent = Remotes:WaitForChild("PurchaseRebirth")
-	local notifyEvent = Remotes:WaitForChild("NotifyClient")
+	local purchaseRebirthEvent = RemoteRegistry.GetRemote("PurchaseRebirth")
+	local notifyEvent = RemoteRegistry.GetRemote("Notify")
 
 	purchaseRebirthEvent.OnServerEvent:Connect(function(player)
 		local success, reason, currencyName = PlayerDataSystem.TryPurchaseRebirth(player)
 		if success then
-			notifyEvent:FireClient(player, {kind = "Simple", text = "Перерождение куплено"})
+			notifyEvent:FireClient(player, {kind = "simple", text = "Перерождение куплено"})
 			return
 		end
 
 		if reason == "MAX" then
-			notifyEvent:FireClient(player, {kind = "Simple", text = "Перерождение уже в MAX"})
+			notifyEvent:FireClient(player, {kind = "simple", text = "Перерождение уже в MAX"})
 		elseif reason == "NO_MONEY" then
 			local messageByCurrency = {
 				Coins = "Не хватает монет для перерождения",
 				Wood = "Не хватает дерева для перерождения",
 				Paper = "Не хватает бумаги для перерождения",
 			}
-			notifyEvent:FireClient(player, {kind = "Simple", text = messageByCurrency[currencyName] or "Не хватает ресурса для перерождения"})
+			notifyEvent:FireClient(player, {kind = "simple", text = messageByCurrency[currencyName] or "Не хватает ресурса для перерождения"})
 		end
 	end)
 
