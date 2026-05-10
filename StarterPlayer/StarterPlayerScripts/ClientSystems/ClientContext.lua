@@ -3,23 +3,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ClientContext = {}
 
-local REMOTE_WAIT_TIMEOUT = 15
-
-local function waitForRequiredChild(parent, childName, timeoutSeconds)
-	local child = parent:WaitForChild(childName, timeoutSeconds or REMOTE_WAIT_TIMEOUT)
-	if not child then
-		error(childName .. " was not created under " .. parent:GetFullName() .. " within " .. tostring(timeoutSeconds or REMOTE_WAIT_TIMEOUT) .. " seconds")
-	end
-	return child
-end
-
 local function waitForRemote(remotesFolder, remoteName)
-	return waitForRequiredChild(remotesFolder, remoteName, REMOTE_WAIT_TIMEOUT)
+	return remotesFolder:WaitForChild(remoteName)
 end
 
 function ClientContext.Create()
 	local player = Players.LocalPlayer
-	local remotesFolder = waitForRequiredChild(ReplicatedStorage, "IncrementalRemotes", REMOTE_WAIT_TIMEOUT)
+	local remotesFolder = ReplicatedStorage:WaitForChild("IncrementalRemotes")
 	local data = player:WaitForChild("PlayerData", 30)
 	if not data then
 		warn("PlayerData was not created within 30 seconds for " .. player.Name)

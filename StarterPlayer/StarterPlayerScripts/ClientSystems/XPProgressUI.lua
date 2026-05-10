@@ -28,7 +28,7 @@ function XPProgressUI.Init(context)
 		return
 	end
 
-	local part = GuiFactory.FindWorkspacePart("XPProgressDoska")
+	local part = workspace:FindFirstChild("XPProgressDoska")
 	if not part then
 		warn("XP progress board part not found: XPProgressDoska")
 		return

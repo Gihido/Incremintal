@@ -32,7 +32,7 @@ local function readValue(root, path, defaultValue)
 end
 
 local function createBoard(context, partName, guiName, themeName, titleText, subtitleText)
-	local part = GuiFactory.FindWorkspacePart(partName)
+	local part = workspace:FindFirstChild(partName)
 	if not part then
 		warn("Board part not found: " .. partName)
 		return nil

@@ -17,7 +17,7 @@ local function decodeState(jsonText)
 end
 
 local function createBoard(context, partName, guiName, title, accent)
-	local part = GuiFactory.FindWorkspacePart(partName)
+	local part = workspace:FindFirstChild(partName)
 	if not part then
 		warn("Passive board part not found: " .. partName)
 		return nil

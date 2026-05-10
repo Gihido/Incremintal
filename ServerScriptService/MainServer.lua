@@ -26,7 +26,8 @@ local RuneSessionSystem = require(RuneSystems:WaitForChild("RuneSessionSystem"))
 local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
 
-local LeaderboardSystem = require(Systems:WaitForChild("LeaderboardSystem"))
+local Modules = script.Parent.Parent:WaitForChild("Modules")
+local LeaderboardService = require(Modules:WaitForChild("LeaderboardService"))
 
 local ADMIN_NAME = "Gihido"
 local LEADERBOARD_REQUEST_COOLDOWN = 0.35
@@ -79,11 +80,11 @@ local LEADERBOARD_SOURCES = {
 
 local function buildLeaderboardTop(boardName, topCount)
 	local sourceGetter = LEADERBOARD_SOURCES[boardName] or LEADERBOARD_SOURCES.Coins
-	local entries = LeaderboardSystem:BuildEntries(Players:GetPlayers(), function(plr)
+	local entries = LeaderboardService:BuildEntries(Players:GetPlayers(), function(plr)
 		local currencyObj = sourceGetter(plr)
 		return currencyObj and currencyObj.Value or 0
 	end, formatLeaderboardValue)
-	return LeaderboardSystem:GetTopPlayers(entries, topCount or 10)
+	return LeaderboardService:GetTopPlayers(entries, topCount or 10)
 end
 
 -- Core
