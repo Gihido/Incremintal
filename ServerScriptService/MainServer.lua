@@ -65,10 +65,19 @@ local function formatLeaderboardValue(value)
 	return tostring(math.floor(n + 0.5))
 end
 
-local function buildCoinLeaderboardTop(topCount)
+local LEADERBOARD_SOURCES = {
+	Coins = PlayerDataSystem.GetCoinsObject,
+	Wood = PlayerDataSystem.GetWoodCurrencyObject,
+	Paper = PlayerDataSystem.GetPaperCurrencyObject,
+	Hay = PlayerDataSystem.GetHayCurrencyObject,
+	XP = PlayerDataSystem.GetXPCurrencyObject,
+}
+
+local function buildLeaderboardTop(boardName, topCount)
+	local sourceGetter = LEADERBOARD_SOURCES[boardName] or LEADERBOARD_SOURCES.Coins
 	local entries = LeaderboardService:BuildEntries(Players:GetPlayers(), function(plr)
-		local coinsObj = PlayerDataSystem.GetCoinsObject(plr)
-		return coinsObj and coinsObj.Value or 0
+		local currencyObj = sourceGetter(plr)
+		return currencyObj and currencyObj.Value or 0
 	end, formatLeaderboardValue)
 	return LeaderboardService:GetTopPlayers(entries, topCount or 10)
 end
@@ -174,12 +183,13 @@ adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName
 end)
 
 leaderboardRequestEvent.OnServerEvent:Connect(function(player, boardName, limit)
-	if boardName ~= nil and boardName ~= "Coins" then
+	local requestedBoard = type(boardName) == "string" and boardName or "Coins"
+	if not LEADERBOARD_SOURCES[requestedBoard] then
 		return
 	end
 
 	local topCount = math.clamp(math.floor(tonumber(limit) or 10), 1, 30)
-	local topEntries = buildCoinLeaderboardTop(topCount)
+	local topEntries = buildLeaderboardTop(requestedBoard, topCount)
 	local payload = {}
 	for _, entry in ipairs(topEntries) do
 		payload[#payload + 1] = {
@@ -191,5 +201,5 @@ leaderboardRequestEvent.OnServerEvent:Connect(function(player, boardName, limit)
 		}
 	end
 
-	leaderboardRequestEvent:FireClient(player, "Coins", payload)
+	leaderboardRequestEvent:FireClient(player, requestedBoard, payload)
 end)
