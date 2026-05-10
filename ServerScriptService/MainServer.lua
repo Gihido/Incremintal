@@ -1,10 +1,13 @@
 local Systems = script.Parent:WaitForChild("Systems")
 local Players = game:GetService("Players")
+local ServerScriptService = game:GetService("ServerScriptService")
 local CoreSystems = Systems:WaitForChild("Core")
 local UpgradeBoards = Systems:WaitForChild("UpgradeBoards")
 local RuneSystems = Systems:WaitForChild("RuneSystems")
 
 local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
+RemoteRegistry.Init()
+
 local PlayerDataSystem = require(CoreSystems:WaitForChild("PlayerDataSystem"))
 local GamepassSystem = require(CoreSystems:WaitForChild("GamepassSystem"))
 
@@ -26,43 +29,9 @@ local RuneSessionSystem = require(RuneSystems:WaitForChild("RuneSessionSystem"))
 local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
 
-local function findFirstDescendantByName(root, targetName, maxDepth)
-	maxDepth = maxDepth or 6
-	local queue = {{node = root, depth = 0}}
-	while #queue > 0 do
-		local item = table.remove(queue, 1)
-		if item.node.Name == targetName then
-			return item.node
-		end
-		if item.depth < maxDepth then
-			for _, child in ipairs(item.node:GetChildren()) do
-				queue[#queue + 1] = {node = child, depth = item.depth + 1}
-			end
-		end
-	end
-	return nil
-end
+local Modules = ServerScriptService:WaitForChild("Modules")
+local LeaderboardService = require(Modules:WaitForChild("LeaderboardService"))
 
-local function resolveLeaderboardModule()
-	local direct = script.Parent.Parent:FindFirstChild("Modules")
-	if direct and direct:FindFirstChild("LeaderboardService") then
-		return direct:FindFirstChild("LeaderboardService")
-	end
-
-	local inServerScriptService = script.Parent:FindFirstChild("Modules")
-	if inServerScriptService and inServerScriptService:FindFirstChild("LeaderboardService") then
-		return inServerScriptService:FindFirstChild("LeaderboardService")
-	end
-
-	local scannedModules = findFirstDescendantByName(game, "Modules", 4)
-	if scannedModules and scannedModules:FindFirstChild("LeaderboardService") then
-		return scannedModules:FindFirstChild("LeaderboardService")
-	end
-
-	error("LeaderboardService module not found (expected in game.Modules or ServerScriptService.Modules)")
-end
-
-local LeaderboardService = require(resolveLeaderboardModule())
 local ADMIN_NAME = "Gihido"
 local LEADERBOARD_REQUEST_COOLDOWN = 0.35
 local leaderboardRequestCooldowns = {}
@@ -122,7 +91,6 @@ local function buildLeaderboardTop(boardName, topCount)
 end
 
 -- Core
-RemoteRegistry.Init()
 PlayerDataSystem.Init()
 GamepassSystem.Init()
 
