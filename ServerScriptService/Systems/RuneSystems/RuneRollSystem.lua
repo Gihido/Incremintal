@@ -17,6 +17,11 @@ local PaperRune = require(Runes:WaitForChild("PaperRune"))
 local HayRune = require(Runes:WaitForChild("HayRune"))
 local RuneRuntimeSystem = require(script.Parent.Parent:WaitForChild("RuntimeLoops"):WaitForChild("RuneRuntimeSystem"))
 local RuneActionSystem = require(script.Parent:WaitForChild("RuneActionSystem"))
+local RuneBlockCheckSystem = require(script.Parent:WaitForChild("RuneBlockCheckSystem"))
+local RuneCurrencySystem = require(script.Parent:WaitForChild("RuneCurrencySystem"))
+local RuneDenominatorSystem = require(script.Parent:WaitForChild("RuneDenominatorSystem"))
+local RuneNotifySystem = require(script.Parent:WaitForChild("RuneNotifySystem"))
+local RuneSetRuntimeSystem = require(script.Parent:WaitForChild("RuneSetRuntimeSystem"))
 
 local RuneRollSystem = {}
 
@@ -31,34 +36,8 @@ local activeNatureRuneRolls = {}
 local RUNE_SET_DEFS = {}
 local initialized = false
 
-local function safeNumber(value, defaultValue)
-	local n = tonumber(value)
-	if n == nil then
-		return defaultValue
-	end
-	return n
-end
 
-local function fireSimple(player, text)
-	local notifyEvent = RemoteRegistry.GetRemote("Notify")
-	if not notifyEvent then
-		return
-	end
 
-	notifyEvent:FireClient(player, {
-		kind = "simple",
-		text = tostring(text),
-	})
-end
-
-local function fireRuneRollTick(player, payload)
-	local notifyEvent = RemoteRegistry.GetRemote("Notify")
-	if not notifyEvent then
-		return
-	end
-
-	notifyEvent:FireClient(player, payload)
-end
 
 function RuneRollSystem.GetRuneOpenDuration(player)
 	local upgrades = RuneInventorySystem.GetRuneUpgradeFolder(player)
@@ -71,32 +50,9 @@ function RuneRollSystem.GetRuneOpenDuration(player)
 end
 
 function RuneRollSystem.GetEffectiveRuneChanceDenominator(baseDenominator, runeLuck)
-	local base = math.max(1, math.floor(tonumber(baseDenominator) or 1))
-	local luck = math.max(1, tonumber(runeLuck) or 1)
-	local effective = math.floor(base / luck + 0.5)
-	return math.max(1, effective)
+	return RuneDenominatorSystem.GetEffectiveDenominator(baseDenominator, runeLuck)
 end
 
-local function isCharacterOnBlock(player, block, tolerance)
-	if not block then
-		return false
-	end
-	local character = player.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	if not humanoid or humanoid.Health <= 0 then
-		return false
-	end
-	local hrp = character and character:FindFirstChild("HumanoidRootPart")
-	if not hrp then
-		return false
-	end
-	local tol = tolerance or Vector3.new(1.2, 3.5, 1.2)
-	local localPos = block.CFrame:PointToObjectSpace(hrp.Position)
-	local half = block.Size * 0.5
-	return math.abs(localPos.X) <= (half.X + tol.X)
-		and math.abs(localPos.Z) <= (half.Z + tol.Z)
-		and math.abs(localPos.Y) <= (half.Y + tol.Y)
-end
 
 function RuneRollSystem.RollFromSet(player, setName)
 	local setDef = RUNE_SET_DEFS[setName]
@@ -113,9 +69,7 @@ function RuneRollSystem.RollFromSet(player, setName)
 	local rolled = {}
 	local denominators = {}
 
-	for _, runeId in ipairs(setDef.order) do
-		denominators[runeId] = RuneRollSystem.GetEffectiveRuneChanceDenominator(setDef.baseDenominators[runeId], luck)
-	end
+	denominators = RuneDenominatorSystem.BuildDenominators(setDef.order, setDef.baseDenominators, luck)
 
 	for _ = 1, bulk do
 		local chosen = setDef.order[1]
@@ -143,30 +97,12 @@ function RuneRollSystem.GetRuneRollInterval(player)
 	return math.max(0.2, interval)
 end
 
-local function getCurrencyObjectForRuneSet(player, cfg)
-	if cfg.currency == "Paper" then
-		return PlayerDataSystem.GetPaperCurrencyObject(player)
-	end
-	return PlayerDataSystem.GetCoinsObject(player)
-end
 
 local function processRuneSet(player, setName, activeTable, now)
 	local cfg = RUNE_SET_DEFS[setName]
-	if not cfg or not cfg.block then
-		activeTable[player] = nil
-		RuneSessionSystem.StopRuneRolling(player, setName)
-		return
-	end
-
 	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
 	local rebirthCount = tonumber(rebirth and rebirth.Count.Value) or 0
-	if rebirthCount < cfg.unlockRebirth then
-		activeTable[player] = nil
-		RuneSessionSystem.StopRuneRolling(player, setName)
-		return
-	end
-
-	if not isCharacterOnBlock(player, cfg.block, Vector3.new(0.8, 3.2, 0.8)) then
+	if RuneSetRuntimeSystem.ShouldStopRolling(player, cfg, rebirthCount, RuneBlockCheckSystem.IsCharacterOnBlock) then
 		activeTable[player] = nil
 		RuneSessionSystem.StopRuneRolling(player, setName)
 		return
@@ -181,25 +117,25 @@ local function processRuneSet(player, setName, activeTable, now)
 	end
 
 	RuneSessionSystem.SetLastRollAt(player, now)
-	local currencyObject = getCurrencyObjectForRuneSet(player, cfg)
-	if not currencyObject or safeNumber(currencyObject.Value, 0) < cfg.cost then
+	local currencyObject = RuneCurrencySystem.GetCurrencyObjectForSet(player, cfg)
+	if not currencyObject or (tonumber(currencyObject.Value) or 0) < cfg.cost then
 		local key = "rune_no_" .. setName
 		local cd = runeOpenCooldowns[player.UserId .. key] or 0
 		if now >= cd then
-			fireSimple(player, cfg.insufficientText)
+			RuneNotifySystem.FireSimple(player, cfg.insufficientText)
 			runeOpenCooldowns[player.UserId .. key] = now + 2
 		end
 		return
 	end
 
-	if not PlayerDataSystem.SpendCurrency(currencyObject, cfg.cost) then
+	if not RuneCurrencySystem.SpendOpenCost(player, cfg) then
 		return
 	end
 
 	local rolled, state, denoms = RuneRollSystem.RollFromSet(player, setName)
 	if rolled then
 		local sessionCounts = RuneSessionSystem.RecordRolledRunes(player, rolled)
-		fireRuneRollTick(player, {
+		RuneNotifySystem.FirePayload(player, {
 			kind = "rune_roll_tick",
 			system = setName,
 			rolled = rolled,
@@ -222,7 +158,7 @@ function RuneRollSystem.HandleRuneAction(player, actionName)
 	if not rebirth or not runeUpgrades or not wood then return end
 
 	RuneActionSystem.Handle(player, actionName, {
-		fireSimple = fireSimple,
+		fireSimple = RuneNotifySystem.FireSimple,
 		canUseRunes = function(currentPlayer)
 			local currentRebirth = PlayerDataSystem.GetRebirthFolder(currentPlayer)
 			return currentRebirth and currentRebirth.SecondAreaUnlocked.Value
