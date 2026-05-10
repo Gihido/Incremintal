@@ -3,6 +3,8 @@ local HttpService = game:GetService("HttpService")
 
 local PlayerDataSystem = {}
 
+local dirtyPlayers = {}
+
 local BASE_PAPER_PRODUCTION_TIME = 10
 local MAX_COIN_SPAWN_SPEED_LEVEL = 3
 
@@ -264,6 +266,44 @@ local HAY_UPGRADES = {
 	HayMultiplier = {levelName = "HayMultiplierLevel", costName = "HayMultiplierCost", startCost = START_HAY_MULTIPLIER_COST, priceMultiplier = 3, maxLevel = 50},
 	HayCooldown = {levelName = "HayCooldownLevel", costName = "HayCooldownCost", startCost = START_HAY_COOLDOWN_COST, priceMultiplier = 2.5, maxLevel = 25},
 }
+
+
+function PlayerDataSystem.RoundToTenth(value)
+	return math.floor((tonumber(value) or 0) * 10 + 0.5) / 10
+end
+
+function PlayerDataSystem.AddCurrency(currencyObject, amount)
+	if currencyObject then
+		currencyObject.Value = PlayerDataSystem.RoundToTenth(currencyObject.Value + amount)
+	end
+end
+
+function PlayerDataSystem.SpendCurrency(currencyObject, amount)
+	if not currencyObject then
+		return false
+	end
+
+	if currencyObject.Value < amount then
+		return false
+	end
+
+	currencyObject.Value = PlayerDataSystem.RoundToTenth(currencyObject.Value - amount)
+	return true
+end
+
+function PlayerDataSystem.MarkDirty(player)
+	if player and player.Parent == Players then
+		dirtyPlayers[player] = true
+	end
+end
+
+function PlayerDataSystem.ClearDirty(player)
+	dirtyPlayers[player] = nil
+end
+
+function PlayerDataSystem.GetDirtyPlayers()
+	return dirtyPlayers
+end
 
 local function ensureFolder(parent, name)
 	local folder = parent:FindFirstChild(name)
