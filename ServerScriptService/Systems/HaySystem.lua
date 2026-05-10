@@ -3,6 +3,7 @@ local Workspace = game:GetService("Workspace")
 
 local CoreSystems = script.Parent:WaitForChild("Core")
 local PlayerDataSystem = require(CoreSystems:WaitForChild("PlayerDataSystem"))
+local HayRuntimeSystem = require(script.Parent:WaitForChild("RuntimeLoops"):WaitForChild("HayRuntimeSystem"))
 local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
 
 local HaySystem = {}
@@ -153,19 +154,6 @@ function HaySystem.UpdatePlayerHayCollection(player, now)
 	end
 end
 
-local function startHayRuntimeLoop()
-	task.spawn(function()
-		while true do
-			task.wait(0.2)
-			local now = os.clock()
-
-			for _, player in ipairs(Players:GetPlayers()) do
-				HaySystem.UpdatePlayerHayCollection(player, now)
-			end
-		end
-	end)
-end
-
 function HaySystem.Init(customDependencies)
 	if initialized then
 		return
@@ -181,7 +169,7 @@ function HaySystem.Init(customDependencies)
 	end
 
 	hayBlock = Workspace:FindFirstChild("HayBlock")
-	startHayRuntimeLoop()
+	HayRuntimeSystem.Start(HaySystem.UpdatePlayerHayCollection)
 end
 
 HaySystem.ActiveHayCollection = activeHayCollection

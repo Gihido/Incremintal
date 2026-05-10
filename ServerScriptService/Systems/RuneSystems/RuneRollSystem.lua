@@ -1,4 +1,3 @@
-local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 
 local CoreSystems = script.Parent.Parent:WaitForChild("Core")
@@ -7,14 +6,29 @@ local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
 local RuneInventorySystem = require(script.Parent:WaitForChild("RuneInventorySystem"))
 local RuneStatsSystem = require(script.Parent:WaitForChild("RuneStatsSystem"))
 local RuneSessionSystem = require(script.Parent:WaitForChild("RuneSessionSystem"))
+local RuneLuckSystem = require(script.Parent:WaitForChild("RuneLuckSystem"))
+local RuneSpeedSystem = require(script.Parent:WaitForChild("RuneSpeedSystem"))
+local RuneBulkSystem = require(script.Parent:WaitForChild("RuneBulkSystem"))
+local RuneIndexSystem = require(script.Parent:WaitForChild("RuneIndexSystem"))
+local Runes = script.Parent.Parent:WaitForChild("Runes")
+local NatureRune = require(Runes:WaitForChild("NatureRune"))
+local ForestRune = require(Runes:WaitForChild("ForestRune"))
+local PaperRune = require(Runes:WaitForChild("PaperRune"))
+local HayRune = require(Runes:WaitForChild("HayRune"))
+local RuneRuntimeSystem = require(script.Parent.Parent:WaitForChild("RuntimeLoops"):WaitForChild("RuneRuntimeSystem"))
+local RuneActionSystem = require(script.Parent:WaitForChild("RuneActionSystem"))
+local RuneBlockCheckSystem = require(script.Parent:WaitForChild("RuneBlockCheckSystem"))
+local RuneCurrencySystem = require(script.Parent:WaitForChild("RuneCurrencySystem"))
+local RuneDenominatorSystem = require(script.Parent:WaitForChild("RuneDenominatorSystem"))
+local RuneNotifySystem = require(script.Parent:WaitForChild("RuneNotifySystem"))
+local RuneSetRuntimeSystem = require(script.Parent:WaitForChild("RuneSetRuntimeSystem"))
 
 local RuneRollSystem = {}
 
 local RUNE_OPEN_BASE_TIME = 10
-local RUNE_UPGRADES = PlayerDataSystem.Config.RuneUpgrades
 
-local FOREST_RUNE_ORDER = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}
-local NATURE_RUNE_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
+local FOREST_RUNE_ORDER = ForestRune.Order
+local NATURE_RUNE_ORDER = NatureRune.Order
 
 local runeOpenCooldowns = {}
 local activeForestRuneRolls = {}
@@ -22,34 +36,8 @@ local activeNatureRuneRolls = {}
 local RUNE_SET_DEFS = {}
 local initialized = false
 
-local function safeNumber(value, defaultValue)
-	local n = tonumber(value)
-	if n == nil then
-		return defaultValue
-	end
-	return n
-end
 
-local function fireSimple(player, text)
-	local notifyEvent = RemoteRegistry.GetRemote("Notify")
-	if not notifyEvent then
-		return
-	end
 
-	notifyEvent:FireClient(player, {
-		kind = "simple",
-		text = tostring(text),
-	})
-end
-
-local function fireRuneRollTick(player, payload)
-	local notifyEvent = RemoteRegistry.GetRemote("Notify")
-	if not notifyEvent then
-		return
-	end
-
-	notifyEvent:FireClient(player, payload)
-end
 
 function RuneRollSystem.GetRuneOpenDuration(player)
 	local upgrades = RuneInventorySystem.GetRuneUpgradeFolder(player)
@@ -62,32 +50,9 @@ function RuneRollSystem.GetRuneOpenDuration(player)
 end
 
 function RuneRollSystem.GetEffectiveRuneChanceDenominator(baseDenominator, runeLuck)
-	local base = math.max(1, math.floor(tonumber(baseDenominator) or 1))
-	local luck = math.max(1, tonumber(runeLuck) or 1)
-	local effective = math.floor(base / luck + 0.5)
-	return math.max(1, effective)
+	return RuneDenominatorSystem.GetEffectiveDenominator(baseDenominator, runeLuck)
 end
 
-local function isCharacterOnBlock(player, block, tolerance)
-	if not block then
-		return false
-	end
-	local character = player.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	if not humanoid or humanoid.Health <= 0 then
-		return false
-	end
-	local hrp = character and character:FindFirstChild("HumanoidRootPart")
-	if not hrp then
-		return false
-	end
-	local tol = tolerance or Vector3.new(1.2, 3.5, 1.2)
-	local localPos = block.CFrame:PointToObjectSpace(hrp.Position)
-	local half = block.Size * 0.5
-	return math.abs(localPos.X) <= (half.X + tol.X)
-		and math.abs(localPos.Z) <= (half.Z + tol.Z)
-		and math.abs(localPos.Y) <= (half.Y + tol.Y)
-end
 
 function RuneRollSystem.RollFromSet(player, setName)
 	local setDef = RUNE_SET_DEFS[setName]
@@ -104,9 +69,7 @@ function RuneRollSystem.RollFromSet(player, setName)
 	local rolled = {}
 	local denominators = {}
 
-	for _, runeId in ipairs(setDef.order) do
-		denominators[runeId] = RuneRollSystem.GetEffectiveRuneChanceDenominator(setDef.baseDenominators[runeId], luck)
-	end
+	denominators = RuneDenominatorSystem.BuildDenominators(setDef.order, setDef.baseDenominators, luck)
 
 	for _ = 1, bulk do
 		local chosen = setDef.order[1]
@@ -134,30 +97,12 @@ function RuneRollSystem.GetRuneRollInterval(player)
 	return math.max(0.2, interval)
 end
 
-local function getCurrencyObjectForRuneSet(player, cfg)
-	if cfg.currency == "Paper" then
-		return PlayerDataSystem.GetPaperCurrencyObject(player)
-	end
-	return PlayerDataSystem.GetCoinsObject(player)
-end
 
 local function processRuneSet(player, setName, activeTable, now)
 	local cfg = RUNE_SET_DEFS[setName]
-	if not cfg or not cfg.block then
-		activeTable[player] = nil
-		RuneSessionSystem.StopRuneRolling(player, setName)
-		return
-	end
-
 	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
 	local rebirthCount = tonumber(rebirth and rebirth.Count.Value) or 0
-	if rebirthCount < cfg.unlockRebirth then
-		activeTable[player] = nil
-		RuneSessionSystem.StopRuneRolling(player, setName)
-		return
-	end
-
-	if not isCharacterOnBlock(player, cfg.block, Vector3.new(0.8, 3.2, 0.8)) then
+	if RuneSetRuntimeSystem.ShouldStopRolling(player, cfg, rebirthCount, RuneBlockCheckSystem.IsCharacterOnBlock) then
 		activeTable[player] = nil
 		RuneSessionSystem.StopRuneRolling(player, setName)
 		return
@@ -172,25 +117,25 @@ local function processRuneSet(player, setName, activeTable, now)
 	end
 
 	RuneSessionSystem.SetLastRollAt(player, now)
-	local currencyObject = getCurrencyObjectForRuneSet(player, cfg)
-	if not currencyObject or safeNumber(currencyObject.Value, 0) < cfg.cost then
+	local currencyObject = RuneCurrencySystem.GetCurrencyObjectForSet(player, cfg)
+	if not currencyObject or (tonumber(currencyObject.Value) or 0) < cfg.cost then
 		local key = "rune_no_" .. setName
 		local cd = runeOpenCooldowns[player.UserId .. key] or 0
 		if now >= cd then
-			fireSimple(player, cfg.insufficientText)
+			RuneNotifySystem.FireSimple(player, cfg.insufficientText)
 			runeOpenCooldowns[player.UserId .. key] = now + 2
 		end
 		return
 	end
 
-	if not PlayerDataSystem.SpendCurrency(currencyObject, cfg.cost) then
+	if not RuneCurrencySystem.SpendOpenCost(player, cfg) then
 		return
 	end
 
 	local rolled, state, denoms = RuneRollSystem.RollFromSet(player, setName)
 	if rolled then
 		local sessionCounts = RuneSessionSystem.RecordRolledRunes(player, rolled)
-		fireRuneRollTick(player, {
+		RuneNotifySystem.FirePayload(player, {
 			kind = "rune_roll_tick",
 			system = setName,
 			rolled = rolled,
@@ -206,105 +151,28 @@ function RuneRollSystem.UpdatePlayerRuneRolling(player, now)
 	processRuneSet(player, "Nature", activeNatureRuneRolls, now)
 end
 
-local function tryBuyRuneUpgrade(player, upgradeKey, silent)
-	local cfg = RUNE_UPGRADES[upgradeKey]
-	local upgrades = RuneInventorySystem.GetRuneUpgradeFolder(player)
-	if not cfg or not upgrades then
-		return
-	end
-	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
-	if not rebirth or not rebirth.SecondAreaUnlocked.Value then
-		if not silent then fireSimple(player, "Forest Runes откроются на 2-м перерождении") end
-		return
-	end
-	local levelObj = upgrades:FindFirstChild(cfg.levelName)
-	local costObj = upgrades:FindFirstChild(cfg.costName)
-	if not levelObj or not costObj then return end
-	if levelObj.Value >= cfg.maxLevel then
-		if not silent then fireSimple(player, "Улучшение на максимуме") end
-		return
-	end
-	local currencyObj
-	if cfg.currency == "Coins" then
-		currencyObj = PlayerDataSystem.GetCoinsObject(player)
-	elseif cfg.currency == "Wood" then
-		currencyObj = PlayerDataSystem.GetWoodCurrencyObject(player)
-	else
-		currencyObj = PlayerDataSystem.GetPaperCurrencyObject(player)
-	end
-	if not currencyObj or currencyObj.Value < costObj.Value then
-		if not silent then fireSimple(player, "Недостаточно ресурса") end
-		return
-	end
-	if not PlayerDataSystem.SpendCurrency(currencyObj, costObj.Value) then
-		return
-	end
-	levelObj.Value += 1
-	costObj.Value = math.floor(costObj.Value * 2 + 0.5)
-	if not silent then fireSimple(player, "Улучшение рун куплено") end
-	PlayerDataSystem.MarkDirty(player)
-end
-
-local function tryBuyRuneUpgradeMax(player, upgradeKey)
-	local safety = 0
-	while safety < 200 do
-		safety += 1
-		local before = RuneInventorySystem.GetRuneUpgradeFolder(player)
-		local cfg = RUNE_UPGRADES[upgradeKey]
-		local levelBefore = before and cfg and before:FindFirstChild(cfg.levelName) and before[cfg.levelName].Value or nil
-		tryBuyRuneUpgrade(player, upgradeKey, true)
-		local after = RuneInventorySystem.GetRuneUpgradeFolder(player)
-		local levelAfter = after and cfg and after:FindFirstChild(cfg.levelName) and after[cfg.levelName].Value or nil
-		if levelBefore == nil or levelAfter == nil or levelAfter <= levelBefore then
-			break
-		end
-		if levelAfter >= cfg.maxLevel then
-			break
-		end
-	end
-end
-
 function RuneRollSystem.HandleRuneAction(player, actionName)
 	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
 	local runeUpgrades = RuneInventorySystem.GetRuneUpgradeFolder(player)
 	local wood = PlayerDataSystem.GetWoodCurrencyObject(player)
 	if not rebirth or not runeUpgrades or not wood then return end
 
-	if actionName == "Open" or actionName == "OpenNature" then
-		fireSimple(player, "Nature Rune работает автоматически, пока стоишь на NatureRuneBlock")
-		return
-	elseif actionName == "OpenForest" then
-		fireSimple(player, "Forest Rune работает автоматически, пока стоишь на ForestRuneBlock")
-		return
-	elseif not rebirth.SecondAreaUnlocked.Value then
-		fireSimple(player, "Система Nature Rune откроется после 2-го перерождения")
-		return
-	elseif actionName == "UpgradeLuck" then
-		tryBuyRuneUpgrade(player, "Luck")
-	elseif actionName == "UpgradeLuckMax" then
-		tryBuyRuneUpgradeMax(player, "Luck")
-	elseif actionName == "UpgradeSpeed" then
-		tryBuyRuneUpgrade(player, "Speed")
-	elseif actionName == "UpgradeSpeedMax" then
-		tryBuyRuneUpgradeMax(player, "Speed")
-	elseif actionName == "UpgradeBulk" then
-		tryBuyRuneUpgrade(player, "Bulk")
-	elseif actionName == "UpgradeBulkMax" then
-		tryBuyRuneUpgradeMax(player, "Bulk")
-	end
+	RuneActionSystem.Handle(player, actionName, {
+		fireSimple = RuneNotifySystem.FireSimple,
+		canUseRunes = function(currentPlayer)
+			local currentRebirth = PlayerDataSystem.GetRebirthFolder(currentPlayer)
+			return currentRebirth and currentRebirth.SecondAreaUnlocked.Value
+		end,
+		buyLuck = function(currentPlayer) RuneLuckSystem.TryBuy(currentPlayer, false) end,
+		buyLuckMax = RuneLuckSystem.TryBuyMax,
+		buySpeed = function(currentPlayer) RuneSpeedSystem.TryBuy(currentPlayer, false) end,
+		buySpeedMax = RuneSpeedSystem.TryBuyMax,
+		buyBulk = function(currentPlayer) RuneBulkSystem.TryBuy(currentPlayer, false) end,
+		buyBulkMax = RuneBulkSystem.TryBuyMax,
+		pushIndex = function(currentPlayer) RuneIndexSystem.PushIndexState(currentPlayer, NATURE_RUNE_ORDER, FOREST_RUNE_ORDER) end,
+	})
 end
 
-local function startRuneRuntimeLoop()
-	task.spawn(function()
-		while true do
-			task.wait(0.2)
-			local now = os.clock()
-			for _, player in ipairs(Players:GetPlayers()) do
-				RuneRollSystem.UpdatePlayerRuneRolling(player, now)
-			end
-		end
-	end)
-end
 
 local function buildRuneSetDefs()
 	for key in pairs(RUNE_SET_DEFS) do
@@ -315,24 +183,11 @@ local function buildRuneSetDefs()
 	local forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
 	local natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
 
-	RUNE_SET_DEFS.Forest = {
-			order = FOREST_RUNE_ORDER,
-			unlockRebirth = 6,
-			currency = "Paper",
-			cost = 50,
-			block = forestRuneBlock,
-			insufficientText = "Недостаточно Paper",
-			baseDenominators = {Palka = 1, ObrublennyKonec = 5, VetvDereva = 25, Brevno = 100, Poleno = 250, ObgorevshiyPen = 1000},
-	}
-	RUNE_SET_DEFS.Nature = {
-			order = NATURE_RUNE_ORDER,
-			unlockRebirth = 2,
-			currency = "Coins",
-			cost = 500,
-			block = natureRuneBlock or runeRollBlock,
-			insufficientText = "Недостаточно Coins",
-			baseDenominators = {Grass = 1, DarkGrass = 5, Dandelion = 25, Flower = 100, Violet = 250, Rose = 1000},
-	}
+	RUNE_SET_DEFS.Forest = PaperRune.BuildDef()
+	RUNE_SET_DEFS.Forest.block = ForestRune.ResolveBlock(forestRuneBlock)
+
+	RUNE_SET_DEFS.Nature = HayRune.BuildDef(natureRuneBlock, runeRollBlock)
+	RUNE_SET_DEFS.Nature.block = NatureRune.ResolveBlock(natureRuneBlock, runeRollBlock)
 end
 
 function RuneRollSystem.Init()
@@ -351,7 +206,7 @@ function RuneRollSystem.Init()
 		RuneRollSystem.HandleRuneAction(player, actionName)
 	end)
 
-	startRuneRuntimeLoop()
+	RuneRuntimeSystem.Start(RuneRollSystem.UpdatePlayerRuneRolling)
 end
 
 function RuneRollSystem.GetRuneSetDefs()
