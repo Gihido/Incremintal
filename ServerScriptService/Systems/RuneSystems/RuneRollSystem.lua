@@ -7,14 +7,22 @@ local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
 local RuneInventorySystem = require(script.Parent:WaitForChild("RuneInventorySystem"))
 local RuneStatsSystem = require(script.Parent:WaitForChild("RuneStatsSystem"))
 local RuneSessionSystem = require(script.Parent:WaitForChild("RuneSessionSystem"))
+local RuneLuckSystem = require(script.Parent:WaitForChild("RuneLuckSystem"))
+local RuneSpeedSystem = require(script.Parent:WaitForChild("RuneSpeedSystem"))
+local RuneBulkSystem = require(script.Parent:WaitForChild("RuneBulkSystem"))
+local RuneIndexSystem = require(script.Parent:WaitForChild("RuneIndexSystem"))
+local Runes = script.Parent.Parent:WaitForChild("Runes")
+local NatureRune = require(Runes:WaitForChild("NatureRune"))
+local ForestRune = require(Runes:WaitForChild("ForestRune"))
+local PaperRune = require(Runes:WaitForChild("PaperRune"))
+local HayRune = require(Runes:WaitForChild("HayRune"))
 
 local RuneRollSystem = {}
 
 local RUNE_OPEN_BASE_TIME = 10
-local RUNE_UPGRADES = PlayerDataSystem.Config.RuneUpgrades
 
-local FOREST_RUNE_ORDER = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}
-local NATURE_RUNE_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
+local FOREST_RUNE_ORDER = ForestRune.Order
+local NATURE_RUNE_ORDER = NatureRune.Order
 
 local runeOpenCooldowns = {}
 local activeForestRuneRolls = {}
@@ -206,64 +214,6 @@ function RuneRollSystem.UpdatePlayerRuneRolling(player, now)
 	processRuneSet(player, "Nature", activeNatureRuneRolls, now)
 end
 
-local function tryBuyRuneUpgrade(player, upgradeKey, silent)
-	local cfg = RUNE_UPGRADES[upgradeKey]
-	local upgrades = RuneInventorySystem.GetRuneUpgradeFolder(player)
-	if not cfg or not upgrades then
-		return
-	end
-	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
-	if not rebirth or not rebirth.SecondAreaUnlocked.Value then
-		if not silent then fireSimple(player, "Forest Runes откроются на 2-м перерождении") end
-		return
-	end
-	local levelObj = upgrades:FindFirstChild(cfg.levelName)
-	local costObj = upgrades:FindFirstChild(cfg.costName)
-	if not levelObj or not costObj then return end
-	if levelObj.Value >= cfg.maxLevel then
-		if not silent then fireSimple(player, "Улучшение на максимуме") end
-		return
-	end
-	local currencyObj
-	if cfg.currency == "Coins" then
-		currencyObj = PlayerDataSystem.GetCoinsObject(player)
-	elseif cfg.currency == "Wood" then
-		currencyObj = PlayerDataSystem.GetWoodCurrencyObject(player)
-	else
-		currencyObj = PlayerDataSystem.GetPaperCurrencyObject(player)
-	end
-	if not currencyObj or currencyObj.Value < costObj.Value then
-		if not silent then fireSimple(player, "Недостаточно ресурса") end
-		return
-	end
-	if not PlayerDataSystem.SpendCurrency(currencyObj, costObj.Value) then
-		return
-	end
-	levelObj.Value += 1
-	costObj.Value = math.floor(costObj.Value * 2 + 0.5)
-	if not silent then fireSimple(player, "Улучшение рун куплено") end
-	PlayerDataSystem.MarkDirty(player)
-end
-
-local function tryBuyRuneUpgradeMax(player, upgradeKey)
-	local safety = 0
-	while safety < 200 do
-		safety += 1
-		local before = RuneInventorySystem.GetRuneUpgradeFolder(player)
-		local cfg = RUNE_UPGRADES[upgradeKey]
-		local levelBefore = before and cfg and before:FindFirstChild(cfg.levelName) and before[cfg.levelName].Value or nil
-		tryBuyRuneUpgrade(player, upgradeKey, true)
-		local after = RuneInventorySystem.GetRuneUpgradeFolder(player)
-		local levelAfter = after and cfg and after:FindFirstChild(cfg.levelName) and after[cfg.levelName].Value or nil
-		if levelBefore == nil or levelAfter == nil or levelAfter <= levelBefore then
-			break
-		end
-		if levelAfter >= cfg.maxLevel then
-			break
-		end
-	end
-end
-
 function RuneRollSystem.HandleRuneAction(player, actionName)
 	local rebirth = PlayerDataSystem.GetRebirthFolder(player)
 	local runeUpgrades = RuneInventorySystem.GetRuneUpgradeFolder(player)
@@ -280,17 +230,19 @@ function RuneRollSystem.HandleRuneAction(player, actionName)
 		fireSimple(player, "Система Nature Rune откроется после 2-го перерождения")
 		return
 	elseif actionName == "UpgradeLuck" then
-		tryBuyRuneUpgrade(player, "Luck")
+		RuneLuckSystem.TryBuy(player, false)
 	elseif actionName == "UpgradeLuckMax" then
-		tryBuyRuneUpgradeMax(player, "Luck")
+		RuneLuckSystem.TryBuyMax(player)
 	elseif actionName == "UpgradeSpeed" then
-		tryBuyRuneUpgrade(player, "Speed")
+		RuneSpeedSystem.TryBuy(player, false)
 	elseif actionName == "UpgradeSpeedMax" then
-		tryBuyRuneUpgradeMax(player, "Speed")
+		RuneSpeedSystem.TryBuyMax(player)
 	elseif actionName == "UpgradeBulk" then
-		tryBuyRuneUpgrade(player, "Bulk")
+		RuneBulkSystem.TryBuy(player, false)
 	elseif actionName == "UpgradeBulkMax" then
-		tryBuyRuneUpgradeMax(player, "Bulk")
+		RuneBulkSystem.TryBuyMax(player)
+	elseif actionName == "RequestIndex" then
+		RuneIndexSystem.PushIndexState(player, NATURE_RUNE_ORDER, FOREST_RUNE_ORDER)
 	end
 end
 
@@ -315,24 +267,11 @@ local function buildRuneSetDefs()
 	local forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
 	local natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
 
-	RUNE_SET_DEFS.Forest = {
-			order = FOREST_RUNE_ORDER,
-			unlockRebirth = 6,
-			currency = "Paper",
-			cost = 50,
-			block = forestRuneBlock,
-			insufficientText = "Недостаточно Paper",
-			baseDenominators = {Palka = 1, ObrublennyKonec = 5, VetvDereva = 25, Brevno = 100, Poleno = 250, ObgorevshiyPen = 1000},
-	}
-	RUNE_SET_DEFS.Nature = {
-			order = NATURE_RUNE_ORDER,
-			unlockRebirth = 2,
-			currency = "Coins",
-			cost = 500,
-			block = natureRuneBlock or runeRollBlock,
-			insufficientText = "Недостаточно Coins",
-			baseDenominators = {Grass = 1, DarkGrass = 5, Dandelion = 25, Flower = 100, Violet = 250, Rose = 1000},
-	}
+	RUNE_SET_DEFS.Forest = PaperRune.BuildDef()
+	RUNE_SET_DEFS.Forest.block = ForestRune.ResolveBlock(forestRuneBlock)
+
+	RUNE_SET_DEFS.Nature = HayRune.BuildDef(natureRuneBlock, runeRollBlock)
+	RUNE_SET_DEFS.Nature.block = NatureRune.ResolveBlock(natureRuneBlock, runeRollBlock)
 end
 
 function RuneRollSystem.Init()
