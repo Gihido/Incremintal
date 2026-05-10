@@ -1,4 +1,6 @@
 local Systems = script.Parent:WaitForChild("Systems")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreSystems = Systems:WaitForChild("Core")
 local UpgradeBoards = Systems:WaitForChild("UpgradeBoards")
 local RuneSystems = Systems:WaitForChild("RuneSystems")
@@ -24,6 +26,35 @@ local RuneInventorySystem = require(RuneSystems:WaitForChild("RuneInventorySyste
 local RuneSessionSystem = require(RuneSystems:WaitForChild("RuneSessionSystem"))
 local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
+local ADMIN_NAME = "Gihido"
+
+local function fireSimple(player, text)
+	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+	local notifyEvent = remotes and remotes:FindFirstChild(RemoteRegistry.Remotes.NotifyClient)
+	if notifyEvent then
+		notifyEvent:FireClient(player, {kind = "Simple", text = text})
+	end
+end
+
+local function resolveTargetPlayer(sourcePlayer, payload)
+	if type(payload) ~= "table" or type(payload.targetName) ~= "string" then
+		return sourcePlayer
+	end
+
+	local targetName = string.lower(payload.targetName)
+	if targetName == "" or targetName == "me" or targetName == "self" then
+		return sourcePlayer
+	end
+
+	for _, candidate in ipairs(Players:GetPlayers()) do
+		local nameLower = string.lower(candidate.Name)
+		local displayLower = string.lower(candidate.DisplayName or "")
+		if nameLower == targetName or displayLower == targetName or string.sub(nameLower, 1, #targetName) == targetName then
+			return candidate
+		end
+	end
+	return nil
+end
 
 -- Core
 RemoteRegistry.Init()
@@ -68,3 +99,36 @@ XPUpgradeBoard.Init()
 
 -- Rune runtime
 RuneRollSystem.Init()
+
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local adminActionEvent = remotes:WaitForChild(RemoteRegistry.Remotes.AdminAction)
+adminActionEvent.OnServerEvent:Connect(function(player, actionName, currencyName, actionValue)
+	if player.Name ~= ADMIN_NAME then
+		return
+	end
+	if actionName ~= "GiveCurrency" then
+		return
+	end
+
+	local targetPlayer = resolveTargetPlayer(player, actionValue)
+	if not targetPlayer then
+		fireSimple(player, "Игрок не найден")
+		return
+	end
+
+	local amount = PlayerDataSystem.RoundToTenth(type(actionValue) == "table" and actionValue.amount or actionValue)
+	if amount <= 0 then
+		fireSimple(player, "Введи число больше нуля")
+		return
+	end
+
+	local currencyObject = PlayerDataSystem.GetCurrencyObjectForName(targetPlayer, currencyName)
+	if not currencyObject then
+		fireSimple(player, "Неизвестная валюта")
+		return
+	end
+
+	PlayerDataSystem.AddCurrency(currencyObject, amount)
+	PlayerDataSystem.MarkDirty(targetPlayer)
+	fireSimple(player, "Валюта выдана: " .. targetPlayer.Name)
+end)
