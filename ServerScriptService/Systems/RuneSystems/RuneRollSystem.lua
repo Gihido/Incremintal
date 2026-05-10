@@ -11,13 +11,18 @@ local RuneLuckSystem = require(script.Parent:WaitForChild("RuneLuckSystem"))
 local RuneSpeedSystem = require(script.Parent:WaitForChild("RuneSpeedSystem"))
 local RuneBulkSystem = require(script.Parent:WaitForChild("RuneBulkSystem"))
 local RuneIndexSystem = require(script.Parent:WaitForChild("RuneIndexSystem"))
+local Runes = script.Parent.Parent:WaitForChild("Runes")
+local NatureRune = require(Runes:WaitForChild("NatureRune"))
+local ForestRune = require(Runes:WaitForChild("ForestRune"))
+local PaperRune = require(Runes:WaitForChild("PaperRune"))
+local HayRune = require(Runes:WaitForChild("HayRune"))
 
 local RuneRollSystem = {}
 
 local RUNE_OPEN_BASE_TIME = 10
 
-local FOREST_RUNE_ORDER = {"Palka", "ObrublennyKonec", "VetvDereva", "Brevno", "Poleno", "ObgorevshiyPen"}
-local NATURE_RUNE_ORDER = {"Grass", "DarkGrass", "Dandelion", "Flower", "Violet", "Rose"}
+local FOREST_RUNE_ORDER = ForestRune.Order
+local NATURE_RUNE_ORDER = NatureRune.Order
 
 local runeOpenCooldowns = {}
 local activeForestRuneRolls = {}
@@ -262,24 +267,11 @@ local function buildRuneSetDefs()
 	local forestRuneBlock = Workspace:FindFirstChild("ForestRuneBlock")
 	local natureRuneBlock = Workspace:FindFirstChild("NatureRuneBlock")
 
-	RUNE_SET_DEFS.Forest = {
-			order = FOREST_RUNE_ORDER,
-			unlockRebirth = 6,
-			currency = "Paper",
-			cost = 50,
-			block = forestRuneBlock,
-			insufficientText = "Недостаточно Paper",
-			baseDenominators = {Palka = 1, ObrublennyKonec = 5, VetvDereva = 25, Brevno = 100, Poleno = 250, ObgorevshiyPen = 1000},
-	}
-	RUNE_SET_DEFS.Nature = {
-			order = NATURE_RUNE_ORDER,
-			unlockRebirth = 2,
-			currency = "Coins",
-			cost = 500,
-			block = natureRuneBlock or runeRollBlock,
-			insufficientText = "Недостаточно Coins",
-			baseDenominators = {Grass = 1, DarkGrass = 5, Dandelion = 25, Flower = 100, Violet = 250, Rose = 1000},
-	}
+	RUNE_SET_DEFS.Forest = PaperRune.BuildDef()
+	RUNE_SET_DEFS.Forest.block = ForestRune.ResolveBlock(forestRuneBlock)
+
+	RUNE_SET_DEFS.Nature = HayRune.BuildDef(natureRuneBlock, runeRollBlock)
+	RUNE_SET_DEFS.Nature.block = NatureRune.ResolveBlock(natureRuneBlock, runeRollBlock)
 end
 
 function RuneRollSystem.Init()
