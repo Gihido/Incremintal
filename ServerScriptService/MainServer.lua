@@ -26,43 +26,8 @@ local RuneSessionSystem = require(RuneSystems:WaitForChild("RuneSessionSystem"))
 local RuneStatsSystem = require(RuneSystems:WaitForChild("RuneStatsSystem"))
 local RuneRollSystem = require(RuneSystems:WaitForChild("RuneRollSystem"))
 
-local function findFirstDescendantByName(root, targetName, maxDepth)
-	maxDepth = maxDepth or 6
-	local queue = {{node = root, depth = 0}}
-	while #queue > 0 do
-		local item = table.remove(queue, 1)
-		if item.node.Name == targetName then
-			return item.node
-		end
-		if item.depth < maxDepth then
-			for _, child in ipairs(item.node:GetChildren()) do
-				queue[#queue + 1] = {node = child, depth = item.depth + 1}
-			end
-		end
-	end
-	return nil
-end
+local LeaderboardSystem = require(Systems:WaitForChild("LeaderboardSystem"))
 
-local function resolveLeaderboardModule()
-	local direct = script.Parent.Parent:FindFirstChild("Modules")
-	if direct and direct:FindFirstChild("LeaderboardService") then
-		return direct:FindFirstChild("LeaderboardService")
-	end
-
-	local inServerScriptService = script.Parent:FindFirstChild("Modules")
-	if inServerScriptService and inServerScriptService:FindFirstChild("LeaderboardService") then
-		return inServerScriptService:FindFirstChild("LeaderboardService")
-	end
-
-	local scannedModules = findFirstDescendantByName(game, "Modules", 4)
-	if scannedModules and scannedModules:FindFirstChild("LeaderboardService") then
-		return scannedModules:FindFirstChild("LeaderboardService")
-	end
-
-	error("LeaderboardService module not found (expected in game.Modules or ServerScriptService.Modules)")
-end
-
-local LeaderboardService = require(resolveLeaderboardModule())
 local ADMIN_NAME = "Gihido"
 local LEADERBOARD_REQUEST_COOLDOWN = 0.35
 local leaderboardRequestCooldowns = {}
@@ -114,11 +79,11 @@ local LEADERBOARD_SOURCES = {
 
 local function buildLeaderboardTop(boardName, topCount)
 	local sourceGetter = LEADERBOARD_SOURCES[boardName] or LEADERBOARD_SOURCES.Coins
-	local entries = LeaderboardService:BuildEntries(Players:GetPlayers(), function(plr)
+	local entries = LeaderboardSystem:BuildEntries(Players:GetPlayers(), function(plr)
 		local currencyObj = sourceGetter(plr)
 		return currencyObj and currencyObj.Value or 0
 	end, formatLeaderboardValue)
-	return LeaderboardService:GetTopPlayers(entries, topCount or 10)
+	return LeaderboardSystem:GetTopPlayers(entries, topCount or 10)
 end
 
 -- Core
