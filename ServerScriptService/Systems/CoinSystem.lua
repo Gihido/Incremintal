@@ -1,11 +1,11 @@
 local Players = game:GetService("Players")
 local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
 
 local CoreSystems = script.Parent:WaitForChild("Core")
 local PlayerDataSystem = require(CoreSystems:WaitForChild("PlayerDataSystem"))
 local RemoteRegistry = require(CoreSystems:WaitForChild("RemoteRegistry"))
+local CoinAnimationSystem = require(script.Parent:WaitForChild("RuntimeLoops"):WaitForChild("CoinAnimationSystem"))
 
 local CoinSystem = {}
 
@@ -264,25 +264,6 @@ function CoinSystem.SpawnCoin()
 	end)
 end
 
-local function startCoinAnimationLoop()
-	RunService.Heartbeat:Connect(function()
-		local now = os.clock()
-
-		for coin, info in pairs(animatedCoins) do
-			if coin and coin.Parent then
-				local bobOffset = math.sin(now * 2 + info.seed) * 0.35
-				local rotationY = now * info.spinSpeed + info.seed
-
-				coin.CFrame = info.baseCFrame
-					* CFrame.new(0, bobOffset, 0)
-					* CFrame.Angles(0, rotationY, 0)
-			else
-				animatedCoins[coin] = nil
-			end
-		end
-	end)
-end
-
 function CoinSystem.Init(customDependencies)
 	if initialized then
 		return
@@ -302,7 +283,7 @@ function CoinSystem.Init(customDependencies)
 	coinTemplate = ServerStorage:WaitForChild("CoinPart")
 	spawnedCoinsFolder = ensureSpawnedCoinsFolder()
 
-	startCoinAnimationLoop()
+	CoinAnimationSystem.Start(animatedCoins)
 
 	for _ = 1, MAX_COINS do
 		CoinSystem.SpawnCoin()
